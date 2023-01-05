@@ -1,0 +1,23 @@
+[package]
+name = "bitris"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+criterion = { version = "0.4.0", features = ["html_reports"] }
+itertools = "0.10.5"
+rstest = "0.16.0"
+rstest_reuse = "0.4.0"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "boards"
+harness = false
+
+[[bench]]
+name = "moves_in_srs"
+harness = false
