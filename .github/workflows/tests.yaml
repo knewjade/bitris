@@ -9,11 +9,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --benches 
+      - name: run tests for core
+        run: >
+          cargo test --release
+          cargo test --benches
+      - name: run tests for example
+        run: cargo test --release
+        working-directory: ./example
