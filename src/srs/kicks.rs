@@ -1,8 +1,9 @@
-use crate::{Kick, KickTable, Offset, Piece, Rotation, Shape};
+use std::slice::Iter;
+use crate::{Kick, Offset, Piece, Rotation, RotationSystem, Shape};
 
 macro_rules! k {
     ($dx: expr, $dy: expr) => {
-        Kick { offset: Offset { dx: $dx, dy: $dy } }
+        Kick::new(Offset::new($dx, $dy))
     }
 }
 
@@ -127,15 +128,15 @@ impl SrsKickTable {
     ];
 }
 
-impl KickTable<'static> for SrsKickTable {
-    fn get_kicks(&self, oriented_shape: Piece, rotation: Rotation) -> &'static [Kick] {
+impl RotationSystem for SrsKickTable {
+    fn iter_kicks(&self, piece: Piece, rotation: Rotation) -> Iter<'_, Kick> {
         assert_ne!(rotation, Rotation::R180);
-        let index = oriented_shape.orientation as usize * 3 + rotation as usize;
-        match oriented_shape.shape {
-            Shape::L | Shape::J | Shape::S | Shape::Z => Self::LJSZ_KICKS[index],
-            Shape::T => Self::T_KICKS[index],
-            Shape::I => Self::I_KICKS[index],
-            Shape::O => Self::O_KICKS[index],
+        let index = piece.orientation as usize * 3 + rotation as usize;
+        match piece.shape {
+            Shape::L | Shape::J | Shape::S | Shape::Z => Self::LJSZ_KICKS[index].iter(),
+            Shape::T => Self::T_KICKS[index].iter(),
+            Shape::I => Self::I_KICKS[index].iter(),
+            Shape::O => Self::O_KICKS[index].iter(),
         }
     }
 
@@ -146,6 +147,8 @@ impl KickTable<'static> for SrsKickTable {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use itertools::assert_equal;
 
     use crate::*;
@@ -153,9 +156,9 @@ mod tests {
 
     #[test]
     fn srs_t_from_north_to_east() {
-        let kicks = SrsKickTable.get_kicks(Piece::new(Shape::T, Orientation::North), Rotation::Cw);
+        let kicks = SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::Cw);
         assert_equal(
-            kicks.iter().map(|it| it.offset),
+            kicks.map(|it| it.offset),
             vec![dd(0, 0), dd(-1, 0), dd(-1, 1), dd(0, -2), dd(-1, -2)].into_iter(),
         );
     }
@@ -163,6 +166,36 @@ mod tests {
     #[test]
     #[should_panic]
     fn srs_is_not_unsupported_rotate_180() {
-        SrsKickTable.get_kicks(Piece::new(Shape::T, Orientation::North), Rotation::R180);
+        let _ = SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::R180);
+    }
+
+    #[test]
+    fn test_kick() {
+        let board = Board64::from_str("\
+            XXX.......\
+            XX........\
+            XX.XXXXXXX\
+            XX..XXXXXX\
+            XX.XXXXXXX\
+        ").unwrap();
+        let placement = piece!(TN).with(cc(3, 3));
+        let rotation = Rotation::Cw;
+        assert_eq!(SrsKickTable.test_kick(&board, placement, rotation), Some(TestKickResult {
+            test_index: 4,
+            kick: *SrsKickTable.iter_kicks(placement.piece, rotation).skip(4).next().unwrap(),
+            destination: CcPlacement { piece: piece!(TE), position: cc(2, 1) },
+        }));
+
+        let board = Board64::from_str("\
+            XX..XXXXXX\
+            XXX..XXXXX\
+        ").unwrap();
+        let placement = piece!(ZW).with(cc(4, 2));
+        let rotation = Rotation::Ccw;
+        assert_eq!(SrsKickTable.test_kick(&board, placement, rotation), Some(TestKickResult {
+            test_index: 2,
+            kick: *SrsKickTable.iter_kicks(placement.piece, rotation).skip(2).next().unwrap(),
+            destination: CcPlacement { piece: piece!(ZS), position: cc(3, 1) },
+        }));
     }
 }

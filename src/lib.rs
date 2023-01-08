@@ -6,6 +6,7 @@ use rstest_reuse;
 pub use boards::*;
 pub use kicks::*;
 pub use location::*;
+pub use moves::*;
 pub use offset::*;
 pub use operators::*;
 pub use orientation::*;
@@ -15,12 +16,14 @@ pub use placements::*;
 pub use positions::*;
 pub use rotation::*;
 pub use shape::*;
+pub use traits::*;
 
 pub mod prelude {
     pub use crate::{
         boards::*,
         kicks::*,
         location::*,
+        moves::*,
         offset::*,
         operators::*,
         orientation::*,
@@ -29,6 +32,8 @@ pub mod prelude {
         placements::*,
         positions::*,
         shape::*,
+        srs::SrsKickTable,
+        traits::*,
     };
     pub use crate::macros;
     pub use crate::srs;
@@ -55,3 +60,5 @@ mod placements;
 mod positions;
 mod rotation;
 mod shape;
+mod traits;
+mod moves;

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{BlPlacement, BlPosition, CcPlacement, CcPosition, Orientation, PieceBlocks, Rotate, Rotation, Shape, TrPlacement, TrPosition, With};
+use crate::{BlPlacement, BlPosition, CcPlacement, CcPosition, Orientation, PieceBlocks, PieceBlocksFactory, Rotate, Rotation, Shape, TrPlacement, TrPosition, With};
 use crate::internal_macros::forward_ref_from;
 
 /// It has shape and orientation as a piece.
@@ -55,6 +55,11 @@ impl Piece {
     #[inline]
     pub const fn new(shape: Shape, orientation: Orientation) -> Self {
         Self { shape, orientation }
+    }
+
+    #[inline]
+    pub fn to_piece_blocks(self) -> &'static PieceBlocks {
+        PieceBlocksFactory.get(self)
     }
 
     /// Fixes the orientation with no change in shape.
@@ -143,7 +148,7 @@ forward_ref_from!(Piece, from TrPlacement);
 impl From<&PieceBlocks> for Piece {
     #[inline]
     fn from(value: &PieceBlocks) -> Self {
-        Self { shape: value.shape, orientation: value.orientation }
+        value.piece
     }
 }
 
@@ -230,26 +235,5 @@ mod tests {
         assert_eq!(piece.with(cc(5, 5)).piece, *piece);
         assert_eq!(piece.with(bl(5, 5)).piece, *piece);
         assert_eq!(piece.with(tr(5, 5)).piece, *piece);
-    }
-
-    #[test]
-    fn with_cc() {
-        let piece = Piece::new(Shape::T, Orientation::North);
-        let placement = piece.with(cc(3, 4));
-        assert_eq!(placement, CcPlacement::new(piece, cc(3, 4)));
-    }
-
-    #[test]
-    fn with_bl() {
-        let piece = Piece::new(Shape::T, Orientation::North);
-        let placement = piece.with(bl(3, 4));
-        assert_eq!(placement, BlPlacement::new(piece, bl(3, 4)));
-    }
-
-    #[test]
-    fn with_tr() {
-        let piece = Piece::new(Shape::T, Orientation::North);
-        let placement = piece.with(tr(3, 4));
-        assert_eq!(placement, TrPlacement::new(piece, tr(3, 4)));
     }
 }

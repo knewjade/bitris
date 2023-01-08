@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use criterion::*;
 
-use bitris::*;
+use bitris::prelude::*;
 
 #[derive(Debug)]
 struct MovesBenchmarkData {

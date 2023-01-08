@@ -1,15 +1,8 @@
 use std::array::IntoIter;
 use std::slice::Iter;
 
-use crate::{Orientation, Piece};
+use crate::{Orientation, Piece, With};
 use crate::internal_macros::enum_display;
-
-/// Converting to different data with additional data.
-pub trait With<T> {
-    type Output;
-
-    fn with(self, arg: T) -> Self::Output;
-}
 
 /// A collection of piece shapes based on Tetrominoes.
 /// ```

@@ -1,6 +1,6 @@
 use std::{fmt, ops};
 
-use crate::{BlPosition, BoardOp, CcPosition, dd, Lines, Location, Offset, Piece, Rotate, Rotation, ToPieceBlocks, TrPosition};
+use crate::{BlPosition, BoardOp, CcPosition, dd, Lines, Location, Offset, Orientation, Piece, PieceBlocks, PieceBlocksFactory, Rotate, Rotation, Shape, TrPosition};
 use crate::internal_macros::{add_member_for_from, forward_ref_from, forward_ref_op};
 
 /// The position to be placed, based on the center of the piece.
@@ -14,6 +14,21 @@ impl CcPlacement {
     #[inline]
     pub const fn new(piece: Piece, position: CcPosition) -> Self {
         Self { piece, position }
+    }
+
+    #[inline]
+    pub fn to_piece_blocks(self) -> &'static PieceBlocks {
+        PieceBlocksFactory.get(self.piece)
+    }
+
+    #[inline]
+    pub const fn shape(&self) -> Shape {
+        self.piece.shape
+    }
+
+    #[inline]
+    pub const fn orientation(&self) -> Orientation {
+        self.piece.orientation
     }
 
     /// Returns locations for each block.
@@ -180,6 +195,21 @@ impl BlPlacement {
         Self { piece, position }
     }
 
+    #[inline]
+    pub fn to_piece_blocks(self) -> &'static PieceBlocks {
+        PieceBlocksFactory.get(self.piece)
+    }
+
+    #[inline]
+    pub const fn shape(&self) -> Shape {
+        self.piece.shape
+    }
+
+    #[inline]
+    pub const fn orientation(&self) -> Orientation {
+        self.piece.orientation
+    }
+
     /// Returns locations for each block.
     #[inline]
     pub fn locations(&self) -> Vec<Location> {
@@ -326,6 +356,21 @@ impl TrPlacement {
     #[inline]
     pub const fn new(piece: Piece, position: TrPosition) -> Self {
         Self { piece, position }
+    }
+
+    #[inline]
+    pub fn to_piece_blocks(self) -> &'static PieceBlocks {
+        PieceBlocksFactory.get(self.piece)
+    }
+
+    #[inline]
+    pub const fn shape(&self) -> Shape {
+        self.piece.shape
+    }
+
+    #[inline]
+    pub const fn orientation(&self) -> Orientation {
+        self.piece.orientation
     }
 
     /// Returns locations for each block.

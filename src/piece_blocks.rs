@@ -10,8 +10,7 @@ use crate::internal_macros::add_member_for_from;
 /// Therefore, this struct is relatively large and slower when copied, so copy/clone are not allowed.
 #[derive(Clone, Hash, Debug)]
 pub struct PieceBlocks {
-    pub shape: Shape,
-    pub orientation: Orientation,
+    pub piece: Piece,
     pub offsets: [Offset; 4],
     pub width: i32,
     pub height: i32,
@@ -24,24 +23,23 @@ impl Rotate for PieceBlocks {
 
     #[inline]
     fn rotate(&self, rotation: Rotation) -> &'static PieceBlocks {
-        PieceBlocksFactory.get(self.shape, self.orientation.rotate(rotation))
+        PieceBlocksFactory.get(self.piece.rotate(rotation))
+    }
+}
+
+impl PieceBlocks {
+    #[inline]
+    pub const fn shape(&self) -> Shape {
+        self.piece.shape
+    }
+
+    #[inline]
+    pub const fn orientation(&self) -> Orientation {
+        self.piece.orientation
     }
 }
 
 add_member_for_from!(Piece, piece, to PieceBlocks);
-
-
-/// Converting to piece blocks.
-pub trait ToPieceBlocks: Sized {
-    fn to_piece_blocks(self) -> &'static PieceBlocks;
-}
-
-impl<T> ToPieceBlocks for T where T: Into<Piece> {
-    fn to_piece_blocks(self) -> &'static PieceBlocks {
-        let piece: Piece = self.into();
-        PieceBlocksFactory.get(piece.shape, piece.orientation)
-    }
-}
 
 
 /// Default piece blocks factory to generate Tetrominoes.
@@ -85,9 +83,8 @@ impl PieceBlocksFactory {
         let (min_dx, max_dx) = Self::min_max_dx(&offsets);
         let (min_dy, max_dy) = Self::min_max_dy(&offsets);
         PieceBlocks {
-            shape,
-            orientation,
             offsets,
+            piece: Piece { shape, orientation },
             width: max_dx - min_dx + 1,
             height: max_dy - min_dy + 1,
             bottom_left: dd(min_dx, min_dy),
@@ -156,8 +153,8 @@ impl PieceBlocksFactory {
     }
 
     #[inline]
-    pub fn get(&self, shape: Shape, orientation: Orientation) -> &'static PieceBlocks {
-        &Self::PIECE_BLOCKS[shape as usize * 4 + orientation as usize]
+    pub fn get(&self, piece: Piece) -> &'static PieceBlocks {
+        &Self::PIECE_BLOCKS[piece.shape as usize * 4 + piece.orientation as usize]
     }
 }
 
@@ -191,8 +188,8 @@ mod tests {
         assert_eq!(blocks.piece(), piece!(TW));
 
         let blocks = blocks.piece().to_piece_blocks();
-        assert_eq!(blocks.shape, Shape::T);
-        assert_eq!(blocks.orientation, Orientation::West);
+        assert_eq!(blocks.shape(), Shape::T);
+        assert_eq!(blocks.orientation(), Orientation::West);
         assert_eq!(blocks.width, 2);
         assert_eq!(blocks.height, 3);
 
