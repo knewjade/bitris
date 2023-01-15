@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use bitris::{Rotate, Rotation};
     use bitris::macros::piece;
     use bitris::prelude::*;
     

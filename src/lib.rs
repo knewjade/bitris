@@ -18,6 +18,7 @@ pub use rotation::*;
 pub use shape::*;
 pub use traits::*;
 
+#[doc(hidden)]
 pub mod prelude {
     pub use crate::{
         boards::*,
@@ -31,6 +32,7 @@ pub mod prelude {
         piece_blocks::*,
         placements::*,
         positions::*,
+        rotation::*,
         shape::*,
         srs::SrsKickTable,
         traits::*,

@@ -1,4 +1,5 @@
 use std::slice::Iter;
+
 use crate::{Kick, Offset, Piece, Rotation, RotationSystem, Shape};
 
 macro_rules! k {
@@ -130,7 +131,7 @@ impl SrsKickTable {
 
 impl RotationSystem for SrsKickTable {
     fn iter_kicks(&self, piece: Piece, rotation: Rotation) -> Iter<'_, Kick> {
-        assert_ne!(rotation, Rotation::R180);
+        assert_ne!(rotation, Rotation::R180, "This kick table does not support 180 rotation.");
         let index = piece.orientation as usize * 3 + rotation as usize;
         match piece.shape {
             Shape::L | Shape::J | Shape::S | Shape::Z => Self::LJSZ_KICKS[index].iter(),
