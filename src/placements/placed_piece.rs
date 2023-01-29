@@ -1,5 +1,3 @@
-use std::cmp;
-
 use itertools::Itertools;
 use tinyvec::ArrayVec;
 
@@ -92,40 +90,6 @@ impl PlacedPiece {
         piece_blocks.offsets
             .map(|offset| { offset - piece_blocks.bottom_left })
             .map(|offset| { Location::new(self.lx as i32 + offset.dx, self.ys[offset.dy as usize] as i32) })
-    }
-
-    /// Returns block locations of possible touch with the ground.
-    /// Finds the y-coordinate of the lowest block in each x-coordinate.
-    /// ```
-    /// use tinyvec::{array_vec, ArrayVec};
-    /// use bitris::piece;
-    /// use bitris::prelude::*;
-    /// assert_eq!(
-    ///     PlacedPiece::new(piece!(JS), 2, array_vec![1, 4]).touching_locations().as_slice(),
-    ///     ArrayVec::from([Location::new(2, 4), Location::new(3, 4), Location::new(4, 1)]).as_slice(),
-    /// );
-    /// assert_eq!(
-    ///     PlacedPiece::new(piece!(SN), 5, array_vec![0, 3]).touching_locations().as_slice(),
-    ///     ArrayVec::from([Location::new(5, 0), Location::new(6, 0), Location::new(7, 3)]).as_slice(),
-    /// );
-    /// ```
-    #[inline]
-    pub fn touching_locations(&self) -> ArrayVec<[Location; 4]> {
-        let piece_blocks = self.piece.to_piece_blocks();
-        let min_dys = piece_blocks.offsets.iter()
-            .map(|offset| { offset - piece_blocks.bottom_left })
-            .fold([i32::MAX; 4], |mut min_dys, offset| {
-                let index = offset.dx as usize;
-                min_dys[index] = cmp::min(self.ys[offset.dy as usize] as i32, min_dys[index]);
-                min_dys
-            });
-
-        let mut vec = ArrayVec::<[Location; 4]>::new();
-        for index in 0..piece_blocks.width as usize {
-            let dx = self.lx as i32 + index as i32;
-            vec.push(Location::new(dx, min_dys[index]));
-        }
-        vec
     }
 
     /// Returns blank rows between the separated pieces.

@@ -1,5 +1,7 @@
 use std::{fmt, ops};
 
+use tinyvec::ArrayVec;
+
 use crate::{Rotate, Rotation};
 use crate::boards::{BoardOp, Lines};
 use crate::coordinates::{CcPosition, dd, Location, Offset};
@@ -40,6 +42,29 @@ impl CcPlacement {
     pub fn locations(&self) -> [Location; 4] {
         let cc = self.position.to_location();
         self.to_piece_blocks().offsets.map(|offset| cc + offset)
+    }
+
+    /// Returns block locations of possible touch with the ground.
+    /// Finds the y-coordinate of the lowest block in each x-coordinate.
+    /// ```
+    /// use tinyvec::ArrayVec;
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    /// assert_eq!(
+    ///     piece!(JS).with(cc(3, 4)).touching_locations().as_slice(),
+    ///     ArrayVec::from([Location::new(2, 4), Location::new(3, 4), Location::new(4, 3)]).as_slice(),
+    /// );
+    /// assert_eq!(
+    ///     piece!(SN).with(cc(5, 0)).touching_locations().as_slice(),
+    ///     ArrayVec::from([Location::new(4, 0), Location::new(5, 0), Location::new(6, 1)]).as_slice(),
+    /// );
+    /// ```
+    #[inline]
+    pub fn touching_locations(&self) -> ArrayVec<[Location; 4]> {
+        let cc = self.position.to_location();
+        self.to_piece_blocks().touching_offsets().into_iter()
+            .map(|offset| cc + offset)
+            .collect()
     }
 
     /// Set all blocks at the location on the board. No apply line clear.

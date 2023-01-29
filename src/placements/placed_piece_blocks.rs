@@ -1,5 +1,3 @@
-use tinyvec::ArrayVec;
-
 use crate::boards::{BoardOp, Lines};
 use crate::coordinates::{bl, Location};
 use crate::internal_macros::forward_ref_from;
@@ -49,9 +47,6 @@ pub struct PlacedPieceBlocks {
     pub placed_piece: PlacedPiece,
     pub locations: [Location; 4],
 
-    /// Block locations of possible touch with the ground.
-    pub touching_locations: ArrayVec<[Location; 4]>,
-
     /// Blank rows between the separated pieces.
     /// See `PlacedPiece::intercepted_rows()`
     pub intercepted_rows: Lines,
@@ -68,7 +63,6 @@ impl PlacedPieceBlocks {
         Self {
             placed_piece,
             locations: placed_piece.locations(),
-            touching_locations: placed_piece.touching_locations(),
             intercepted_rows: placed_piece.intercepted_rows(),
             using_rows: placed_piece.using_rows(),
         }
