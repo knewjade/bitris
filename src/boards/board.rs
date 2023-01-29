@@ -46,6 +46,9 @@ pub trait BoardOp: Ceiling {
     /// Returns as key the rows that are all filled with blocks.
     fn filled_rows(&self) -> Lines;
 
+    /// Remove specified rows only.
+    fn clear_lines_partially(&mut self, lines: Lines);
+
     /// Remove rows that are all filled with blocks.
     fn clear_lines(&mut self) -> Lines;
 
@@ -572,6 +575,11 @@ impl BoardOp for Board<u8> {
     }
 
     #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u8)
+    }
+
+    #[inline]
     fn clear_lines(&mut self) -> Lines {
         let key = filled_row_key!(self.cols);
         clear_lines!(self.cols, key);
@@ -648,6 +656,11 @@ impl BoardOp for Board<u16> {
     #[inline]
     fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols) as u64)
+    }
+
+    #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u16)
     }
 
     #[inline]
@@ -730,6 +743,11 @@ impl BoardOp for Board<u32> {
     }
 
     #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u32)
+    }
+
+    #[inline]
     fn clear_lines(&mut self) -> Lines {
         let key = filled_row_key!(self.cols);
         clear_lines!(self.cols, key);
@@ -805,6 +823,11 @@ impl BoardOp for Board<u64> {
     #[inline]
     fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols))
+    }
+
+    #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key)
     }
 
     #[inline]
@@ -1015,5 +1038,19 @@ mod tests {
         assert_eq!(left.count_blocks(), 2);
         assert!(left.is_occupied_at(xy(0, 0)));
         assert!(left.is_occupied_at(xy(9, 0)));
+    }
+
+    #[apply(all_boards)]
+    fn clear_lines_partially(board: impl BoardOp + Clone + PartialEq + fmt::Debug) {
+        let mut board = board.clone();
+        for y in 4..board.ceiling() as i32 {
+            board.set_at(xy(0, y));
+        }
+        assert_eq!(board.well_top(), board.ceiling());
+        assert_eq!(board.count_blocks(), board.ceiling() - 4);
+
+        board.clear_lines_partially(Lines::new(0b11110));
+        assert_eq!(board.well_top(), board.ceiling() - 4);
+        assert_eq!(board.count_blocks(), board.ceiling() - 5);
     }
 }
