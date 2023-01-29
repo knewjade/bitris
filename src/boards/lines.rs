@@ -50,8 +50,8 @@ impl Lines {
     /// assert_eq!(Lines::filled_up_to(5), Lines::new(0b11111));
     /// ```
     #[inline]
-    pub const fn filled_up_to(height: u32) -> Self {
-        Lines::new((1u64 << height) - 1)
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self::new((1u64 << height) - 1)
     }
 
     /// Returns the height to the highest line. If the lines are empty, return 0.
@@ -152,6 +152,29 @@ impl Lines {
             key = ((key & upper_mask) << 1) | (key & lower_mask);
         }
         Lines::new(key)
+    }
+
+    /// Returns true if there is an overlap.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert!(Lines::new(0b01010101).overlaps(&Lines::new(0b00000001)));
+    /// assert!(!Lines::new(0b01010101).overlaps(&Lines::new(0b10101010)));
+    /// ```
+    #[inline]
+    pub fn overlaps(&self, other: &Self) -> bool {
+        0 < (self.key & other.key)
+    }
+
+    /// Returns true when it has all the other's on-bits.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert!(Lines::new(0b11110000).contains_all(&Lines::new(0b01100000)));
+    /// assert!(Lines::new(0b11110000).contains_all(&Lines::new(0b11110000)));
+    /// assert!(!Lines::new(0b11110000).contains_all(&Lines::new(0b00011000)));
+    /// ```
+    #[inline]
+    pub fn contains_all(&self, other: &Self) -> bool {
+        (self.key & other.key) == other.key
     }
 }
 

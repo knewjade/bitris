@@ -118,6 +118,18 @@ impl Board<u8> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board8::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board8::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board8::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self { cols: [(1 << height) - 1; 10] }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
     pub fn after_clearing(&self) -> Self {
@@ -136,6 +148,18 @@ impl Board<u16> {
     #[inline]
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
+    }
+
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board16::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board16::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board16::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self { cols: [(1 << height) - 1; 10] }
     }
 
     /// Returns a new board after clearing lines.
@@ -158,6 +182,18 @@ impl Board<u32> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board32::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board32::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board32::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self { cols: [(1 << height) - 1; 10] }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
     pub fn after_clearing(&self) -> Self {
@@ -176,6 +212,18 @@ impl Board<u64> {
     #[inline]
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
+    }
+
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board64::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board64::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board64::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self { cols: [(1 << height) - 1; 10] }
     }
 
     /// Returns a new board after clearing lines.

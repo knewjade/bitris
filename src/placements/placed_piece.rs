@@ -3,10 +3,10 @@ use std::cmp;
 use itertools::Itertools;
 use tinyvec::ArrayVec;
 
-use crate::boards::Lines;
+use crate::boards::{BoardOp, Lines};
 use crate::coordinates::{Location, xy};
 use crate::pieces::Piece;
-use crate::placements::BlPlacement;
+use crate::placements::{BlPlacement, place_according_to};
 
 /// The structure represents the pieces placed on the board.
 ///
@@ -141,14 +141,27 @@ impl PlacedPiece {
     pub fn intercepted_rows(&self) -> Lines {
         self.ys.iter()
             .skip(1)
-            .fold((self.ys[0] as u32, Lines::blank()), |(prev_y, lines), &y| {
-                let y = y as u32;
+            .fold((self.ys[0], Lines::blank()), |(prev_y, lines), &y| {
                 let current_using_row = Lines::filled_up_to(y);
                 let prev_using_row = Lines::filled_up_to(prev_y + 1);
                 let intercepted = current_using_row ^ prev_using_row;
                 (y, lines | intercepted)
             })
             .1
+    }
+
+    /// Set all blocks at the location on the board. No apply line clear.
+    /// If the block already exists, it's nothing happens.
+    #[inline]
+    pub fn set_all(&self, board: &mut impl BoardOp) {
+        board.set_all(&self.locations());
+    }
+
+    /// Unset all blocks at the location on the board.
+    /// If no block exists, it's nothing happens.
+    #[inline]
+    pub fn unset_all(&self, board: &mut impl BoardOp) {
+        board.unset_all(&self.locations());
     }
 
     /// Rows on which the block exists.
@@ -164,6 +177,44 @@ impl PlacedPiece {
     pub fn using_rows(&self) -> Lines {
         self.ys.iter()
             .fold(Lines::blank(), |lines, &y| lines | Lines::new_at(y))
+    }
+
+    /// Converts to placement according to the board.
+    ///
+    /// Returns None if it cannot be placed due to spaces or lock.
+    /// ```
+    /// use std::str::FromStr;
+    /// use tinyvec::array_vec;
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let board = Board64::from_str("
+    ///     ..........
+    ///     .........X
+    ///     XXXXXXXXXX
+    ///     X...X...XX
+    ///     XXXXX...XX
+    /// ").unwrap();
+    ///
+    /// // Success
+    /// let placed_piece = PlacedPiece::new(piece!(TE), 2, array_vec![1, 3, 4]);
+    /// assert_eq!(placed_piece.place_according_to(board), Some(piece!(TE).with(bl(2, 1))));
+    ///
+    /// // A block exists under a cleared line.
+    /// let placed_piece = PlacedPiece::new(piece!(ON), 7, array_vec![3, 4]);
+    /// assert_eq!(placed_piece.place_according_to(board), Some(piece!(ON).with(bl(7, 2))));
+    ///
+    /// // A block does not exist under a cleared line.
+    /// let placed_piece = PlacedPiece::new(piece!(ON), 6, array_vec![3, 4]);
+    /// assert_eq!(placed_piece.place_according_to(board), None);
+    ///
+    /// // The piece is on the cleared line.
+    /// let placed_piece_blocks = PlacedPiece::new(piece!(ON), 7, array_vec![2, 3]);
+    /// assert_eq!(placed_piece.place_according_to(board), None);
+    /// ```
+    #[inline]
+    pub fn place_according_to<T: BoardOp + Clone>(&self, board: T) -> Option<BlPlacement> {
+        place_according_to(board, *self, self.using_rows(), self.intercepted_rows())
     }
 }
 
