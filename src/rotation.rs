@@ -1,6 +1,3 @@
-use std::array::IntoIter;
-use std::slice::Iter;
-
 use crate::internal_macros::enum_display;
 
 /// Converting to the post-rotation item.
@@ -30,7 +27,7 @@ enum_display! { Rotation, has Cw,Ccw,R180 }
 
 /// A collection of piece shapes based on Tetrominoes.
 /// ```
-/// use bitris::Rotation;
+/// use bitris::prelude::*;
 /// assert_eq!(Rotation::default(), Rotation::Cw);
 /// assert_eq!(Rotation::Cw as i32, 0);
 /// assert_eq!(Rotation::Ccw as i32, 1);
@@ -47,28 +44,15 @@ impl Rotation {
     const VALUES: [Rotation; 3] = [Rotation::Cw, Rotation::Ccw, Rotation::R180];
 
     /// ```
-    /// use bitris::Rotation;
+    /// use bitris::prelude::*;
     /// let mut iter = Rotation::all_iter();
-    /// assert_eq!(Some(&Rotation::Cw), iter.next());
-    /// assert_eq!(Some(&Rotation::Ccw), iter.next());
-    /// assert_eq!(Some(&Rotation::R180), iter.next());
-    /// assert_eq!(None, iter.next());
-    /// ```
-    #[inline]
-    pub fn all_iter() -> Iter<'static, Rotation> {
-        Self::VALUES.iter()
-    }
-
-    /// ```
-    /// use bitris::Rotation;
-    /// let mut iter = Rotation::all_into_iter();
     /// assert_eq!(Some(Rotation::Cw), iter.next());
     /// assert_eq!(Some(Rotation::Ccw), iter.next());
     /// assert_eq!(Some(Rotation::R180), iter.next());
     /// assert_eq!(None, iter.next());
     /// ```
     #[inline]
-    pub fn all_into_iter() -> IntoIter<Rotation, 3> {
+    pub fn all_iter() -> impl Iterator<Item=Rotation> {
         Self::VALUES.into_iter()
     }
 }
@@ -76,7 +60,7 @@ impl Rotation {
 
 #[cfg(test)]
 mod tests {
-    use crate::Rotation;
+    use crate::prelude::*;
 
     #[test]
     fn string() {

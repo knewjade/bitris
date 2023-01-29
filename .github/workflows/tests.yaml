@@ -10,7 +10,10 @@ jobs:
         with:
           toolchain: stable
       - name: run tests for core
-        run: cargo test --release && cargo test --benches
-      - name: run tests for example
-        run: cargo test --release
-        working-directory: ./example
+        run: |
+          cargo test --release
+          cargo test --benches
+          cargo run --example n01_primitives 
+          cargo run --example n02_boards 
+          cargo run --example n03_place 
+          cargo run --example n04_moves

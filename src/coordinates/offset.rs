@@ -4,7 +4,7 @@ use crate::internal_macros::forward_ref_op;
 
 /// The difference from a base point to a point on the board.
 /// ```
-/// use bitris::{dd, Offset};
+/// use bitris::prelude::*;
 /// assert_eq!(Offset::default(), Offset { dx: 0, dy: 0 });
 /// assert_eq!(dd(1, -2), Offset { dx: 1, dy: -2 });
 /// assert_eq!(format!("{}", Offset::new(1, -1)), "offset (1, -1)");
@@ -81,7 +81,7 @@ pub const fn dd(dx: i32, dy: i32) -> Offset {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
 
     #[test]
     fn operators() {

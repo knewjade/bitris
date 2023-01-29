@@ -3,8 +3,13 @@ name = "bitris"
 version = "0.2.0"
 edition = "2021"
 authors = ["knewjade"]
+license = "MIT"
 
 [dependencies]
+itertools = "0.10.5"
+tinyvec = "1.6.0"
+fxhash = "0.2.1"
+thiserror = "1.0.38"
 
 [dev-dependencies]
 criterion = { version = "0.4.0", features = ["html_reports"] }

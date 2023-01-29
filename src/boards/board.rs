@@ -2,7 +2,8 @@ use std::cmp;
 use std::fmt;
 use std::str::FromStr;
 
-use crate::{CcPosition, Location, PieceBlocks, xy};
+use crate::boards::Lines;
+use crate::coordinates::{Location, xy};
 
 /// Ceiling of the board.
 pub trait Ceiling: Sized {
@@ -40,10 +41,10 @@ pub trait BoardOp: Ceiling {
     fn count_blocks(&self) -> u32;
 
     /// Returns as a key the row in which one or more blocks exist.
-    fn used_row_key(&self) -> Lines;
+    fn used_rows(&self) -> Lines;
 
     /// Returns as key the rows that are all filled with blocks.
-    fn filled_row_key(&self) -> Lines;
+    fn filled_rows(&self) -> Lines;
 
     /// Remove rows that are all filled with blocks.
     fn clear_lines(&mut self) -> Lines;
@@ -53,6 +54,9 @@ pub trait BoardOp: Ceiling {
 
     /// Reverse left and right.
     fn mirror(&mut self);
+
+    /// Returns true if there is an overlap.
+    fn overlaps(&self, other: &Self) -> bool;
 
     /// Merge self and other.
     fn merge(&mut self, other: &Self);
@@ -67,19 +71,17 @@ pub trait BoardOp: Ceiling {
 
     /// Set all blocks at the location on the board. No apply line clear.
     /// If the block already exists, it's nothing happens.
-    fn set_all(&mut self, piece_blocks: &PieceBlocks, position: CcPosition) {
-        let cc = position.to_location();
-        for offset in piece_blocks.offsets {
-            self.set_at(cc + offset);
+    fn set_all(&mut self, locations: &[Location]) {
+        for &location in locations {
+            self.set_at(location);
         }
     }
 
     /// Unset all blocks at the location on the board.
     /// If no block exists, it's nothing happens.
-    fn unset_all(&mut self, piece_blocks: &PieceBlocks, position: CcPosition) {
-        let cc = position.to_location();
-        for offset in piece_blocks.offsets {
-            self.unset_at(cc + offset);
+    fn unset_all(&mut self, locations: &[Location]) {
+        for &location in locations {
+            self.unset_at(location);
         }
     }
 }
@@ -87,69 +89,6 @@ pub trait BoardOp: Ceiling {
 /// Shrinks and converts to this type from the input type.
 pub trait ShrinkFrom<T>: Sized {
     fn shrink_from(value: T) -> Self;
-}
-
-
-/// A key that holds a flag for each row. For example, `key: 0b1001` represents that rows 0 and 3 are on.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct Lines {
-    pub key: u64,
-}
-
-impl Lines {
-    #[inline]
-    pub const fn new(key: u64) -> Self {
-        Self { key }
-    }
-
-    /// ```
-    /// use bitris::Lines;
-    /// assert_eq!(Lines::blank(), Lines::new(0));
-    /// ```
-    #[inline]
-    pub const fn blank() -> Self {
-        Lines::new(0)
-    }
-
-    /// Returns the height to the highest line. If the lines are empty, return 0.
-    /// ```
-    /// use bitris::Lines;
-    /// assert_eq!(Lines::new(0b00000).top(), 0);
-    /// assert_eq!(Lines::new(0b00001).top(), 1);
-    /// assert_eq!(Lines::new(0b10000).top(), 5);
-    /// ```
-    #[inline]
-    pub fn top(&self) -> u32 {
-        64 - self.key.leading_zeros()
-    }
-
-    /// Count the lines that are on.
-    /// ```
-    /// use bitris::Lines;
-    /// assert_eq!(Lines::new(0b0000).count(), 0);
-    /// assert_eq!(Lines::new(0b0001).count(), 1);
-    /// assert_eq!(Lines::new(0b11010).count(), 3);
-    /// ```
-    #[inline]
-    pub fn count(&self) -> u32 {
-        self.key.count_ones()
-    }
-
-    /// Returns the height to the highest line. If the lines are empty, return 0.
-    /// Panics if `y` is over 64.
-    /// ```
-    /// use bitris::Lines;
-    /// let lines = Lines::new(0b01001);
-    /// assert_eq!(lines.test_at(0), true);
-    /// assert_eq!(lines.test_at(1), false);
-    /// assert_eq!(lines.test_at(2), false);
-    /// assert_eq!(lines.test_at(3), true);
-    /// assert_eq!(lines.test_at(63), false);
-    /// ```
-    #[inline]
-    pub fn test_at(&self, y: usize) -> bool {
-        0 < (self.key & (1u64 << y))
-    }
 }
 
 
@@ -178,6 +117,14 @@ impl Board<u8> {
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
     }
+
+    /// Returns a new board after clearing lines.
+    #[inline]
+    pub fn after_clearing(&self) -> Self {
+        let mut board = self.clone();
+        board.clear_lines();
+        board
+    }
 }
 
 impl Board<u16> {
@@ -189,6 +136,14 @@ impl Board<u16> {
     #[inline]
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
+    }
+
+    /// Returns a new board after clearing lines.
+    #[inline]
+    pub fn after_clearing(&self) -> Self {
+        let mut board = self.clone();
+        board.clear_lines();
+        board
     }
 }
 
@@ -202,6 +157,14 @@ impl Board<u32> {
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
     }
+
+    /// Returns a new board after clearing lines.
+    #[inline]
+    pub fn after_clearing(&self) -> Self {
+        let mut board = self.clone();
+        board.clear_lines();
+        board
+    }
 }
 
 impl Board<u64> {
@@ -214,12 +177,20 @@ impl Board<u64> {
     pub const fn blank() -> Self {
         Self { cols: [0; 10] }
     }
+
+    /// Returns a new board after clearing lines.
+    #[inline]
+    pub fn after_clearing(&self) -> Self {
+        let mut board = self.clone();
+        board.clear_lines();
+        board
+    }
 }
 
 
 impl<T> fmt::Display for Board<T> where Board<T>: BoardOp {
     /// ```
-    /// use bitris::{BoardOp, Board64, Location, xy};
+    /// use bitris::prelude::*;
     /// let mut board = Board64::default();
     /// board.set_at(xy(2, 1));
     ///
@@ -275,7 +246,7 @@ impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
 
     /// ```
     /// use std::str::FromStr;
-    /// use bitris::{BoardOp, Board64, Location, xy};
+    /// use bitris::prelude::*;
     /// let board = Board64::from_str("
     ///     ..........
     ///     ..........
@@ -326,14 +297,14 @@ macro_rules! board_from {
         impl From<Board<$t>> for Board<$u> {
             #[inline]
             fn from(board: Board<$t>) -> Self {
-                Self { cols: board.cols.map(|it| it.into()) }
+                Self { cols: board.cols.map(Into::into) }
             }
         }
 
         impl From<&Board<$t>> for Board<$u> {
             #[inline]
             fn from(board: &Board<$t>) -> Self {
-                Self { cols: board.cols.map(|it| it.into()) }
+                Self { cols: board.cols.map(Into::into) }
             }
         }
     };
@@ -450,6 +421,17 @@ macro_rules! mirror {
     };
 }
 
+macro_rules! overlaps {
+    ($cols1:expr, $cols2:expr) => ({
+        for x in 0..10 {
+            if 0 < ($cols1[x] & $cols2[x]) {
+                return true;
+            }
+        }
+        false
+    });
+}
+
 macro_rules! merge {
     ($cols1:expr, $cols2:expr) => {
         for x in 0..10 {
@@ -531,12 +513,12 @@ impl BoardOp for Board<u8> {
     }
 
     #[inline]
-    fn used_row_key(&self) -> Lines {
+    fn used_rows(&self) -> Lines {
         Lines::new(used_row_key!(self.cols) as u64)
     }
 
     #[inline]
-    fn filled_row_key(&self) -> Lines {
+    fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols) as u64)
     }
 
@@ -555,6 +537,11 @@ impl BoardOp for Board<u8> {
     #[inline]
     fn mirror(&mut self) {
         mirror!(self.cols)
+    }
+
+    #[inline]
+    fn overlaps(&self, other: &Self) -> bool {
+        overlaps!(self.cols, other.cols)
     }
 
     #[inline]
@@ -605,12 +592,12 @@ impl BoardOp for Board<u16> {
     }
 
     #[inline]
-    fn used_row_key(&self) -> Lines {
+    fn used_rows(&self) -> Lines {
         Lines::new(used_row_key!(self.cols) as u64)
     }
 
     #[inline]
-    fn filled_row_key(&self) -> Lines {
+    fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols) as u64)
     }
 
@@ -629,6 +616,11 @@ impl BoardOp for Board<u16> {
     #[inline]
     fn mirror(&mut self) {
         mirror!(self.cols)
+    }
+
+    #[inline]
+    fn overlaps(&self, other: &Self) -> bool {
+        overlaps!(self.cols, other.cols)
     }
 
     #[inline]
@@ -679,12 +671,12 @@ impl BoardOp for Board<u32> {
     }
 
     #[inline]
-    fn used_row_key(&self) -> Lines {
+    fn used_rows(&self) -> Lines {
         Lines::new(used_row_key!(self.cols) as u64)
     }
 
     #[inline]
-    fn filled_row_key(&self) -> Lines {
+    fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols) as u64)
     }
 
@@ -703,6 +695,11 @@ impl BoardOp for Board<u32> {
     #[inline]
     fn mirror(&mut self) {
         mirror!(self.cols)
+    }
+
+    #[inline]
+    fn overlaps(&self, other: &Self) -> bool {
+        overlaps!(self.cols, other.cols)
     }
 
     #[inline]
@@ -752,12 +749,12 @@ impl BoardOp for Board<u64> {
     }
 
     #[inline]
-    fn used_row_key(&self) -> Lines {
+    fn used_rows(&self) -> Lines {
         Lines::new(used_row_key!(self.cols))
     }
 
     #[inline]
-    fn filled_row_key(&self) -> Lines {
+    fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols))
     }
 
@@ -776,6 +773,11 @@ impl BoardOp for Board<u64> {
     #[inline]
     fn mirror(&mut self) {
         mirror!(self.cols)
+    }
+
+    #[inline]
+    fn overlaps(&self, other: &Self) -> bool {
+        overlaps!(self.cols, other.cols)
     }
 
     #[inline]
@@ -804,12 +806,14 @@ pub type Board64 = Board<u64>;
 
 #[cfg(test)]
 mod tests {
+    use std::fmt;
     use std::mem::size_of;
+    use std::str::FromStr;
 
     use rstest::*;
     use rstest_reuse::*;
 
-    use crate::boards::*;
+    use crate::prelude::*;
 
     #[fixture]
     pub fn board8() -> Board8 { Board8::blank() }
@@ -935,11 +939,11 @@ mod tests {
         assert_eq!(board.count_blocks(), 0);
 
         board.invert();
-        let row_key = board.filled_row_key();
+        let row_key = board.filled_rows();
         assert_eq!(row_key.count(), board.ceiling());
 
         board.clear_lines();
-        let row_key = board.filled_row_key();
+        let row_key = board.filled_rows();
         assert_eq!(row_key.count(), 0);
     }
 

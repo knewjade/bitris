@@ -1,11 +1,11 @@
 use std::{fmt, ops};
 
-use crate::{BlPosition, CcPosition, Offset, TrPosition};
+use crate::coordinates::{BlPosition, CcPosition, Offset, TrPosition};
 use crate::internal_macros::{forward_ref_from, forward_ref_op};
 
 /// An absolute point on the board.
 /// ```
-/// use bitris::{Location, xy};
+/// use bitris::prelude::*;
 /// assert_eq!(Location::default(), Location { x: 0, y: 0 });
 /// assert_eq!(xy(1, -2), Location { x: 1, y: -2 });
 /// assert_eq!(format!("{}", Location { x: 1, y: -2 }), "xy (1, -2)");
@@ -80,7 +80,7 @@ pub const fn xy(x: i32, y: i32) -> Location {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
 
     #[test]
     fn operators() {

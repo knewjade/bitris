@@ -1,7 +1,11 @@
 use std::fmt;
 use std::slice::Iter;
 
-use crate::{BoardOp, CcPlacement, Offset, Piece, Rotate, Rotation, Shape};
+use crate::{Rotate, Rotation};
+use crate::boards::BoardOp;
+use crate::coordinates::Offset;
+use crate::pieces::{Piece, Shape};
+use crate::placements::CcPlacement;
 
 /// The amount of movement based on the center of the piece when rotating.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]

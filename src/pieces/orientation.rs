@@ -1,12 +1,9 @@
-use std::array::IntoIter;
-use std::slice::Iter;
-
 use crate::{Rotate, Rotation};
 use crate::internal_macros::enum_display;
 
 /// A collection of the direction that piece is facing.
 /// ```
-/// use bitris::Orientation;
+/// use bitris::prelude::*;
 /// assert_eq!(Orientation::default(), Orientation::North);
 /// assert_eq!(Orientation::North as i32, 0);
 /// assert_eq!(Orientation::East as i32, 1);
@@ -25,24 +22,9 @@ impl Orientation {
     const VALUES: [Orientation; 4] = [Orientation::North, Orientation::East, Orientation::South, Orientation::West];
 
     /// ```
-    /// use bitris::Orientation;
+    /// use bitris::prelude::*;
     /// use Orientation::*;
     /// let mut iter = Orientation::all_iter();
-    /// assert_eq!(Some(&North), iter.next());
-    /// assert_eq!(Some(&East), iter.next());
-    /// assert_eq!(Some(&South), iter.next());
-    /// assert_eq!(Some(&West), iter.next());
-    /// assert_eq!(None, iter.next());
-    /// ```
-    #[inline]
-    pub fn all_iter() -> Iter<'static, Orientation> {
-        Self::VALUES.iter()
-    }
-
-    /// ```
-    /// use bitris::Orientation;
-    /// use Orientation::*;
-    /// let mut iter = Orientation::all_into_iter();
     /// assert_eq!(Some(North), iter.next());
     /// assert_eq!(Some(East), iter.next());
     /// assert_eq!(Some(South), iter.next());
@@ -50,7 +32,7 @@ impl Orientation {
     /// assert_eq!(None, iter.next());
     /// ```
     #[inline]
-    pub fn all_into_iter() -> IntoIter<Orientation, 4> {
+    pub fn all_iter() -> impl Iterator<Item=Orientation> {
         Self::VALUES.into_iter()
     }
 }
@@ -59,7 +41,7 @@ impl Rotate for Orientation {
     type Item = Orientation;
 
     /// ```
-    /// use bitris::{Orientation, Rotate};
+    /// use bitris::prelude::*;
     /// use Orientation::*;
     /// assert_eq!(North.cw(), East);
     /// assert_eq!(East.cw(), South);
@@ -78,7 +60,7 @@ impl Rotate for Orientation {
     }
 
     /// ```
-    /// use bitris::{Orientation, Rotate};
+    /// use bitris::prelude::*;
     /// use Orientation::*;
     /// assert_eq!(North.ccw(), West);
     /// assert_eq!(East.ccw(), North);
@@ -97,7 +79,7 @@ impl Rotate for Orientation {
     }
 
     /// ```
-    /// use bitris::{Orientation, Rotate};
+    /// use bitris::prelude::*;
     /// use Orientation::*;
     /// assert_eq!(North.r180(), South);
     /// assert_eq!(East.r180(), West);
@@ -116,7 +98,7 @@ impl Rotate for Orientation {
     }
 
     /// ```
-    /// use bitris::{Orientation, Rotate, Rotation};
+    /// use bitris::prelude::*;
     /// use Orientation::*;
     /// assert_eq!(North.rotate(Rotation::Cw), East);
     /// assert_eq!(North.rotate(Rotation::Ccw), West);
@@ -137,7 +119,7 @@ enum_display! { Orientation, has North,East,South,West }
 
 #[cfg(test)]
 mod tests {
-    use crate::orientation::*;
+    use crate::prelude::*;
 
     #[test]
     fn string() {

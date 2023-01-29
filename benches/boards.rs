@@ -1,6 +1,6 @@
 use criterion::*;
 
-use bitris::*;
+use bitris::prelude::*;
 
 fn set_at(c: &mut Criterion) {
     c.bench_function("set_at", |b| {

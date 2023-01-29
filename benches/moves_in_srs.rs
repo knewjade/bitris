@@ -18,7 +18,7 @@ fn all_moves(data: &MovesBenchmarkData) {
     let board = Board64::from(data.board);
     for (shape, expected_size) in &data.expected {
         let spawn = shape.with(Orientation::North).with(data.spawn);
-        let moves = srs::generate_all_moves(board, spawn.into());
+        let moves = srs::generate_all_moves(AllowMove::Softdrop, board, spawn.into());
         assert_eq!(moves.len(), *expected_size);
     }
 }
@@ -28,7 +28,7 @@ fn minimized_moves(data: &MovesBenchmarkData) {
     let board = Board64::from(data.board);
     for (shape, expected_size) in &data.expected {
         let spawn = shape.with(Orientation::North).with(data.spawn);
-        let moves = srs::generate_minimized_moves(board, spawn.into());
+        let moves = srs::generate_minimized_moves(AllowMove::Softdrop, board, spawn.into());
         assert_eq!(moves.len(), *expected_size);
     }
 }

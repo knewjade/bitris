@@ -1,6 +1,7 @@
 /// Board operations based on CC.
-pub mod cc_board_ops {
-    use crate::{BoardOp, CcPlacement};
+pub mod cc_ops {
+    use crate::boards::BoardOp;
+    use crate::placements::CcPlacement;
 
     /// See `CCPlacement::set_all()`
     pub fn set_all(board: &mut impl BoardOp, placement: CcPlacement) {
@@ -24,8 +25,9 @@ pub mod cc_board_ops {
 }
 
 /// Board operations based on BL.
-pub mod bl_board_ops {
-    use crate::{BlPlacement, BoardOp};
+pub mod bl_ops {
+    use crate::boards::BoardOp;
+    use crate::placements::BlPlacement;
 
     /// See `BLPlacement::set_all()`
     pub fn set_all(board: &mut impl BoardOp, placement: BlPlacement) {
@@ -49,8 +51,9 @@ pub mod bl_board_ops {
 }
 
 /// Board operations based on TR.
-pub mod tr_board_ops {
-    use crate::{BoardOp, TrPlacement};
+pub mod tr_ops {
+    use crate::boards::BoardOp;
+    use crate::placements::TrPlacement;
 
     /// See `TRPlacement::set_all()`
     pub fn set_all(board: &mut impl BoardOp, placement: TrPlacement) {
@@ -79,8 +82,8 @@ mod tests {
     use rstest::*;
     use rstest_reuse::*;
 
-    use crate::*;
-    use crate::cc_board_ops;
+    use crate::piece;
+    use crate::prelude::*;
 
     #[fixture]
     pub fn board8() -> Board8 { Board8::blank() }
@@ -106,23 +109,23 @@ mod tests {
     fn cc_board_operators(mut board: impl BoardOp) {
         let on = piece!(ON);
 
-        cc_board_ops::set_all(&mut board, on.with(cc(0, 0)));
-        cc_board_ops::set_all(&mut board, on.with(cc(2, 0)));
-        cc_board_ops::set_all(&mut board, on.with(cc(4, 0)));
-        cc_board_ops::set_all(&mut board, on.with(cc(6, 0)));
-        cc_board_ops::set_all(&mut board, on.with(cc(8, 0)));
+        cc_ops::set_all(&mut board, on.with(cc(0, 0)));
+        cc_ops::set_all(&mut board, on.with(cc(2, 0)));
+        cc_ops::set_all(&mut board, on.with(cc(4, 0)));
+        cc_ops::set_all(&mut board, on.with(cc(6, 0)));
+        cc_ops::set_all(&mut board, on.with(cc(8, 0)));
         assert_eq!(board.count_blocks(), 20);
 
-        cc_board_ops::unset_all(&mut board, on.with(cc(8, 0)));
+        cc_ops::unset_all(&mut board, on.with(cc(8, 0)));
         assert_eq!(board.count_blocks(), 16);
 
-        cc_board_ops::place(&mut board, on.with(cc(8, 0)));
+        cc_ops::place(&mut board, on.with(cc(8, 0)));
         assert_eq!(board.count_blocks(), 20);
 
-        cc_board_ops::unset_all(&mut board, on.with(cc(8, 0)));
+        cc_ops::unset_all(&mut board, on.with(cc(8, 0)));
         assert_eq!(board.count_blocks(), 16);
 
-        cc_board_ops::place_and_clear_lines(&mut board, on.with(cc(8, 0)));
+        cc_ops::place_and_clear_lines(&mut board, on.with(cc(8, 0)));
         assert_eq!(board.count_blocks(), 0);
     }
 
@@ -130,23 +133,23 @@ mod tests {
     fn bl_board_operators(mut board: impl BoardOp) {
         let on = piece!(OS);
 
-        bl_board_ops::set_all(&mut board, on.with(bl(0, 0)));
-        bl_board_ops::set_all(&mut board, on.with(bl(2, 0)));
-        bl_board_ops::set_all(&mut board, on.with(bl(4, 0)));
-        bl_board_ops::set_all(&mut board, on.with(bl(6, 0)));
-        bl_board_ops::set_all(&mut board, on.with(bl(8, 0)));
+        bl_ops::set_all(&mut board, on.with(bl(0, 0)));
+        bl_ops::set_all(&mut board, on.with(bl(2, 0)));
+        bl_ops::set_all(&mut board, on.with(bl(4, 0)));
+        bl_ops::set_all(&mut board, on.with(bl(6, 0)));
+        bl_ops::set_all(&mut board, on.with(bl(8, 0)));
         assert_eq!(board.count_blocks(), 20);
 
-        bl_board_ops::unset_all(&mut board, on.with(bl(8, 0)));
+        bl_ops::unset_all(&mut board, on.with(bl(8, 0)));
         assert_eq!(board.count_blocks(), 16);
 
-        bl_board_ops::place(&mut board, on.with(bl(8, 0)));
+        bl_ops::place(&mut board, on.with(bl(8, 0)));
         assert_eq!(board.count_blocks(), 20);
 
-        bl_board_ops::unset_all(&mut board, on.with(bl(8, 0)));
+        bl_ops::unset_all(&mut board, on.with(bl(8, 0)));
         assert_eq!(board.count_blocks(), 16);
 
-        bl_board_ops::place_and_clear_lines(&mut board, on.with(bl(8, 0)));
+        bl_ops::place_and_clear_lines(&mut board, on.with(bl(8, 0)));
         assert_eq!(board.count_blocks(), 0);
     }
 
@@ -154,23 +157,23 @@ mod tests {
     fn tr_board_operators(mut board: impl BoardOp) {
         let on = piece!(OS);
 
-        tr_board_ops::set_all(&mut board, on.with(tr(1, 1)));
-        tr_board_ops::set_all(&mut board, on.with(tr(3, 1)));
-        tr_board_ops::set_all(&mut board, on.with(tr(5, 1)));
-        tr_board_ops::set_all(&mut board, on.with(tr(7, 1)));
-        tr_board_ops::set_all(&mut board, on.with(tr(9, 1)));
+        tr_ops::set_all(&mut board, on.with(tr(1, 1)));
+        tr_ops::set_all(&mut board, on.with(tr(3, 1)));
+        tr_ops::set_all(&mut board, on.with(tr(5, 1)));
+        tr_ops::set_all(&mut board, on.with(tr(7, 1)));
+        tr_ops::set_all(&mut board, on.with(tr(9, 1)));
         assert_eq!(board.count_blocks(), 20);
 
-        tr_board_ops::unset_all(&mut board, on.with(tr(9, 1)));
+        tr_ops::unset_all(&mut board, on.with(tr(9, 1)));
         assert_eq!(board.count_blocks(), 16);
 
-        tr_board_ops::place(&mut board, on.with(tr(9, 1)));
+        tr_ops::place(&mut board, on.with(tr(9, 1)));
         assert_eq!(board.count_blocks(), 20);
 
-        tr_board_ops::unset_all(&mut board, on.with(tr(9, 1)));
+        tr_ops::unset_all(&mut board, on.with(tr(9, 1)));
         assert_eq!(board.count_blocks(), 16);
 
-        tr_board_ops::place_and_clear_lines(&mut board, on.with(tr(9, 1)));
+        tr_ops::place_and_clear_lines(&mut board, on.with(tr(9, 1)));
         assert_eq!(board.count_blocks(), 0);
     }
 }

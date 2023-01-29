@@ -1,11 +1,14 @@
 use std::fmt;
 
-use crate::{BlPlacement, BlPosition, CcPlacement, CcPosition, Orientation, PieceBlocks, PieceBlocksFactory, Rotate, Rotation, Shape, TrPlacement, TrPosition, With};
+use crate::{Rotate, Rotation, With};
+use crate::coordinates::{BlPosition, CcPosition, TrPosition};
 use crate::internal_macros::forward_ref_from;
+use crate::pieces::{Orientation, PieceBlocks, PieceBlocksFactory, Shape};
+use crate::placements::{BlPlacement, CcPlacement, TrPlacement};
 
 /// It has shape and orientation as a piece.
 /// ```
-/// use bitris::{Orientation, Piece, Shape};
+/// use bitris::prelude::*;
 /// assert_eq!(Piece::default(), Piece { shape: Shape::T, orientation: Orientation::North });
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -18,7 +21,8 @@ impl With<CcPosition> for Piece {
     type Output = CcPlacement;
 
     /// ```
-    /// use bitris::{cc, CcPlacement, Orientation, Piece, piece, Shape, With};
+    /// use bitris::macros::piece;
+    /// use bitris::prelude::*;
     /// assert_eq!(piece!(TS).with(cc(5, 6)), CcPlacement { piece: piece!(TS), position: cc(5, 6) });
     /// ```
     fn with(self, position: CcPosition) -> Self::Output {
@@ -30,7 +34,8 @@ impl With<BlPosition> for Piece {
     type Output = BlPlacement;
 
     /// ```
-    /// use bitris::{bl, BlPlacement, Orientation, Piece, piece, Shape, With};
+    /// use bitris::macros::piece;
+    /// use bitris::prelude::*;
     /// assert_eq!(piece!(TS).with(bl(5, 6)), BlPlacement { piece: piece!(TS), position: bl(5, 6) });
     /// ```
     fn with(self, position: BlPosition) -> Self::Output {
@@ -42,7 +47,8 @@ impl With<TrPosition> for Piece {
     type Output = TrPlacement;
 
     /// ```
-    /// use bitris::{tr, TrPlacement, Orientation, Piece, piece, Shape, With};
+    /// use bitris::macros::piece;
+    /// use bitris::prelude::*;
     /// assert_eq!(piece!(TS).with(tr(5, 6)), TrPlacement { piece: piece!(TS), position: tr(5, 6) });
     /// ```
     #[inline]
@@ -62,11 +68,11 @@ impl Piece {
         PieceBlocksFactory.get(self)
     }
 
-    /// Fixes the orientation with no change in shape.
+    /// Fixes the orientation with no change in form.
     /// Always return the post-canonicalization piece.
-    /// see also `Self::canonicalize()`
+    /// see also `Self::canonicalize()`.
     /// ```
-    /// use bitris::{Orientation, Piece, Shape};
+    /// use bitris::prelude::*;
     /// assert_eq!(Piece::new(Shape::I, Orientation::North).canonical_or_self(), Piece::new(Shape::I, Orientation::North));
     /// assert_eq!(Piece::new(Shape::I, Orientation::South).canonical_or_self(), Piece::new(Shape::I, Orientation::North));
     /// ```
@@ -75,13 +81,13 @@ impl Piece {
         self.canonical().unwrap_or(*self)
     }
 
-    /// Fixes the orientation with no change in shape.
+    /// Fixes the orientation with no change in form.
     /// If modification is not necessary, return None.
     /// * T or L or J => Not fixed
     /// * I or S or Z => Fixed to North or East
     /// * O => Fixed to North
     /// ```
-    /// use bitris::{Orientation, Piece, Shape};
+    /// use bitris::prelude::*;
     /// assert_eq!(Piece::new(Shape::I, Orientation::North).canonical(), None);
     /// assert_eq!(Piece::new(Shape::I, Orientation::South).canonical(), Some(Piece::new(Shape::I, Orientation::North)));
     /// ```
@@ -104,6 +110,108 @@ impl Piece {
             },
         }
     }
+
+    /// Returns orientations having the same form.
+    /// ```
+    /// use bitris::prelude::*;
+    ///
+    /// use Shape::*;
+    /// use Orientation::*;
+    /// assert_eq!(Piece::new(T, North).orientations_having_same_form(), &[North]);
+    /// assert_eq!(Piece::new(I, North).orientations_having_same_form(), &[North, South]);
+    /// assert_eq!(Piece::new(O, North).orientations_having_same_form(), &[North, East, South, West]);
+    /// ```
+    #[inline]
+    pub const fn orientations_having_same_form(&self) -> &'static [Orientation] {
+        use Orientation::*;
+        match self.shape {
+            Shape::T | Shape::L | Shape::J => match self.orientation {
+                North => &[North],
+                East => &[East],
+                South => &[South],
+                West => &[West],
+            },
+            Shape::I | Shape::S | Shape::Z => match self.orientation {
+                North | South => &[North, South],
+                East | West => &[East, West],
+            },
+            Shape::O => &[North, East, South, West],
+        }
+    }
+
+    /// Returns the height of piece.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Piece::new(Shape::I, Orientation::North).height(), 1);
+    /// assert_eq!(Piece::new(Shape::O, Orientation::South).height(), 2);
+    /// assert_eq!(Piece::new(Shape::S, Orientation::East).height(), 3);
+    /// assert_eq!(Piece::new(Shape::I, Orientation::West).height(), 4);
+    /// ```
+    #[inline]
+    pub const fn height(&self) -> u32 {
+        use Shape::*;
+        match self.orientation {
+            Orientation::North | Orientation::South => match self.shape {
+                I => 1,
+                O | T | L | J | S | Z => 2,
+            },
+            Orientation::East | Orientation::West => match self.shape {
+                I => 4,
+                O => 2,
+                T | L | J | S | Z => 3,
+            },
+        }
+    }
+
+    /// Returns the width of piece.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Piece::new(Shape::I, Orientation::West).width(), 1);
+    /// assert_eq!(Piece::new(Shape::O, Orientation::East).width(), 2);
+    /// assert_eq!(Piece::new(Shape::T, Orientation::South).width(), 3);
+    /// assert_eq!(Piece::new(Shape::I, Orientation::North).width(), 4);
+    /// ```
+    #[inline]
+    pub const fn width(&self) -> u32 {
+        use Shape::*;
+        match self.orientation {
+            Orientation::North | Orientation::South => match self.shape {
+                I => 4,
+                O => 2,
+                T | L | J | S | Z => 3,
+            },
+            Orientation::East | Orientation::West => match self.shape {
+                I => 1,
+                O | T | L | J | S | Z => 2,
+            },
+        }
+    }
+
+    /// Returns true if the two have of the same form.
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    /// assert!(piece!(SN).has_same_form_as(piece!(SS)));
+    /// assert!(piece!(OW).has_same_form_as(piece!(OE)));
+    ///
+    /// assert!(!piece!(TW).has_same_form_as(piece!(TE)));
+    /// ```
+    #[inline]
+    pub fn has_same_form_as(&self, piece: Piece) -> bool {
+        self.canonical_or_self() == piece.canonical_or_self()
+    }
+
+    /// Returns an iterator to make all pieces.
+    /// ```
+    /// use bitris::prelude::*;
+    /// let vec: Vec<Piece> = Piece::all_iter().collect();
+    /// assert_eq!(vec.len(), 4 * 7);
+    /// ```
+    #[inline]
+    pub fn all_iter() -> impl Iterator<Item=Piece> {
+        Shape::all_iter()
+            .flat_map(|shape| Orientation::all_iter().map(move |orientation| shape.with(orientation)))
+    }
 }
 
 impl fmt::Display for Piece {
@@ -117,7 +225,7 @@ impl Rotate for Piece {
 
     #[inline]
     fn rotate(&self, rotation: Rotation) -> Piece {
-        Piece::new(self.shape, self.orientation.rotate(rotation))
+        self.shape.with(self.orientation.rotate(rotation))
     }
 }
 
@@ -157,7 +265,8 @@ impl From<&PieceBlocks> for Piece {
 mod tests {
     use rstest::*;
 
-    use crate::*;
+    use crate::piece;
+    use crate::prelude::*;
 
     #[test]
     fn string() {
@@ -202,17 +311,15 @@ mod tests {
 
     #[test]
     fn shape_canonical_orientations_and_piece_canonical_in_sync() {
-        for shape in Shape::all_into_iter() {
-            for orientation in Orientation::all_into_iter() {
-                assert_eq!(
-                    shape.canonical_orientations().contains(&orientation),
-                    Piece::new(shape, orientation).canonical() == None,
-                );
-                assert_eq!(
-                    shape.no_canonical_orientations().contains(&orientation),
-                    Piece::new(shape, orientation).canonical() != None,
-                );
-            }
+        for piece in Piece::all_iter() {
+            assert_eq!(
+                piece.shape.canonical_pieces_iter().any(|it| it == piece),
+                piece.canonical() == None,
+            );
+            assert_eq!(
+                piece.shape.no_canonical_pieces_iter().any(|it| it == piece),
+                piece.canonical() != None,
+            );
         }
     }
 
@@ -235,5 +342,14 @@ mod tests {
         assert_eq!(piece.with(cc(5, 5)).piece, *piece);
         assert_eq!(piece.with(bl(5, 5)).piece, *piece);
         assert_eq!(piece.with(tr(5, 5)).piece, *piece);
+    }
+
+    #[test]
+    fn height_and_width() {
+        for piece in Piece::all_iter() {
+            let piece_blocks = piece.to_piece_blocks();
+            assert_eq!(piece.height(), piece_blocks.height);
+            assert_eq!(piece.width(), piece_blocks.width);
+        }
     }
 }
