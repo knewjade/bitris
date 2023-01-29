@@ -1,3 +1,7 @@
+use std::cmp;
+
+use tinyvec::ArrayVec;
+
 use crate::{Rotate, Rotation};
 use crate::coordinates::{CcPosition, dd, Location, Offset};
 use crate::internal_macros::add_member_for_from;
@@ -95,8 +99,8 @@ impl PieceBlocks {
         let (min_dx, max_dx) = min_max_dx(&offsets);
         let (min_dy, max_dy) = min_max_dy(&offsets);
         PieceBlocks {
-            offsets,
             piece,
+            offsets,
             width: (max_dx - min_dx + 1) as u32,
             height: (max_dy - min_dy + 1) as u32,
             bottom_left: dd(min_dx, min_dy),
@@ -118,6 +122,39 @@ impl PieceBlocks {
     pub fn to_locations(&self, cc: CcPosition) -> [Location; 4] {
         let cc = cc.to_location();
         self.offsets.map(|offset| cc + offset)
+    }
+
+    /// Returns block locations of possible touch with the ground.
+    /// Finds the y-coordinate of the lowest block in each x-coordinate.
+    /// ```
+    /// use tinyvec::{array_vec, ArrayVec};
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    /// assert_eq!(
+    ///     piece!(JS).to_piece_blocks().touching_offsets().as_slice(),
+    ///     ArrayVec::from([dd(-1, 0), dd(0, 0), dd(1, -1)]).as_slice(),
+    /// );
+    /// assert_eq!(
+    ///     piece!(SN).to_piece_blocks().touching_offsets().as_slice(),
+    ///     ArrayVec::from([dd(-1, 0), dd(0, 0), dd(1, 1)]).as_slice(),
+    /// );
+    /// ```
+    #[inline]
+    pub fn touching_offsets(&self) -> ArrayVec<[Offset; 4]> {
+        let lx = self.bottom_left.dx;
+        let min_dys = self.offsets.iter()
+            .fold([i32::MAX; 4], |mut min_dys, offset| {
+                let index = (offset.dx - lx) as usize;
+                min_dys[index] = cmp::min(offset.dy, min_dys[index]);
+                min_dys
+            });
+
+        let mut vec = ArrayVec::<[Offset; 4]>::new();
+        for index in 0..self.width as usize {
+            let dx = lx + index as i32;
+            vec.push(Offset::new(dx, min_dys[index]));
+        }
+        vec
     }
 }
 

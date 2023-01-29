@@ -180,6 +180,7 @@ impl Board<u64> {
 
     /// Returns a new board after clearing lines.
     #[inline]
+    #[must_use]
     pub fn after_clearing(&self) -> Self {
         let mut board = self.clone();
         board.clear_lines();
