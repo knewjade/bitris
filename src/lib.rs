@@ -1,6 +1,7 @@
 #[cfg(test)]
 use rstest_reuse;
 
+pub use enums::*;
 pub use kicks::*;
 pub use moves::*;
 pub use rotation::*;
@@ -9,6 +10,7 @@ pub use traits::*;
 #[doc(hidden)]
 pub mod prelude {
     pub use crate::{
+        enums::*,
         kicks::*,
         moves::*,
         rotation::*,
@@ -34,6 +36,7 @@ pub mod placements;
 mod internal_macros;
 mod internal_moves;
 
+mod enums;
 mod kicks;
 mod moves;
 mod rotation;

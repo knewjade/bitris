@@ -1,20 +1,24 @@
 use thiserror::Error;
 use tinyvec::ArrayVec;
 
-use crate::{GenerateInstruction, MoveRules, RotationSystem, With};
+use crate::{MoveRules, RotationSystem, SearchResult, With};
 use crate::boards::{Board64, BoardOp, Lines};
 use crate::pieces::Piece;
 use crate::placements::{BlPlacement, CcPlacement, PlacedPiece};
 use crate::prelude::{BlPosition, PlacedPieceBlocks, PlacedPieceBlocksFlow};
 
-fn can_stack_dyn(
+/// Returns true if all placements have been successful from the initial board according to the Rotation System.
+///
+/// `validator` receives (board after clearing, subsequent placement) and returns whether to continue searching the board.
+///
+fn satisfies_dyn(
     board: Board64,
     placements: &Vec<CcPlacement>,
-    validator: impl Fn(&Board64, &CcPlacement) -> GenerateInstruction,
+    validator: impl Fn(&Board64, &CcPlacement) -> SearchResult,
 ) -> bool {
     let mut board = board.after_clearing();
     for placement in placements {
-        if validator(&board, placement) == GenerateInstruction::Stop {
+        if validator(&board, placement) == SearchResult::Pruned {
             return false;
         }
 
@@ -154,17 +158,13 @@ impl PlacementFlow {
     /// It's similar to `can_stack_all()` except that spawn can be set dynamically.
     #[inline]
     pub fn can_stack_all_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        can_stack_dyn(self.initial_board, &self.placements, |&board, placement| {
-            match spawn_func(placement.piece, &board) {
-                Some(spawn) => {
-                    if move_rules.can_reach(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        GenerateInstruction::Continue
-                    } else {
-                        GenerateInstruction::Stop
-                    }
+        satisfies_dyn(self.initial_board, &self.placements, |&board, placement| {
+            if let Some(spawn) = spawn_func(placement.piece, &board) {
+                if move_rules.can_reach(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
                 }
-                None => GenerateInstruction::Stop
             }
+            SearchResult::Pruned
         })
     }
 
@@ -177,17 +177,13 @@ impl PlacementFlow {
     /// It's similar to `can_stack_all_strictly()` except that spawn can be set dynamically.
     #[inline]
     pub fn can_stack_all_strictly_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        can_stack_dyn(self.initial_board, &self.placements, |&board, placement| {
-            match spawn_func(placement.piece, &board) {
-                Some(spawn) => {
-                    if move_rules.can_reach_strictly(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        GenerateInstruction::Continue
-                    } else {
-                        GenerateInstruction::Stop
-                    }
+        satisfies_dyn(self.initial_board, &self.placements, |&board, placement| {
+            if let Some(spawn) = spawn_func(placement.piece, &board) {
+                if move_rules.can_reach_strictly(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
                 }
-                None => GenerateInstruction::Stop
             }
+            SearchResult::Pruned
         })
     }
 

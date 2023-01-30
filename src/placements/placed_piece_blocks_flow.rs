@@ -1,6 +1,6 @@
 use fxhash::FxHashSet;
 
-use crate::{GenerateInstruction, MoveRules, RotationSystem, With};
+use crate::{MoveRules, RotationSystem, SearchResult, With};
 use crate::boards::{Board64, BoardOp};
 use crate::coordinates::BlPosition;
 use crate::pieces::Piece;
@@ -17,7 +17,7 @@ use crate::prelude::BlPlacement;
 fn find_one_dyn(
     initial_board: Board64,
     refs: Vec<&PlacedPieceBlocks>,
-    validator: impl Fn(&Board64, BlPlacement) -> GenerateInstruction,
+    validator: impl Fn(&Board64, BlPlacement) -> SearchResult,
 ) -> Option<PlacedPieceBlocksFlow> {
     if refs.is_empty() {
         return Some(PlacedPieceBlocksFlow::new(initial_board, refs));
@@ -36,7 +36,7 @@ fn find_one_dyn(
             &mut self,
             board: Board64,
             remaining: u64,
-            validator: &impl Fn(&Board64, BlPlacement) -> GenerateInstruction,
+            validator: &impl Fn(&Board64, BlPlacement) -> SearchResult,
         ) -> bool {
             let mut candidates = remaining;
             while 0 < candidates {
@@ -54,7 +54,7 @@ fn find_one_dyn(
                 let placed_piece_blocks = self.refs[bit.trailing_zeros() as usize];
 
                 if let Some(placement) = placed_piece_blocks.place_according_to(board) {
-                    if validator(&board, placement) == GenerateInstruction::Stop {
+                    if validator(&board, placement) == SearchResult::Pruned {
                         continue;
                     }
 
@@ -116,7 +116,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     /// Note that it does not depend on Rotation System. It depends only on spaces and landing.
     pub fn find_one_placeable(initial_board: Board64, refs: Vec<&'a PlacedPieceBlocks>) -> Option<Self> {
         find_one_dyn(initial_board, refs, |_, _| {
-            GenerateInstruction::Continue
+            SearchResult::Success
         })
     }
 
@@ -144,17 +144,12 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |board, placement| {
             let board_to_place = board.after_clearing();
-
-            match spawn_func(placement.piece, &board_to_place) {
-                Some(spawn) => {
-                    if move_rules.can_reach(placement, board_to_place, placement.piece.with(spawn)) {
-                        GenerateInstruction::Continue
-                    } else {
-                        GenerateInstruction::Stop
-                    }
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
                 }
-                None => GenerateInstruction::Stop,
             }
+            SearchResult::Pruned
         })
     }
 
@@ -178,17 +173,12 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |board, placement| {
             let board_to_place = board.after_clearing();
-
-            match spawn_func(placement.piece, &board_to_place) {
-                Some(spawn) => {
-                    if move_rules.can_reach_strictly(placement, board_to_place, placement.piece.with(spawn)) {
-                        GenerateInstruction::Continue
-                    } else {
-                        GenerateInstruction::Stop
-                    }
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach_strictly(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
                 }
-                None => GenerateInstruction::Stop,
             }
+            SearchResult::Pruned
         })
     }
 
