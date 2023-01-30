@@ -6,12 +6,11 @@ use crate::With;
 
 #[inline]
 pub(crate) fn place_according_to<T: BoardOp + Clone>(
-    board: T,
+    mut board: T,
     placed_piece: PlacedPiece,
     using_rows: Lines,
     intercepted_rows: Lines,
 ) -> Option<BlPlacement> {
-    let mut board = board.clone();
     let lines_cleared = board.clear_lines();
 
     // Whether cleared rows and the piece overlap or not.
@@ -42,7 +41,7 @@ pub(crate) fn place_according_to<T: BoardOp + Clone>(
 /// This caches the results of the placed piece calculation.
 /// It prioritizes speed and records what can be calculated in advance.
 /// Therefore, this struct is relatively large and slower when copied, so it's recommended to do less make/clone.
-#[derive(Clone, Hash, Debug)]
+#[derive(Clone, PartialEq, PartialOrd, Hash, Debug)]
 pub struct PlacedPieceBlocks {
     pub placed_piece: PlacedPiece,
     pub locations: [Location; 4],

@@ -1041,8 +1041,7 @@ mod tests {
     }
 
     #[apply(all_boards)]
-    fn clear_lines_partially(board: impl BoardOp + Clone + PartialEq + fmt::Debug) {
-        let mut board = board.clone();
+    fn clear_lines_partially(mut board: impl BoardOp + Clone + PartialEq + fmt::Debug) {
         for y in 4..board.ceiling() as i32 {
             board.set_at(xy(0, y));
         }

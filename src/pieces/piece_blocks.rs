@@ -14,7 +14,7 @@ use crate::pieces::{Orientation, Piece, Shape};
 ///
 /// It prioritizes speed and records what can be calculated in advance.
 /// Therefore, this struct is relatively large and slower when copied, so it's recommended that clone be avoided.
-#[derive(Clone, Hash, Debug)]
+#[derive(Clone, PartialEq, PartialOrd, Hash, Debug)]
 pub struct PieceBlocks {
     pub piece: Piece,
     pub offsets: [Offset; 4],

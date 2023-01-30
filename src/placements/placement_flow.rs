@@ -1,11 +1,29 @@
 use thiserror::Error;
 use tinyvec::ArrayVec;
 
-use crate::{MoveRules, RotationSystem, With};
+use crate::{GenerateInstruction, MoveRules, RotationSystem, With};
 use crate::boards::{Board64, BoardOp, Lines};
 use crate::pieces::Piece;
 use crate::placements::{BlPlacement, CcPlacement, PlacedPiece};
 use crate::prelude::{BlPosition, PlacedPieceBlocks, PlacedPieceBlocksFlow};
+
+fn can_stack_dyn(
+    board: Board64,
+    placements: &Vec<CcPlacement>,
+    validator: impl Fn(&Board64, &CcPlacement) -> GenerateInstruction,
+) -> bool {
+    let mut board = board.after_clearing();
+    for placement in placements {
+        if validator(&board, placement) == GenerateInstruction::Stop {
+            return false;
+        }
+
+        if let None = placement.place_on_and_clear_lines(&mut board) {
+            return false;
+        }
+    }
+    true
+}
 
 /// This holds the initial board and the subsequent placements.
 /// They are placed in order from the head.
@@ -136,22 +154,18 @@ impl PlacementFlow {
     /// It's similar to `can_stack_all()` except that spawn can be set dynamically.
     #[inline]
     pub fn can_stack_all_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        let mut board = self.initial_board.after_clearing();
-        for placement in &self.placements {
+        can_stack_dyn(self.initial_board, &self.placements, |&board, placement| {
             match spawn_func(placement.piece, &board) {
                 Some(spawn) => {
-                    if !move_rules.can_reach(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        return false;
+                    if move_rules.can_reach(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
+                        GenerateInstruction::Continue
+                    } else {
+                        GenerateInstruction::Stop
                     }
                 }
-                None => return false,
+                None => GenerateInstruction::Stop
             }
-
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return false;
-            }
-        }
-        true
+        })
     }
 
     /// It's similar to `can_stack_all()` except that the orientation is strictly checked.
@@ -163,22 +177,18 @@ impl PlacementFlow {
     /// It's similar to `can_stack_all_strictly()` except that spawn can be set dynamically.
     #[inline]
     pub fn can_stack_all_strictly_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        let mut board = self.initial_board.after_clearing();
-        for placement in &self.placements {
+        can_stack_dyn(self.initial_board, &self.placements, |&board, placement| {
             match spawn_func(placement.piece, &board) {
                 Some(spawn) => {
-                    if !move_rules.can_reach_strictly(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        return false;
+                    if move_rules.can_reach_strictly(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
+                        GenerateInstruction::Continue
+                    } else {
+                        GenerateInstruction::Stop
                     }
                 }
-                None => return false,
+                None => GenerateInstruction::Stop
             }
-
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return false;
-            }
-        }
-        true
+        })
     }
 
     /// Returns the flow bound with placed piece blocks.

@@ -155,10 +155,13 @@ impl Lines {
     }
 
     /// Returns true if there is an overlap.
+    ///
+    /// Note that returns false always if the other is blank.
     /// ```
     /// use bitris::prelude::*;
     /// assert!(Lines::new(0b01010101).overlaps(&Lines::new(0b00000001)));
     /// assert!(!Lines::new(0b01010101).overlaps(&Lines::new(0b10101010)));
+    /// assert!(!Lines::new(0b01010101).overlaps(&Lines::blank()));
     /// ```
     #[inline]
     pub fn overlaps(&self, other: &Self) -> bool {
@@ -166,11 +169,14 @@ impl Lines {
     }
 
     /// Returns true when it has all the other's on-bits.
+    ///
+    /// Note that returns true always if the other is blank.
     /// ```
     /// use bitris::prelude::*;
     /// assert!(Lines::new(0b11110000).contains_all(&Lines::new(0b01100000)));
     /// assert!(Lines::new(0b11110000).contains_all(&Lines::new(0b11110000)));
     /// assert!(!Lines::new(0b11110000).contains_all(&Lines::new(0b00011000)));
+    /// assert!(Lines::new(0b11110000).contains_all(&Lines::blank()));
     /// ```
     #[inline]
     pub fn contains_all(&self, other: &Self) -> bool {
