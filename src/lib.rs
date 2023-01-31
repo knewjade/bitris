@@ -4,6 +4,7 @@ use rstest_reuse;
 pub use enums::*;
 pub use kicks::*;
 pub use moves::*;
+pub use order::*;
 pub use rotation::*;
 pub use traits::*;
 
@@ -13,6 +14,7 @@ pub mod prelude {
         enums::*,
         kicks::*,
         moves::*,
+        order::*,
         rotation::*,
         traits::*,
     };
@@ -39,5 +41,6 @@ mod internal_moves;
 mod enums;
 mod kicks;
 mod moves;
+mod order;
 mod rotation;
 mod traits;

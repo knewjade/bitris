@@ -198,7 +198,7 @@ impl fmt::Display for Lines {
         let ys = self.ys();
         if !ys.is_empty() {
             write!(f, "{}", ys[0])?;
-            for y in &ys[1..ys.len()] {
+            for y in &ys[1..] {
                 write!(f, ", {}", y)?
             }
         }
