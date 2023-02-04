@@ -835,7 +835,7 @@ fn bench_minimized_moves(c: &mut Criterion) {
     benchmarks.iter().for_each(|benchmark| {
         let id = format!("minimized-moves-{}", benchmark.id);
         c.bench_function(id.as_str(), |b| {
-            b.iter(|| minimized_moves(benchmark));
+            b.iter(|| minimized_moves(black_box(benchmark)));
         });
     });
 }
