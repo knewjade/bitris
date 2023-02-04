@@ -11,42 +11,42 @@ pub enum PopOp {
 pub struct OrderCursor<'a, T> {
     items: &'a [T],
 
-    /// Head index of the item in the entire order.
-    /// When `head` is None, `tails` is also always None, indicating that the cursor is empty.
-    head: Option<usize>,
+    /// Current index of the item in the entire order.
+    /// When `current` is None, `next` is also always None, indicating that the cursor is empty.
+    current: Option<usize>,
 
-    /// Head index of remaining items.
-    /// When `tails` is None, indicating that there are no items other than `head`.
-    tails: Option<usize>,
+    /// Current index of remaining items.
+    /// When `next` is None, indicating that there are no items other than `current`.
+    next: Option<usize>,
 }
 
 impl<'a, T> OrderCursor<'a, T> {
     /// Returns `true` if a pop-able item exists next.
     #[inline]
     pub fn has_next(&self) -> bool {
-        self.head.is_some()
+        self.current.is_some()
     }
 
     /// Returns the count of items not used.
     #[inline]
     pub fn len_remaining(&self) -> usize {
-        let head = self.head.and(Some(1)).unwrap_or(0);
-        let tails = self.tails.map(|tails| self.items.len() - tails).unwrap_or(0);
-        head + tails
+        let current = self.current.and(Some(1)).unwrap_or(0);
+        let next = self.next.map(|next| self.items.len() - next).unwrap_or(0);
+        current + next
     }
 
     /// Returns shapes that have not been used as an order.
     #[inline]
     pub fn iter_remaining(&self) -> impl Iterator<Item=&T> {
-        let head = match self.head {
+        let current = match self.current {
             Some(index) => &self.items[index..=index],
             None => &[],
         };
-        let tails = match self.tails {
+        let next = match self.next {
             Some(index) => &self.items[index..],
             None => &[],
         };
-        head.iter().chain(tails.iter())
+        current.iter().chain(next.iter())
     }
 
     /// Returns a popped item and a next cursor.
@@ -59,29 +59,29 @@ impl<'a, T> OrderCursor<'a, T> {
     /// * If the first returns None, the second is always None.
     ///   The last item is always assigned to the first.
     ///
-    /// * If only the first is used, it's equivalent to consuming from the head of the order.
+    /// * If only the first is used, it's equivalent to consuming from the current of the order.
     ///   In other words, equivalent to not using a hold.
     ///   Note, however, this means that "The second is not always the hold because the last one is assigned to the first, regardless of the hold".
     #[inline]
     pub fn pop(self, op: PopOp) -> (Option<&'a T>, OrderCursor<'a, T>) {
         return match op {
             PopOp::First => {
-                match self.head {
+                match self.current {
                     None => (None, self),
-                    Some(head_index) => {
-                        let item = self.items.get(head_index);
-                        match self.tails {
+                    Some(current_index) => {
+                        let item = self.items.get(current_index);
+                        match self.next {
                             None => (item, OrderCursor {
                                 items: self.items,
-                                head: None,
-                                tails: None,
+                                current: None,
+                                next: None,
                             }),
-                            Some(tails_index) => {
+                            Some(next_index) => {
                                 (item, OrderCursor {
                                     items: self.items,
-                                    head: self.tails,
-                                    tails: if tails_index + 1 < self.items.len() {
-                                        Some(tails_index + 1)
+                                    current: self.next,
+                                    next: if next_index + 1 < self.items.len() {
+                                        Some(next_index + 1)
                                     } else {
                                         None
                                     },
@@ -92,14 +92,14 @@ impl<'a, T> OrderCursor<'a, T> {
                 }
             }
             PopOp::Second => {
-                match self.tails {
+                match self.next {
                     None => (None, self),
                     Some(index) => {
                         let item = self.items.get(index);
                         (item, OrderCursor {
                             items: self.items,
-                            head: self.head,
-                            tails: if index + 1 < self.items.len() {
+                            current: self.current,
+                            next: if index + 1 < self.items.len() {
                                 Some(index + 1)
                             } else {
                                 None
@@ -123,22 +123,22 @@ impl<'a, T> OrderCursor<'a, T> {
     /// Returns a current first item.
     #[inline]
     pub fn first(&self) -> Option<&T> {
-        self.head.map(|index| &self.items[index])
+        self.current.map(|index| &self.items[index])
     }
 
     /// Returns a current second item.
     #[inline]
     pub fn second(&self) -> Option<&T> {
-        self.tails.map(|index| &self.items[index])
+        self.next.map(|index| &self.items[index])
     }
 }
 
 impl<'a, T> From<&'a [T]> for OrderCursor<'a, T> {
     fn from(items: &'a [T]) -> Self {
         match items.len() {
-            0 => Self { items, head: None, tails: None },
-            1 => Self { items, head: Some(0), tails: None },
-            _ => Self { items, head: Some(0), tails: Some(1) },
+            0 => Self { items, current: None, next: None },
+            1 => Self { items, current: Some(0), next: None },
+            _ => Self { items, current: Some(0), next: Some(1) },
         }
     }
 }
