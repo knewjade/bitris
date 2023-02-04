@@ -129,7 +129,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     pub fn find_one_stackable<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
-        move_rules: MoveRules<'a, T>,
+        move_rules: &MoveRules<'a, T>,
         spawn: BlPosition,
     ) -> Option<Self> {
         Self::find_one_stackable_dyn(initial_board, refs, move_rules, |_, _| Some(spawn))
@@ -139,7 +139,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     pub fn find_one_stackable_dyn<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
-        move_rules: MoveRules<T>,
+        move_rules: &MoveRules<T>,
         spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
     ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |board, placement| {
@@ -158,7 +158,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     pub fn find_one_stackable_strictly<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
-        move_rules: MoveRules<'a, T>,
+        move_rules: &MoveRules<'a, T>,
         spawn: BlPosition,
     ) -> Option<Self> {
         Self::find_one_stackable_strictly_dyn(initial_board, refs, move_rules, move |_, _| Some(spawn))
@@ -168,7 +168,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     pub fn find_one_stackable_strictly_dyn<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
-        move_rules: MoveRules<T>,
+        move_rules: &MoveRules<T>,
         spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
     ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |board, placement| {
@@ -312,9 +312,9 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     ///         board,
     ///         placed_piece_blocks.iter().collect(),
     ///     );
-    ///     assert!(flow.can_stack_all(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///     assert!(flow.can_stack_all_strictly(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///     assert!(!flow.can_stack_all(MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
+    ///     assert!(flow.can_stack_all(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///     assert!(flow.can_stack_all_strictly(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///     assert!(!flow.can_stack_all(&MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
     /// }
     /// {
     ///     let placed_piece_blocks: Vec<PlacedPieceBlocks> = vec![
@@ -326,18 +326,18 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     ///         board,
     ///         placed_piece_blocks.iter().collect(),
     ///     );
-    ///     assert!(flow.can_stack_all(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///     assert!(!flow.can_stack_all_strictly(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///     assert!(!flow.can_stack_all(MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
+    ///     assert!(flow.can_stack_all(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///     assert!(!flow.can_stack_all_strictly(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///     assert!(!flow.can_stack_all(&MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
     /// }
     /// ```
     #[inline]
-    pub fn can_stack_all<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn: BlPosition) -> bool {
+    pub fn can_stack_all<T: RotationSystem>(&self, move_rules: &MoveRules<T>, spawn: BlPosition) -> bool {
         self.can_stack_all_dyn(move_rules, move |_, _| Some(spawn))
     }
 
     /// It's similar to `can_stack_all()` except that spawn can be set dynamically.
-    pub fn can_stack_all_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
+    pub fn can_stack_all_dyn<T: RotationSystem>(&self, move_rules: &MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
         let mut board = self.initial_board;
         for &placed_piece_blocks in self.refs.iter() {
             if let Some(placement) = placed_piece_blocks.place_according_to(board) {
@@ -362,12 +362,12 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
 
     /// It's similar to `can_stack_all()` except that the orientation is strictly checked.
     #[inline]
-    pub fn can_stack_all_strictly<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn: BlPosition) -> bool {
+    pub fn can_stack_all_strictly<T: RotationSystem>(&self, move_rules: &MoveRules<T>, spawn: BlPosition) -> bool {
         self.can_stack_all_strictly_dyn(move_rules, move |_, _| Some(spawn))
     }
 
     /// It's similar to `can_stack_all_strictly()` except that spawn can be set dynamically.
-    pub fn can_stack_all_strictly_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
+    pub fn can_stack_all_strictly_dyn<T: RotationSystem>(&self, move_rules: &MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
         let mut board = self.initial_board;
         for &placed_piece_blocks in self.refs.iter() {
             if let Some(placement) = placed_piece_blocks.place_according_to(board) {
@@ -555,28 +555,28 @@ mod tests {
             let move_rules = MoveRules::srs(AllowMove::Softdrop);
             let spawn = bl(4, 20);
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_some());
             if let Some(placed_piece_flow) = placed_piece_flow {
-                assert!(placed_piece_flow.can_stack_all(move_rules, spawn));
-                assert!(placed_piece_flow.can_stack_all_strictly(move_rules, spawn));
+                assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+                assert!(placed_piece_flow.can_stack_all_strictly(&move_rules, spawn));
             }
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_some());
             if let Some(placed_piece_flow) = placed_piece_flow {
-                assert!(placed_piece_flow.can_stack_all(move_rules, spawn));
-                assert!(placed_piece_flow.can_stack_all_strictly(move_rules, spawn));
+                assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+                assert!(placed_piece_flow.can_stack_all_strictly(&move_rules, spawn));
             }
         }
         {
             let move_rules = MoveRules::srs(AllowMove::Harddrop);
             let spawn = bl(4, 20);
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_none());
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_none());
         }
     }
@@ -605,24 +605,24 @@ mod tests {
             let move_rules = MoveRules::srs(AllowMove::Softdrop);
             let spawn = bl(4, 20);
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_some());
             if let Some(placed_piece_flow) = placed_piece_flow {
-                assert!(placed_piece_flow.can_stack_all(move_rules, spawn));
-                assert!(!placed_piece_flow.can_stack_all_strictly(move_rules, spawn));
+                assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+                assert!(!placed_piece_flow.can_stack_all_strictly(&move_rules, spawn));
             }
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_none());
         }
         {
             let move_rules = MoveRules::srs(AllowMove::Harddrop);
             let spawn = bl(4, 20);
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_none());
 
-            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), move_rules, spawn);
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly(board, &placed_piece_blocks.iter().collect(), &move_rules, spawn);
             assert!(placed_piece_flow.is_none());
         }
     }
@@ -632,8 +632,8 @@ mod tests {
         let placed_piece_flow = PlacedPieceBlocksFlow::new(Board64::blank(), vec![]);
         assert_eq!(placed_piece_flow.len(), 0);
         assert!(placed_piece_flow.can_place_all());
-        assert!(placed_piece_flow.can_stack_all(MoveRules::default(), bl(4, 20)));
-        assert!(placed_piece_flow.can_stack_all_strictly(MoveRules::default(), bl(4, 20)));
+        assert!(placed_piece_flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
+        assert!(placed_piece_flow.can_stack_all_strictly(&MoveRules::default(), bl(4, 20)));
     }
 
     #[test]
