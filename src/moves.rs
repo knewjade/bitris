@@ -1,4 +1,5 @@
 use crate::boards::Board64;
+use crate::internal_macros::enum_display;
 use crate::internal_moves::moves64;
 use crate::placements::BlPlacement;
 use crate::RotationSystem;
@@ -138,6 +139,9 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
         }
     }
 }
+
+enum_display! { AllowMove, has Softdrop,Harddrop }
+
 
 pub mod srs {
     use std::slice::Iter;
