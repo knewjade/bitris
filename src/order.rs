@@ -133,6 +133,23 @@ impl<'a, T> OrderCursor<'a, T> {
     }
 }
 
+impl<'a, T: PartialEq> OrderCursor<'a, T> {
+    #[inline]
+    pub fn decide_next_op(&self, value: &T) -> Option<PopOp> {
+        if let Some(item) = self.first() {
+            if item == value {
+                return Some(PopOp::First);
+            }
+        }
+        if let Some(item) = self.second() {
+            if item == value {
+                return Some(PopOp::Second);
+            }
+        }
+        None
+    }
+}
+
 impl<'a, T> From<&'a [T]> for OrderCursor<'a, T> {
     fn from(items: &'a [T]) -> Self {
         match items.len() {
@@ -307,5 +324,34 @@ mod tests {
         assert_equal(cursor.iter_remaining(), vec![].iter());
         assert_eq!(cursor.peek(PopOp::First), None);
         assert_eq!(cursor.peek(PopOp::Second), None);
+    }
+
+    #[test]
+    fn decide_next_op() {
+        use Shape::*;
+
+        let shapes = vec![O, S, T];
+        let cursor = OrderCursor::<Shape>::from(&shapes);
+
+        // [](O)ST
+        assert_eq!(cursor.decide_next_op(&O), Some(PopOp::First));
+        assert_eq!(cursor.decide_next_op(&S), Some(PopOp::Second));
+        assert_eq!(cursor.decide_next_op(&T), None);
+
+        // [](O)T
+        let (_, cursor) = cursor.pop(PopOp::Second);
+        assert_eq!(cursor.decide_next_op(&O), Some(PopOp::First));
+        assert_eq!(cursor.decide_next_op(&T), Some(PopOp::Second));
+        assert_eq!(cursor.decide_next_op(&I), None);
+
+        // [](T)
+        let (_, cursor) = cursor.pop(PopOp::First);
+        assert_eq!(cursor.decide_next_op(&T), Some(PopOp::First));
+        assert_eq!(cursor.decide_next_op(&I), None);
+
+        // []()
+        let (_, cursor) = cursor.pop(PopOp::First);
+        assert_eq!(cursor.decide_next_op(&T), None);
+        assert_eq!(cursor.decide_next_op(&I), None);
     }
 }

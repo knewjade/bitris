@@ -1,9 +1,9 @@
 use fxhash::FxHashSet;
 
-use crate::{MoveRules, RotationSystem, SearchResult, With};
+use crate::{MoveRules, OrderCursor, PopOp, RotationSystem, SearchResult, With};
 use crate::boards::{Board64, BoardOp};
 use crate::coordinates::BlPosition;
-use crate::pieces::Piece;
+use crate::pieces::{Piece, Shape};
 use crate::placements::PlacedPieceBlocks;
 use crate::prelude::BlPlacement;
 
@@ -94,6 +94,129 @@ fn find_one_dyn<'a>(
     }
 }
 
+/// Returns a flow finds that all placements have been successful from the initial board.
+/// Placements are ordered according to the order of the shapes and the use of the holds.
+///
+/// `validator` receives (board before clearing, subsequent placement) and returns whether to continue searching the board.
+///
+/// The search status is based on the combination of blocks used to determine if they have already been explored.
+/// Note that it's not possible to consider the order.
+/// For example, if a board created with "SZ" is first explored with S->Z, the board will not be explored with Z->S.
+fn find_one_by_order_dyn<'a>(
+    initial_board: Board64,
+    refs: &Vec<&'a PlacedPieceBlocks>,
+    order: &Vec<Shape>,
+    allows_hold: bool,
+    validator: impl Fn(&Board64, BlPlacement) -> SearchResult,
+) -> Option<PlacedPieceBlocksFlow<'a>> {
+    assert!(refs.len() <= order.len(), "the refs length must be the same as or longer than the shapes.");
+
+    if refs.is_empty() {
+        return Some(PlacedPieceBlocksFlow::new(initial_board, refs.clone()));
+    }
+
+    assert!(refs.len() < 64, "the refs length supports up to 64.");
+
+    struct Builder<'a, 'b> {
+        refs: &'a Vec<&'b PlacedPieceBlocks>,
+        results: Vec<&'b PlacedPieceBlocks>,
+    }
+
+    impl Builder<'_, '_> {
+        fn build_allows_hold(
+            &mut self,
+            board: Board64,
+            remaining: u64,
+            cursor: OrderCursor<Shape>,
+            validator: &impl Fn(&Board64, BlPlacement) -> SearchResult,
+        ) -> bool {
+            self.build(board, remaining, cursor, &|_| true, validator)
+        }
+
+        fn build_allows_no_hold(
+            &mut self,
+            board: Board64,
+            remaining: u64,
+            cursor: OrderCursor<Shape>,
+            validator: &impl Fn(&Board64, BlPlacement) -> SearchResult,
+        ) -> bool {
+            self.build(board, remaining, cursor, &|op| op == PopOp::First, validator)
+        }
+
+        fn build(
+            &mut self,
+            board: Board64,
+            remaining: u64,
+            cursor: OrderCursor<Shape>,
+            ordering: &impl Fn(PopOp) -> bool,
+            validator: &impl Fn(&Board64, BlPlacement) -> SearchResult,
+        ) -> bool {
+            let mut candidates = remaining;
+            while 0 < candidates {
+                let next_candidates = candidates & (candidates - 1);
+                let bit = candidates - next_candidates;
+                let next_remaining = remaining - bit;
+
+                candidates = next_candidates;
+
+                let placed_piece_blocks = self.refs[bit.trailing_zeros() as usize];
+                let shape = placed_piece_blocks.placed_piece.piece.shape;
+
+                let (_, next_cursor) = if let Some(op) = cursor.decide_next_op(&shape) {
+                    if !ordering(op) {
+                        continue;
+                    }
+                    cursor.pop(op)
+                } else {
+                    continue;
+                };
+
+                if let Some(placement) = placed_piece_blocks.place_according_to(board) {
+                    if validator(&board, placement) == SearchResult::Pruned {
+                        continue;
+                    }
+
+                    self.results.push(placed_piece_blocks);
+
+                    if next_remaining == 0 {
+                        return true;
+                    }
+
+                    let mut next_board = board;
+                    next_board.set_all(&placed_piece_blocks.locations);
+
+                    if self.build(next_board, next_remaining, next_cursor, ordering, validator) {
+                        return true;
+                    }
+                    self.results.pop();
+                }
+            }
+
+            false
+        }
+    }
+
+    let len = refs.len();
+    let mut builder = Builder {
+        refs,
+        results: Vec::with_capacity(len),
+    };
+
+    let order_cursor = OrderCursor::from(order);
+
+    let succeed = if allows_hold {
+        builder.build_allows_hold(initial_board, (1u64 << len) - 1, order_cursor, &validator)
+    } else {
+        builder.build_allows_no_hold(initial_board, (1u64 << len) - 1, order_cursor, &validator)
+    };
+
+    if succeed {
+        Some(PlacedPieceBlocksFlow::new(initial_board, builder.results))
+    } else {
+        None
+    }
+}
+
 /// This holds the initial board and reference of the subsequent placed piece blocks.
 /// They are placed in order from the head.
 ///
@@ -114,7 +237,11 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     /// Returns None if placements is not placeable.
     ///
     /// Note that it does not depend on Rotation System. It depends only on spaces and landing.
-    pub fn find_one_placeable(initial_board: Board64, refs: &Vec<&'a PlacedPieceBlocks>) -> Option<Self> {
+    #[inline]
+    pub fn find_one_placeable(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+    ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |_, _| {
             SearchResult::Success
         })
@@ -136,6 +263,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     }
 
     /// It's similar to `find_one_stackable()` except that spawn can be set dynamically.
+    #[inline]
     pub fn find_one_stackable_dyn<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
@@ -165,6 +293,7 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
     }
 
     /// It's similar to `find_one_stackable_strictly()` except that spawn can be set dynamically.
+    #[inline]
     pub fn find_one_stackable_strictly_dyn<T: RotationSystem>(
         initial_board: Board64,
         refs: &Vec<&'a PlacedPieceBlocks>,
@@ -172,6 +301,96 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
         spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
     ) -> Option<Self> {
         find_one_dyn(initial_board, refs, |board, placement| {
+            let board_to_place = board.after_clearing();
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach_strictly(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
+                }
+            }
+            SearchResult::Pruned
+        })
+    }
+
+    /// Returns a flow finds that all placements have been successful from the initial board.
+    /// Placements are ordered according to the order of the shapes and the use of the holds.
+    /// Returns None if placements is not placeable.
+    ///
+    /// Note that it does not depend on Rotation System. It depends only on spaces and landing.
+    #[inline]
+    pub fn find_one_placeable_by_order(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+        order: &Vec<Shape>,
+        allows_hold: bool,
+    ) -> Option<Self> {
+        find_one_by_order_dyn(initial_board, refs, order, allows_hold, |_, _| {
+            SearchResult::Success
+        })
+    }
+
+    /// Returns a flow finds that all placements have been successful from the initial board according to the Rotation System.
+    /// Placements are ordered according to the order of the shapes and the use of the holds.
+    /// Returns None if placements is not stackable.
+    ///
+    /// Note that the same form will succeed regardless of the orientation.
+    /// If you want to be strict, use `find_one_stackable_strictly()`.
+    #[inline]
+    pub fn find_one_stackable_by_order<T: RotationSystem>(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+        order: &Vec<Shape>,
+        allows_hold: bool,
+        move_rules: &MoveRules<'a, T>,
+        spawn: BlPosition,
+    ) -> Option<Self> {
+        Self::find_one_stackable_by_order_dyn(initial_board, refs, order, allows_hold, move_rules, |_, _| Some(spawn))
+    }
+
+    #[inline]
+    /// It's similar to `find_one_stackable_by_order()` except that spawn can be set dynamically.
+    pub fn find_one_stackable_by_order_dyn<T: RotationSystem>(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+        order: &Vec<Shape>,
+        allows_hold: bool,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+    ) -> Option<Self> {
+        find_one_by_order_dyn(initial_board, refs, order, allows_hold, |board, placement| {
+            let board_to_place = board.after_clearing();
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
+                }
+            }
+            SearchResult::Pruned
+        })
+    }
+
+    /// It's similar to `find_one_stackable_by_order()` except that the orientation is strictly checked.
+    #[inline]
+    pub fn find_one_stackable_strictly_by_order<T: RotationSystem>(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+        order: &Vec<Shape>,
+        allows_hold: bool,
+        move_rules: &MoveRules<'a, T>,
+        spawn: BlPosition,
+    ) -> Option<Self> {
+        Self::find_one_stackable_strictly_by_order_dyn(initial_board, refs, order, allows_hold, move_rules, move |_, _| Some(spawn))
+    }
+
+    /// It's similar to `find_one_stackable_strictly_by_order()` except that spawn can be set dynamically.
+    #[inline]
+    pub fn find_one_stackable_strictly_by_order_dyn<T: RotationSystem>(
+        initial_board: Board64,
+        refs: &Vec<&'a PlacedPieceBlocks>,
+        order: &Vec<Shape>,
+        allows_hold: bool,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+    ) -> Option<Self> {
+        find_one_by_order_dyn(initial_board, refs, order, allows_hold, |board, placement| {
             let board_to_place = board.after_clearing();
             if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
                 if move_rules.can_reach_strictly(placement, board_to_place, placement.piece.with(spawn)) {
@@ -402,6 +621,15 @@ mod tests {
     use crate::prelude::*;
 
     #[test]
+    fn empty() {
+        let placed_piece_flow = PlacedPieceBlocksFlow::new(Board64::blank(), vec![]);
+        assert_eq!(placed_piece_flow.len(), 0);
+        assert!(placed_piece_flow.can_place_all());
+        assert!(placed_piece_flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
+        assert!(placed_piece_flow.can_stack_all_strictly(&MoveRules::default(), bl(4, 20)));
+    }
+
+    #[test]
     fn new_case1() {
         let board = Board64::from_str("
             ...#######
@@ -511,7 +739,10 @@ mod tests {
 
     #[test]
     fn find_one_placeable() {
+        use Shape::*;
+
         let board = Board64::from_str("
+            ...#######
             ...#######
             ...#######
             ...#######
@@ -529,6 +760,20 @@ mod tests {
         let placed_piece_flow = PlacedPieceBlocksFlow::find_one_placeable(board, &placed_piece_blocks.iter().collect()).unwrap();
         assert_eq!(placed_piece_flow.len(), 3);
         assert!(placed_piece_flow.can_place_all());
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::find_one_placeable_by_order(board, &placed_piece_blocks.iter().collect(), &vec![L, J, O], false).unwrap();
+        assert_eq!(placed_piece_flow.len(), 3);
+        assert!(placed_piece_flow.can_place_all());
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::find_one_placeable_by_order(board, &placed_piece_blocks.iter().collect(), &vec![L, O, J], false);
+        assert_eq!(placed_piece_flow, None);
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::find_one_placeable_by_order(board, &placed_piece_blocks.iter().collect(), &vec![O, L, J], true).unwrap();
+        assert_eq!(placed_piece_flow.len(), 3);
+        assert!(placed_piece_flow.can_place_all());
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::find_one_placeable_by_order(board, &placed_piece_blocks.iter().collect(), &vec![O, J, L], true);
+        assert_eq!(placed_piece_flow, None);
     }
 
     #[test]
@@ -628,12 +873,121 @@ mod tests {
     }
 
     #[test]
-    fn empty() {
-        let placed_piece_flow = PlacedPieceBlocksFlow::new(Board64::blank(), vec![]);
-        assert_eq!(placed_piece_flow.len(), 0);
-        assert!(placed_piece_flow.can_place_all());
-        assert!(placed_piece_flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
-        assert!(placed_piece_flow.can_stack_all_strictly(&MoveRules::default(), bl(4, 20)));
+    fn find_one_stackable_by_order_case1() {
+        use Shape::*;
+
+        let board = Board64::from_str("
+            ...#######
+            ...#######
+            ...#######
+            ...#######
+        ").unwrap();
+        let placed_piece_blocks = vec![
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
+        ];
+        let refs: Vec<&PlacedPieceBlocks> = placed_piece_blocks.iter().collect();
+
+        let move_rules = MoveRules::srs(AllowMove::Softdrop);
+        let spawn = bl(4, 20);
+
+        {
+            let placed_piece_flow = PlacedPieceBlocksFlow::new(board, refs.clone());
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_place_all());
+            assert!(!placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![L, S, J], false, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![L, J, S], false, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![S, L, J], true, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![S, J, L], true, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+        }
+        {
+            let placed_piece_flow = PlacedPieceBlocksFlow::new(board, refs.clone());
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_place_all());
+            assert!(!placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![L, S, J], false, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![L, J, S], false, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![S, L, J], true, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![S, J, L], true, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+        }
+    }
+
+    #[test]
+    fn find_one_stackable_by_order_case2() {
+        use Shape::*;
+
+        let board = Board64::from_str("
+            ########..
+            #####..#..
+            ####..####
+            ....######
+        ").unwrap();
+        let placed_piece_blocks = vec![
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(IN), 0, array_vec![0])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 4, array_vec![1, 2])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(ON), 8, array_vec![2, 3])),
+        ];
+        let refs: Vec<&PlacedPieceBlocks> = placed_piece_blocks.iter().collect();
+
+        let spawn = bl(4, 20);
+
+        {
+            let move_rules = MoveRules::srs(AllowMove::Softdrop);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![O, S, I], false, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![O, I, S], false, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![O, I, S], true, &move_rules, spawn).unwrap();
+            assert_eq!(placed_piece_flow.len(), 3);
+            assert!(placed_piece_flow.can_stack_all(&move_rules, spawn));
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![I, S, O], true, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+        }
+        {
+            let move_rules = MoveRules::srs(AllowMove::Harddrop);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![O, S, I], false, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_by_order(board, &refs, &vec![O, I, S], true, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+        }
+        {
+            let move_rules = MoveRules::srs(AllowMove::Softdrop);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![O, S, I], false, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+
+            let placed_piece_flow = PlacedPieceBlocksFlow::find_one_stackable_strictly_by_order(board, &refs, &vec![O, I, S], true, &move_rules, spawn);
+            assert_eq!(placed_piece_flow, None);
+        }
     }
 
     #[test]
