@@ -1,6 +1,6 @@
 use fxhash::FxHashSet;
 
-use crate::{MoveRules, OrderCursor, PopOp, RotationSystem, SearchResult, With};
+use crate::{GenerateInstruction, MoveRules, OrderCursor, PopOp, RotationSystem, SearchResult, With};
 use crate::boards::{Board64, BoardOp};
 use crate::coordinates::BlPosition;
 use crate::pieces::{Piece, Shape};
@@ -459,6 +459,155 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
             initial_state,
             generator_next_state,
         )
+    }
+
+    /// It is visited once for every placement that meets the conditions from the initial board.
+    ///
+    ///
+    /// Note that it does not depend on Rotation System. It depends only on spaces and landing.
+    #[inline]
+    pub fn for_each_placeable<C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        callback: C,
+    ) {
+        self.for_each_dyn(callback, |_, _| {
+            SearchResult::Success
+        })
+    }
+
+    #[inline]
+    pub fn for_each_stackable<T: RotationSystem, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        move_rules: &MoveRules<'a, T>,
+        spawn: BlPosition,
+        callback: C,
+    ) {
+        self.for_each_stackable_dyn(move_rules, |_, _| Some(spawn), callback)
+    }
+
+    /// It's similar to `find_one_stackable()` except that spawn can be set dynamically.
+    #[inline]
+    pub fn for_each_stackable_dyn<T: RotationSystem, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+        callback: C,
+    ) {
+        self.for_each_dyn(callback, |board, placement| {
+            let board_to_place = board.after_clearing();
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
+                }
+            }
+            SearchResult::Pruned
+        })
+    }
+
+    /// It's similar to `find_one_stackable()` except that the orientation is strictly checked.
+    #[inline]
+    pub fn for_each_stackable_strictly<T: RotationSystem, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        move_rules: &MoveRules<'a, T>,
+        spawn: BlPosition,
+        callback: C,
+    ) {
+        self.for_each_stackable_strictly_dyn(move_rules, move |_, _| Some(spawn), callback)
+    }
+
+    /// It's similar to `find_one_stackable_strictly()` except that spawn can be set dynamically.
+    #[inline]
+    pub fn for_each_stackable_strictly_dyn<T: RotationSystem, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+        callback: C,
+    ) {
+        self.for_each_dyn(callback, |board, placement| {
+            let board_to_place = board.after_clearing();
+            if let Some(spawn) = spawn_func(placement.piece, &board_to_place) {
+                if move_rules.can_reach_strictly(placement, board_to_place, placement.piece.with(spawn)) {
+                    return SearchResult::Success;
+                }
+            }
+            SearchResult::Pruned
+        })
+    }
+
+    #[inline]
+    pub fn for_each_dyn<C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction>(
+        &self,
+        mut callback: C,
+        validator: impl Fn(&Board64, BlPlacement) -> SearchResult,
+    ) {
+        if self.refs.is_empty() {
+            callback(&self.refs);
+            return;
+        }
+
+        assert!(self.refs.len() < 64, "the refs length supports up to 64.");
+
+        struct Builder<'a, 'b, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction> {
+            refs: &'a Vec<&'b PlacedPieceBlocks>,
+            results: Vec<&'b PlacedPieceBlocks>,
+            callback: &'a mut C,
+        }
+
+        impl<'b, C: FnMut(&Vec<&PlacedPieceBlocks>) -> GenerateInstruction> Builder<'_, 'b, C> {
+            fn build(
+                &mut self,
+                board: Board64,
+                remaining: u64,
+                validator: &impl Fn(&Board64, BlPlacement) -> SearchResult,
+            ) -> GenerateInstruction {
+                let mut candidates = remaining;
+                while 0 < candidates {
+                    let next_candidates = candidates & (candidates - 1);
+                    let bit = candidates - next_candidates;
+                    let next_remaining = remaining - bit;
+
+                    candidates = next_candidates;
+
+                    let placed_piece_blocks = self.refs[bit.trailing_zeros() as usize];
+
+                    if let Some(placement) = placed_piece_blocks.place_according_to(board) {
+                        if validator(&board, placement) == SearchResult::Pruned {
+                            continue;
+                        }
+
+                        self.results.push(placed_piece_blocks);
+
+                        if next_remaining == 0 {
+                            let instruction = (self.callback)(&self.results);
+                            self.results.pop();
+                            return instruction;
+                        }
+
+                        let mut next_board = board;
+                        next_board.set_all(&placed_piece_blocks.locations);
+
+                        if self.build(
+                            next_board, next_remaining, validator,
+                        ) == GenerateInstruction::Stop {
+                            return GenerateInstruction::Stop;
+                        }
+
+                        self.results.pop();
+                    }
+                }
+
+                GenerateInstruction::Continue
+            }
+        }
+
+        let len = self.refs.len();
+        let mut builder = Builder {
+            refs: &self.refs,
+            results: Vec::with_capacity(len),
+            callback: &mut callback,
+        };
+
+        builder.build(self.initial_board, (1u64 << len) - 1, &validator);
     }
 
     #[inline]
@@ -1072,5 +1221,76 @@ mod tests {
         assert!(!placed_piece_flow.can_place_all());
 
         assert_eq!(PlacedPieceBlocksFlow::find_one_placeable(board, &placed_piece_blocks.iter().collect()), None);
+    }
+
+    #[test]
+    fn for_each_placeable() {
+        let board = Board64::from_str("
+            ...#######
+            ...#######
+            ...#######
+            ...#######
+        ").unwrap();
+        let placed_piece_blocks = vec![
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
+        ];
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
+
+        {
+            let mut counter = 0;
+            placed_piece_flow.for_each_placeable(|_| {
+                counter += 1;
+                GenerateInstruction::Stop
+            });
+            assert_eq!(counter, 1);
+        }
+        {
+            let mut counter = 0;
+            placed_piece_flow.for_each_placeable(|_| {
+                counter += 1;
+                GenerateInstruction::Continue
+            });
+            assert_eq!(counter, 4);
+        }
+    }
+
+    #[test]
+    fn for_each_stackable() {
+        let board = Board64::from_str("
+            ....####..
+            ....######
+            ....######
+            ....###..#
+        ").unwrap();
+        let placed_piece_blocks = vec![
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(IW), 3, array_vec![0, 1, 2, 3])),
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 7, array_vec![0, 3])),
+        ];
+
+        let placed_piece_flow = PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
+        let move_rules = MoveRules::srs(AllowMove::Softdrop);
+
+        {
+            let mut counter = 0;
+            placed_piece_flow.for_each_stackable(&move_rules, bl(4, 20), |_| {
+                counter += 1;
+                GenerateInstruction::Continue
+            });
+            assert_eq!(counter, 4);
+        }
+        {
+            let mut counter = 0;
+            placed_piece_flow.for_each_stackable_strictly(&move_rules, bl(4, 20), |_| {
+                counter += 1;
+                GenerateInstruction::Continue
+            });
+            assert_eq!(counter, 0);
+        }
     }
 }
