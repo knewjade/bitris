@@ -70,7 +70,14 @@ pub const fn bl(lx: i32, by: i32) -> BlPosition {
 
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn bl_placement_to_position() {
+        let placement = BlPlacement::new(piece!(TN), BlPosition::new(2, 3));
+        assert_eq!(BlPosition::from(placement), bl(2, 3));
+    }
 
     #[test]
     fn bl_position_operators() {

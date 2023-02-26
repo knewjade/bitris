@@ -84,6 +84,11 @@ mod tests {
     use crate::prelude::*;
 
     #[test]
+    fn dd_and_new() {
+        assert_eq!(dd(1, 2), Offset::new(1, 2));
+    }
+
+    #[test]
     fn operators() {
         assert_eq!(dd(1, 2) + dd(-2, 3), dd(-1, 5));
         assert_eq!(dd(1, 2) - dd(-2, 3), dd(3, -1));

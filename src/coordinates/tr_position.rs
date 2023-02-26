@@ -70,7 +70,14 @@ pub const fn tr(rx: i32, ty: i32) -> TrPosition {
 
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn tr_placement_to_position() {
+        let placement = TrPlacement::new(piece!(TN), TrPosition::new(2, 3));
+        assert_eq!(TrPosition::from(placement), tr(2, 3));
+    }
 
     #[test]
     fn tr_position_operators() {

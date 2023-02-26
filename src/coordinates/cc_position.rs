@@ -67,7 +67,14 @@ pub const fn cc(cx: i32, cy: i32) -> CcPosition {
 
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn cc_placement_to_position() {
+        let placement = CcPlacement::new(piece!(TN), CcPosition::new(2, 3));
+        assert_eq!(CcPosition::from(placement), cc(2, 3));
+    }
 
     #[test]
     fn cc_position_operators() {
