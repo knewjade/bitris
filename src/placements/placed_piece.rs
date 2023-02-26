@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use tinyvec::ArrayVec;
 
-use crate::boards::{BoardOp, Lines};
-use crate::coordinates::{Location, xy};
+use crate::boards::{Board64, BoardOp, Lines};
+use crate::coordinates::{Location, Offset, xy};
 use crate::pieces::Piece;
 use crate::placements::{BlPlacement, place_according_to};
 
@@ -63,6 +63,76 @@ impl PlacedPiece {
                         let max = 10 - piece_blocks.width as u8 + 1;
                         (0..max).into_iter().map(move |lx| PlacedPiece::new(piece, lx, ys))
                     })
+            })
+    }
+
+    /// Returns a vec containing all placed pieces within the height.
+    /// Only one of the different orientations in the same form is included.
+    /// Generate according to space on Board.
+    pub fn make_canonical_on_board_iter(board: Board64, height: usize) -> impl Iterator<Item=Self> {
+        Piece::all_iter()
+            .filter(|piece| piece.canonical().is_none())
+            .map(|piece| piece.to_piece_blocks())
+            .flat_map(move |piece_blocks| {
+                struct Builder {
+                    piece: Piece,
+                    board: Board64,
+                    dxs_each_dy: ArrayVec<[ArrayVec<[i32; 4]>; 4]>,
+                    pieces: Vec<PlacedPiece>,
+                    ys: ArrayVec<[u8; 4]>,
+                }
+
+                impl Builder {
+                    fn run(&mut self, lx: i32, by: i32, height: i32, depth: usize) {
+                        let dxs = self.dxs_each_dy[depth];
+                        for y in by..=height {
+                            let conflicted = dxs.iter()
+                                .map(|&dx| Location::new(lx + dx, y))
+                                .any(|location| self.board.is_occupied_at(location));
+                            if conflicted {
+                                continue;
+                            }
+
+                            self.ys.push(y as u8);
+                            if depth + 1 < self.dxs_each_dy.len() {
+                                self.run(lx, y + 1, height + 1, depth + 1)
+                            } else {
+                                self.pieces.push(PlacedPiece::new(self.piece, lx as u8, self.ys.clone()));
+                            }
+                            self.ys.pop();
+                        }
+                    }
+                }
+
+                let offsets: ArrayVec<[Offset; 4]> = ArrayVec::from_iter(piece_blocks.offsets);
+                let dxs_each_dy: ArrayVec<[ArrayVec<[i32; 4]>; 4]> = offsets.iter()
+                    .map(|offset| offset.dy)
+                    .sorted()
+                    .dedup()
+                    .map(|dy| {
+                        offsets.iter()
+                            .filter(|&offset| offset.dy == dy)
+                            .map(|offset| offset - piece_blocks.bottom_left)
+                            .map(|offset| offset.dx)
+                            .collect()
+                    })
+                    .collect();
+
+                let mut builder = Builder {
+                    piece: piece_blocks.piece,
+                    board,
+                    dxs_each_dy,
+                    pieces: Vec::<PlacedPiece>::new(),
+                    ys: ArrayVec::<[u8; 4]>::new(),
+                };
+
+                let max_x = 10 - piece_blocks.width as i32 + 1;
+                let height = height as i32 - piece_blocks.height as i32;
+                for lx in 0..max_x {
+                    builder.run(lx, 0, height, 0);
+                }
+
+                builder.pieces
             })
     }
 
@@ -197,10 +267,29 @@ mod tests {
 
     #[test]
     fn make_canonical_all_iter() {
-        assert_eq!(PlacedPiece::make_canonical_all_iter(0).count(), 0);
-        assert_eq!(PlacedPiece::make_canonical_all_iter(1).count(), 7);
-        assert_eq!(PlacedPiece::make_canonical_all_iter(2).count(), 87);
-        assert_eq!(PlacedPiece::make_canonical_all_iter(3).count(), 312);
-        assert_eq!(PlacedPiece::make_canonical_all_iter(4).count(), 764);
+        for (height, expected) in vec![
+            (0, 0),
+            (1, 7),
+            (2, 87),
+            (3, 312),
+            (4, 764),
+            (5, 1535),
+        ] {
+            assert_eq!(PlacedPiece::make_canonical_all_iter(height).count(), expected);
+
+            let board = Board64::blank();
+            assert_eq!(PlacedPiece::make_canonical_on_board_iter(board, height).count(), expected);
+        }
+    }
+
+    #[test]
+    fn make_canonical_on_board_iter_high_board() {
+        let mut board = Board64::blank();
+        for y in 0..64 as i32 {
+            for x in 0..9 {
+                board.set_at(xy(x, y));
+            }
+        }
+        assert_eq!(PlacedPiece::make_canonical_on_board_iter(board, 64).count(), 635376);
     }
 }
