@@ -254,7 +254,7 @@ impl<T> fmt::Display for Board<T> where Board<T>: BoardOp {
     /// assert_eq!(format!("{}", board), expected);
     /// `````
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let height = cmp::min(self.well_top() + 1, self.ceiling()) as u32;
+        let height = cmp::min(self.well_top() + 1, self.ceiling());
         let mut str = String::with_capacity((height * 11) as usize);
         for y in (0..height).rev() {
             let y = y as i32;
