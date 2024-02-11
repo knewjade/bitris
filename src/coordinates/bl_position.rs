@@ -61,7 +61,7 @@ forward_ref_from!(BlPosition, from BlPlacement);
 
 add_member_for_from!(Location, to_location, to BlPosition);
 
-/// An shortcut for `BLPosition { lx, by }`.
+/// A shortcut for `BLPosition { lx, by }`.
 #[inline(always)]
 pub const fn bl(lx: i32, by: i32) -> BlPosition {
     BlPosition { lx, by }
