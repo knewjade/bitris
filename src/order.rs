@@ -115,20 +115,20 @@ impl<'a, T> OrderCursor<'a, T> {
     #[inline]
     pub fn peek(&self, op: PopOp) -> Option<&T> {
         match op {
-            PopOp::First => self.first(),
-            PopOp::Second => self.second(),
+            PopOp::First => self.peek_first(),
+            PopOp::Second => self.peek_second(),
         }
     }
 
     /// Returns a current first item.
     #[inline]
-    pub fn first(&self) -> Option<&T> {
+    pub fn peek_first(&self) -> Option<&T> {
         self.current.map(|index| &self.items[index])
     }
 
     /// Returns a current second item.
     #[inline]
-    pub fn second(&self) -> Option<&T> {
+    pub fn peek_second(&self) -> Option<&T> {
         self.next.map(|index| &self.items[index])
     }
 }
@@ -136,12 +136,12 @@ impl<'a, T> OrderCursor<'a, T> {
 impl<'a, T: PartialEq> OrderCursor<'a, T> {
     #[inline]
     pub fn decide_next_op(&self, value: &T) -> Option<PopOp> {
-        if let Some(item) = self.first() {
+        if let Some(item) = self.peek_first() {
             if item == value {
                 return Some(PopOp::First);
             }
         }
-        if let Some(item) = self.second() {
+        if let Some(item) = self.peek_second() {
             if item == value {
                 return Some(PopOp::Second);
             }
@@ -182,8 +182,8 @@ mod tests {
         assert!(!cursor.has_next());
         assert_eq!(cursor.len_remaining(), 0);
         assert_equal(cursor.iter_remaining(), vec![].iter());
-        assert_eq!(cursor.first(), None);
-        assert_eq!(cursor.second(), None);
+        assert_eq!(cursor.peek_first(), None);
+        assert_eq!(cursor.peek_second(), None);
 
         let (shape, cursor) = cursor.pop(PopOp::First);
         assert!(!cursor.has_next());
@@ -205,8 +205,8 @@ mod tests {
         assert!(cursor.has_next());
         assert_eq!(cursor.len_remaining(), 1);
         assert_equal(cursor.iter_remaining(), [T].iter());
-        assert_eq!(cursor.first(), Some(&T));
-        assert_eq!(cursor.second(), None);
+        assert_eq!(cursor.peek_first(), Some(&T));
+        assert_eq!(cursor.peek_second(), None);
         let (shape, cursor) = cursor.pop(PopOp::Second);
         assert_eq!(shape, None);
 
@@ -214,16 +214,16 @@ mod tests {
         assert!(cursor.has_next());
         assert_eq!(cursor.len_remaining(), 1);
         assert_equal(cursor.iter_remaining(), [T].iter());
-        assert_eq!(cursor.first(), Some(&T));
-        assert_eq!(cursor.second(), None);
+        assert_eq!(cursor.peek_first(), Some(&T));
+        assert_eq!(cursor.peek_second(), None);
         let (shape, cursor) = cursor.pop(PopOp::First);
         assert_eq!(shape, Some(&T));
 
         assert!(!cursor.has_next());
         assert_eq!(cursor.len_remaining(), 0);
         assert_equal(cursor.iter_remaining(), [].iter());
-        assert_eq!(cursor.first(), None);
-        assert_eq!(cursor.second(), None);
+        assert_eq!(cursor.peek_first(), None);
+        assert_eq!(cursor.peek_second(), None);
     }
 
     #[test]

@@ -34,7 +34,7 @@ impl Rotate for PieceBlocks {
 }
 
 impl PieceBlocks {
-    pub const fn new(piece: Piece) -> Self {
+    const fn new(piece: Piece) -> Self {
         const fn offsets(piece: Piece) -> [Offset; 4] {
             let mut os = north_offsets(piece.shape);
             let mut index = 0;
