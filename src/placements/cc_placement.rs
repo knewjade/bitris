@@ -210,6 +210,15 @@ impl fmt::Display for CcPlacement {
 impl Rotate for CcPlacement {
     type Item = CcPlacement;
 
+    /// It rotates around the center of the piece Therefore, the position may change.
+    ///
+    /// Note that no kick occurs.
+    /// ```
+    /// use bitris::macros::piece;
+    /// use bitris::prelude::*;
+    /// let placement = piece!(IN).with(cc(5, 5));
+    /// assert_eq!(placement.rotate(Rotation::Cw), piece!(IE).with(cc(5, 5)));
+    /// ```
     #[inline]
     fn rotate(&self, rotation: Rotation) -> Self {
         Self::new(self.piece.rotate(rotation), self.position)
