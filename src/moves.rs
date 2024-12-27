@@ -1,8 +1,8 @@
 use crate::boards::Board64;
 use crate::internal_moves::moves64;
 use crate::placements::BlPlacement;
-use crate::RotationSystem;
 use crate::srs::SrsKickTable;
+use crate::RotationSystem;
 
 /// A collection of piece drop types.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -41,6 +41,7 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
     ///
     /// Panics if the spawn is not placeable position.
     #[inline]
+    #[cfg(not(target_feature = "avx2"))]
     pub fn generate_all_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
         let result = match self.allow_move {
             AllowMove::Softdrop => {
@@ -48,6 +49,21 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
             }
             AllowMove::Harddrop => {
                 moves64::all_moves_harddrop(self.rotation_system, &board.into(), spawn.into())
+            }
+        };
+        result.vec()
+    }
+
+    #[inline]
+    #[cfg(target_feature = "avx2")]
+    pub fn generate_all_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
+        use crate::avx2::internal_moves::moves;
+        let result = match self.allow_move {
+            AllowMove::Softdrop => {
+                moves::all_moves_softdrop(&board.into(), spawn.into())
+            }
+            AllowMove::Harddrop => {
+                moves::all_moves_harddrop(&board.into(), spawn.into())
             }
         };
         result.vec()
@@ -142,11 +158,11 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
 pub mod srs {
     use std::slice::Iter;
 
-    use crate::{AllowMove, Kick, MoveRules, Rotation, RotationSystem};
     use crate::boards::Board64;
     use crate::coordinates::Offset;
     use crate::pieces::{Piece, Shape};
     use crate::placements::BlPlacement;
+    use crate::{AllowMove, Kick, MoveRules, Rotation, RotationSystem};
 
     macro_rules! k {
         ($dx: expr, $dy: expr) => {

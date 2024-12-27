@@ -1,6 +1,3 @@
-#[cfg(test)]
-use rstest_reuse;
-
 pub use kicks::*;
 pub use moves::*;
 pub use rotation::*;
@@ -38,3 +35,6 @@ mod kicks;
 mod moves;
 mod rotation;
 mod traits;
+
+#[cfg(target_feature = "avx2")]
+mod avx2;

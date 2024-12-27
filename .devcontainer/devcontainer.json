@@ -1,10 +1,27 @@
 {
-    "name": "rust",
-    "image": "mcr.microsoft.com/devcontainers/rust:latest",
-    "features": {
-      "ghcr.io/devcontainers-contrib/features/direnv:1": {},
-      "ghcr.io/devcontainers-contrib/features/go-task:1": {}
-    },
-    "remoteUser": "vscode",
-    "postCreateCommand": "/bin/sh .devcontainer/post_create.sh"
+  "name": "rust",
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/direnv:1": {},
+    "ghcr.io/devcontainers-contrib/features/go-task:1": {},
+    // for jetbrains
+    "ghcr.io/devcontainers/features/sshd:1": {},
+    "ghcr.io/ouvill/devcontainers_features/authorized_keys:0": {
+      "github_account": "knewjade"
+    }
+  },
+  "customizations": {
+    "vscode": {
+        "extensions": [
+          "github.copilot",
+          "github.copilot-chat",
+          "formulahendry.code-runner"
+      ]
+    }
+  },
+  // for jetbrains: https://blog.ouvill.net/blog/2022-12-20-jetbrains_devcontainer/
+  "forwardPorts": [
+    2222
+  ],
+  "postCreateCommand": "/bin/sh .devcontainer/post_create.sh"
 }
