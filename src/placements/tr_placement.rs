@@ -2,12 +2,12 @@ use std::{fmt, ops};
 
 use tinyvec::ArrayVec;
 
-use crate::{Rotate, Rotation};
 use crate::boards::{BoardOp, Lines};
 use crate::coordinates::{Location, Offset, TrPosition};
 use crate::internal_macros::{add_member_for_from, forward_ref_from, forward_ref_op};
 use crate::pieces::{Orientation, Piece, PieceBlocks, PieceBlocksFactory, Shape};
 use crate::placements::{BlPlacement, CcPlacement, PlacedPiece};
+use crate::{Rotate, Rotation};
 
 /// The position to be placed, based on the top-right of the piece.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -329,16 +329,24 @@ mod tests {
     }
 
     #[fixture]
-    pub fn board8() -> Board8 { Board8::blank() }
+    pub fn board8() -> Board8 {
+        Board8::blank()
+    }
 
     #[fixture]
-    pub fn board16() -> Board16 { Board16::blank() }
+    pub fn board16() -> Board16 {
+        Board16::blank()
+    }
 
     #[fixture]
-    pub fn board32() -> Board32 { Board32::blank() }
+    pub fn board32() -> Board32 {
+        Board32::blank()
+    }
 
     #[fixture]
-    pub fn board64() -> Board64 { Board64::blank() }
+    pub fn board64() -> Board64 {
+        Board64::blank()
+    }
 
     #[template]
     #[rstest]
