@@ -37,7 +37,6 @@ pub mod placements;
 // Internals
 mod internal_macros;
 mod internal_moves;
-
 mod enums;
 mod kicks;
 mod moves;
