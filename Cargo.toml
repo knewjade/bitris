@@ -10,6 +10,7 @@ itertools = "0.13.0"
 tinyvec = "1.6.0"
 fxhash = "0.2.1"
 thiserror = "2.0.9"
+log = "0.4.22"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
