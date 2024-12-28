@@ -330,7 +330,7 @@ impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
                 }
             }
 
-            if 10 * ceiling <= index as u32 {
+            if 10 * ceiling < index as u32 {
                 return Err(ExceedBoardCeiling(ceiling));
             }
         }
