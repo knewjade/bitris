@@ -1,1 +1,1 @@
-pub mod moves64;
+pub mod u64;

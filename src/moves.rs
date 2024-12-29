@@ -1,6 +1,6 @@
 use crate::boards::Board64;
 use crate::internal_macros::enum_display;
-use crate::internal_moves::moves64::moves;
+use crate::internal_moves::u64::moves;
 use crate::placements::BlPlacement;
 use crate::RotationSystem;
 use crate::srs::SrsKickTable;
