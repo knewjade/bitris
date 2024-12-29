@@ -600,7 +600,7 @@ pub(crate) fn all_moves_softdrop(
         // move
         loop {
             let reachable = reachables[src_index].clone();
-            let reachable = reachable.move1(&free_spaces[src_index]);
+            let reachable = reachable.move_n(&free_spaces[src_index]);
 
             if reachables[src_index] == reachable {
                 break;
