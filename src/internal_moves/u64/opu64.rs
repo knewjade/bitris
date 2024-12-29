@@ -94,8 +94,13 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // left
         data[index] |= data[index + 1] & free_space[index];
         // down
-        // TODO まとめて？
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
     for index in 1..9 {
         // left
@@ -103,14 +108,26 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
     {
         let index = 9;
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
 
     data
@@ -125,7 +142,13 @@ pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
     for index in (1..9).rev() {
         // left
@@ -133,14 +156,26 @@ pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
     {
         let index = 0;
         // left
         data[index] |= data[index + 1] & free_space[index];
         // down
-        data[index] |= (data[index] >> 1) & free_space[index];
+        loop {
+            let d = (data[index] | (data[index] >> 1)) & free_space[index];
+            if d == data[index] {
+                break
+            }
+            data[index] = d;
+        }
     }
 
     data
