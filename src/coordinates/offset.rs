@@ -32,7 +32,10 @@ impl ops::Add<Offset> for Offset {
     type Output = Offset;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        Offset { dx: self.dx + rhs.dx, dy: self.dy + rhs.dy }
+        Offset {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+        }
     }
 }
 
@@ -47,7 +50,10 @@ impl ops::Sub<Offset> for Offset {
     type Output = Offset;
 
     fn sub(self, rhs: Offset) -> Self::Output {
-        Offset { dx: self.dx - rhs.dx, dy: self.dy - rhs.dy }
+        Offset {
+            dx: self.dx - rhs.dx,
+            dy: self.dy - rhs.dy,
+        }
     }
 }
 
@@ -62,7 +68,10 @@ impl ops::Neg for Offset {
     type Output = Offset;
 
     fn neg(self) -> Self::Output {
-        Offset { dx: -self.dx, dy: -self.dy }
+        Offset {
+            dx: -self.dx,
+            dy: -self.dy,
+        }
     }
 }
 
@@ -77,7 +86,6 @@ forward_ref_op! { - Offset }
 pub const fn dd(dx: i32, dy: i32) -> Offset {
     Offset { dx, dy }
 }
-
 
 #[cfg(test)]
 mod tests {

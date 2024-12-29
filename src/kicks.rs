@@ -1,11 +1,11 @@
 use std::fmt;
 use std::slice::Iter;
 
-use crate::{Rotate, Rotation};
 use crate::boards::BoardOp;
 use crate::coordinates::Offset;
 use crate::pieces::{Piece, Shape};
 use crate::placements::CcPlacement;
+use crate::{Rotate, Rotation};
 
 /// The amount of movement based on the center of the piece when rotating.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -47,7 +47,12 @@ pub trait RotationSystem {
     ///
     /// Returns the final kick and placement if the test passes.
     /// Returns None if the rotation is not possible.
-    fn test_kick(&self, board: &impl BoardOp, placement: impl Into<CcPlacement>, rotation: Rotation) -> Option<TestKickResult> {
+    fn test_kick(
+        &self,
+        board: &impl BoardOp,
+        placement: impl Into<CcPlacement>,
+        rotation: Rotation,
+    ) -> Option<TestKickResult> {
         let from: CcPlacement = placement.into();
         let to = from.rotate(rotation);
 

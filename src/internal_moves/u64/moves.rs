@@ -6,7 +6,6 @@ use crate::placements::BlPlacement;
 use crate::prelude::CcPlacement;
 use crate::With;
 
-
 #[derive(Debug)]
 pub struct Moves4 {
     pub spawn: CcPlacement,

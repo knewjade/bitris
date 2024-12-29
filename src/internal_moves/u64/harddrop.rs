@@ -1,9 +1,12 @@
 use crate::boards::Board;
-use crate::internal_moves::u64::loaders::{can_reach1, can_reach4, minimize, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, to_free_space, to_free_spaces};
+use crate::internal_moves::u64::loaders::{
+    can_reach1, can_reach4, minimize, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables,
+    to_free_space, to_free_spaces,
+};
 use crate::internal_moves::u64::moves::{Moves1, Moves4};
+use crate::pieces::ToCcPosition;
 use crate::placements::BlPlacement;
 use crate::{RotationSystem, With};
-use crate::pieces::ToCcPosition;
 
 pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
     rotation_system: &impl RotationSystem,
@@ -41,7 +44,11 @@ pub fn moves_harddrop_no_rotation<const MINIMIZE: bool>(
 
     let reachable = reachable.land(&free_space);
 
-    Moves1 { spawn, reachable, minimized: MINIMIZE }
+    Moves1 {
+        spawn,
+        reachable,
+        minimized: MINIMIZE,
+    }
 }
 
 pub(crate) fn can_reach_harddrop_with_rotation(
@@ -51,7 +58,9 @@ pub(crate) fn can_reach_harddrop_with_rotation(
     spawn: BlPlacement,
 ) -> bool {
     let spawn = spawn.to_cc_placement();
-    let goals = goal.piece.orientations_having_same_form()
+    let goals = goal
+        .piece
+        .orientations_having_same_form()
         .iter()
         .map(|&orientation| goal.piece.shape.with(orientation))
         .map(|piece| piece.with(goal.position.to_cc_position(piece.to_piece_blocks())))

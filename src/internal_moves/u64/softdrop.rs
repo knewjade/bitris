@@ -1,11 +1,14 @@
+use crate::boards::Board;
 use crate::internal_moves::u64::free_space::FreeSpace64;
-use crate::internal_moves::u64::loaders::{rotate, to_free_space, to_free_spaces, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, minimize, can_reach4, can_reach1};
+use crate::internal_moves::u64::loaders::{
+    can_reach1, can_reach4, minimize, rotate, spawn_and_harddrop_reachable,
+    spawn_and_harddrop_reachables, to_free_space, to_free_spaces,
+};
+use crate::internal_moves::u64::moves::{Moves1, Moves4};
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Orientation, Piece, ToCcPosition};
 use crate::placements::{BlPlacement, CcPlacement};
 use crate::{Rotate, Rotation, RotationSystem, With};
-use crate::boards::Board;
-use crate::internal_moves::u64::moves::{Moves1, Moves4};
 
 const ORIENTATIONS_ORDER: [Orientation; 4] = [
     Orientation::North,
@@ -55,16 +58,14 @@ pub(crate) fn search_with_rotation(
             let dest_index = src_piece.cw().orientation as usize;
 
             let found_dest_reachable = rotate(
-                    rotation_system,
-                    Rotation::Cw,
-                    src_piece,
-                    &reachables[src_index],
-                    &free_spaces[dest_index],
+                rotation_system,
+                Rotation::Cw,
+                src_piece,
+                &reachables[src_index],
+                &free_spaces[dest_index],
             );
 
-            let dest_reachable = reachables[dest_index]
-                .clone()
-                .or(&found_dest_reachable);
+            let dest_reachable = reachables[dest_index].clone().or(&found_dest_reachable);
 
             if reachables[dest_index] != dest_reachable {
                 reachables[dest_index] = dest_reachable;
@@ -84,9 +85,7 @@ pub(crate) fn search_with_rotation(
                 &free_spaces[dest_index],
             );
 
-            let dest_reachable = reachables[dest_index]
-                .clone()
-                .or(&found_dest_reachable);
+            let dest_reachable = reachables[dest_index].clone().or(&found_dest_reachable);
 
             if reachables[dest_index] != dest_reachable {
                 reachables[dest_index] = dest_reachable;
@@ -149,9 +148,7 @@ pub(crate) fn can_reach_with_rotation(
                 &free_spaces[dest_index],
             );
 
-            let dest_reachable = reachables[dest_index]
-                .clone()
-                .or(&found_dest_reachable);
+            let dest_reachable = reachables[dest_index].clone().or(&found_dest_reachable);
 
             if reachables[dest_index] != dest_reachable {
                 reachables[dest_index] = dest_reachable;
@@ -171,9 +168,7 @@ pub(crate) fn can_reach_with_rotation(
                 &free_spaces[dest_index],
             );
 
-            let dest_reachable = reachables[dest_index]
-                .clone()
-                .or(&found_dest_reachable);
+            let dest_reachable = reachables[dest_index].clone().or(&found_dest_reachable);
 
             if reachables[dest_index] != dest_reachable {
                 reachables[dest_index] = dest_reachable;
@@ -275,7 +270,11 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     let reachable = search_no_rotation(reachable, &free_space);
     let reachable = reachable.land(&free_space);
 
-    Moves1 { spawn, reachable, minimized: MINIMIZE }
+    Moves1 {
+        spawn,
+        reachable,
+        minimized: MINIMIZE,
+    }
 }
 
 pub(crate) fn can_reach_softdrop_with_rotation(
@@ -285,7 +284,9 @@ pub(crate) fn can_reach_softdrop_with_rotation(
     spawn: BlPlacement,
 ) -> bool {
     let spawn = spawn.to_cc_placement();
-    let goals = goal.piece.orientations_having_same_form()
+    let goals = goal
+        .piece
+        .orientations_having_same_form()
         .iter()
         .map(|&orientation| goal.piece.shape.with(orientation))
         .map(|piece| piece.with(goal.position.to_cc_position(piece.to_piece_blocks())))

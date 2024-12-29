@@ -37,7 +37,10 @@ impl ops::Add<Offset> for TrPosition {
     type Output = TrPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        TrPosition { rx: self.rx + rhs.dx, ty: self.ty + rhs.dy }
+        TrPosition {
+            rx: self.rx + rhs.dx,
+            ty: self.ty + rhs.dy,
+        }
     }
 }
 
@@ -66,7 +69,6 @@ add_member_for_from!(Location, to_location, to TrPosition);
 pub const fn tr(rx: i32, ty: i32) -> TrPosition {
     TrPosition { rx, ty }
 }
-
 
 #[cfg(test)]
 mod tests {

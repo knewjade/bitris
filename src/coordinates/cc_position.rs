@@ -34,7 +34,10 @@ impl ops::Add<Offset> for CcPosition {
     type Output = CcPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        CcPosition { cx: self.cx + rhs.dx, cy: self.cy + rhs.dy }
+        CcPosition {
+            cx: self.cx + rhs.dx,
+            cy: self.cy + rhs.dy,
+        }
     }
 }
 
@@ -63,7 +66,6 @@ add_member_for_from!(Location, to_location, to CcPosition);
 pub const fn cc(cx: i32, cy: i32) -> CcPosition {
     CcPosition { cx, cy }
 }
-
 
 #[cfg(test)]
 mod tests {

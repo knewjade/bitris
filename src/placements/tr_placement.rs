@@ -123,11 +123,9 @@ impl TrPlacement {
     /// ```
     #[inline]
     pub fn canonical(self) -> Option<Self> {
-        self.piece.canonical().map(|piece| {
-            Self {
-                piece,
-                position: self.position,
-            }
+        self.piece.canonical().map(|piece| Self {
+            piece,
+            position: self.position,
         })
     }
 
@@ -259,7 +257,6 @@ forward_ref_from!(TrPlacement, from TrPlacement);
 add_member_for_from!(BlPlacement, to_bl_placement, to TrPlacement);
 add_member_for_from!(CcPlacement, to_cc_placement, to TrPlacement);
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -378,14 +375,19 @@ mod tests {
         assert!(!os.with(tr(9, 2)).is_landing(&mut board));
         assert!(os.with(tr(9, 1)).is_landing(&mut board));
 
-        assert_eq!(os.with(tr(9, 1)).place_on_and_clear_lines(&mut board), Some(Lines::new(0b11)));
+        assert_eq!(
+            os.with(tr(9, 1)).place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0b11))
+        );
         assert_eq!(board.count_blocks(), 0);
     }
 
     #[test]
     fn to_placed_piece() {
         assert_eq!(
-            piece!(TW).with(tr(5, 5)).with_interception(Lines::new(0b01010000)),
+            piece!(TW)
+                .with(tr(5, 5))
+                .with_interception(Lines::new(0b01010000)),
             PlacedPiece::new(piece!(TW), 4, array_vec![3, 5, 7]),
         );
     }

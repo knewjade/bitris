@@ -33,7 +33,10 @@ impl ops::Add<Offset> for Location {
     type Output = Location;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        Location { x: self.x + rhs.dx, y: self.y + rhs.dy }
+        Location {
+            x: self.x + rhs.dx,
+            y: self.y + rhs.dy,
+        }
     }
 }
 
@@ -76,7 +79,6 @@ forward_ref_from!(Location, from TrPosition);
 pub const fn xy(x: i32, y: i32) -> Location {
     Location { x, y }
 }
-
 
 #[cfg(test)]
 mod tests {

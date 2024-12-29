@@ -1,8 +1,7 @@
 use crate::boards::Board64;
-use crate::coordinates::{BlPosition, Location, Offset};
+use crate::coordinates::{Location, Offset};
 use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::opu64;
-use crate::pieces::Orientation;
 
 #[derive(Debug, Clone)]
 pub struct Reachable64 {

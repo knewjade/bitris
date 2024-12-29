@@ -8,8 +8,8 @@ pub use tr_placement::*;
 
 mod bl_placement;
 mod cc_placement;
-mod placement_flow;
 mod placed_piece;
 mod placed_piece_blocks;
 mod placed_piece_blocks_flow;
+mod placement_flow;
 mod tr_placement;

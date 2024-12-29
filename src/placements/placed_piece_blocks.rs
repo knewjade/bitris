@@ -116,7 +116,12 @@ impl PlacedPieceBlocks {
     /// ```
     #[inline]
     pub fn place_according_to<T: BoardOp + Clone>(&self, board: T) -> Option<BlPlacement> {
-        place_according_to(board, self.placed_piece, self.using_rows, self.intercepted_rows)
+        place_according_to(
+            board,
+            self.placed_piece,
+            self.using_rows,
+            self.intercepted_rows,
+        )
     }
 }
 

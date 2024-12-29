@@ -2,12 +2,12 @@ use std::{fmt, ops};
 
 use tinyvec::ArrayVec;
 
-use crate::{Rotate, Rotation};
 use crate::boards::{BoardOp, Lines};
 use crate::coordinates::{BlPosition, Location, Offset};
 use crate::internal_macros::{add_member_for_from, forward_ref_from, forward_ref_op};
 use crate::pieces::{Orientation, Piece, PieceBlocks, PieceBlocksFactory, Shape};
 use crate::placements::{CcPlacement, PlacedPiece, TrPlacement};
+use crate::{Rotate, Rotation};
 
 /// The position to be placed, based on the bottom-left of the piece.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -123,11 +123,9 @@ impl BlPlacement {
     /// ```
     #[inline]
     pub fn canonical(self) -> Option<Self> {
-        self.piece.canonical().map(|piece| {
-            Self {
-                piece,
-                position: self.position,
-            }
+        self.piece.canonical().map(|piece| Self {
+            piece,
+            position: self.position,
         })
     }
 
@@ -259,7 +257,6 @@ forward_ref_from!(BlPlacement, from TrPlacement);
 add_member_for_from!(CcPlacement, to_cc_placement, to BlPlacement);
 add_member_for_from!(TrPlacement, to_tr_placement, to BlPlacement);
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -378,14 +375,19 @@ mod tests {
         assert!(!os.with(bl(8, 1)).is_landing(&mut board));
         assert!(os.with(bl(8, 0)).is_landing(&mut board));
 
-        assert_eq!(os.with(bl(8, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0b11)));
+        assert_eq!(
+            os.with(bl(8, 0)).place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0b11))
+        );
         assert_eq!(board.count_blocks(), 0);
     }
 
     #[test]
     fn to_placed_piece() {
         assert_eq!(
-            piece!(SE).with(bl(7, 1)).with_interception(Lines::new(0b010101111)),
+            piece!(SE)
+                .with(bl(7, 1))
+                .with_interception(Lines::new(0b010101111)),
             PlacedPiece::new(piece!(SE), 7, array_vec![6, 8, 9]),
         );
     }
