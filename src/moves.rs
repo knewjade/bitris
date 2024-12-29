@@ -1,6 +1,6 @@
 use crate::boards::Board64;
 use crate::internal_macros::enum_display;
-use crate::internal_moves::moves64::moves;
+use crate::internal_moves::u64::{moves, softdrop, harddrop};
 use crate::placements::BlPlacement;
 use crate::RotationSystem;
 use crate::srs::SrsKickTable;
@@ -43,15 +43,31 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
     /// Panics if the spawn is not placeable position.
     #[inline]
     pub fn generate_all_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
-        let result = match self.allow_move {
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
+        match self.allow_move {
             AllowMove::Softdrop => {
-                moves::all_moves_softdrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    softdrop::moves_softdrop_with_rotation::<false>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    softdrop::moves_softdrop_no_rotation::<false>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
             AllowMove::Harddrop => {
-                moves::all_moves_harddrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    harddrop::moves_harddrop_with_rotation::<false>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    harddrop::moves_harddrop_no_rotation::<false>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
-        };
-        result.vec()
+        }
     }
 
     /// Collect all the placements that can be placed in the rotation system.
@@ -61,15 +77,31 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
     /// Panics if the spawn is not placeable position.
     #[inline]
     pub fn generate_minimized_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
-        let result = match self.allow_move {
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
+        match self.allow_move {
             AllowMove::Softdrop => {
-                moves::minimized_moves_softdrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    softdrop::moves_softdrop_with_rotation::<true>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    softdrop::moves_softdrop_no_rotation::<true>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
             AllowMove::Harddrop => {
-                moves::minimized_moves_harddrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    harddrop::moves_harddrop_with_rotation::<true>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    harddrop::moves_harddrop_no_rotation::<true>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
-        };
-        result.vec()
+        }
     }
 
     /// Return true when the piece can be carried to the placement.
@@ -111,12 +143,29 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
             return false;
         }
 
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
         match self.allow_move {
             AllowMove::Softdrop => {
-                moves::can_reach_softdrop(self.rotation_system, goal, &board.into(), spawn)
+                if is_moving_in_rotation {
+                    softdrop::can_reach_softdrop_with_rotation(
+                        self.rotation_system, goal, &board.into(), spawn.into(),
+                    )
+                } else {
+                    softdrop::can_reach_softdrop_no_rotation(
+                        goal, &board.into(), spawn.into(),
+                    )
+                }
             }
             AllowMove::Harddrop => {
-                moves::can_reach_harddrop(self.rotation_system, goal, &board.into(), spawn)
+                if is_moving_in_rotation {
+                    harddrop::can_reach_harddrop_with_rotation(
+                        self.rotation_system, goal, &board.into(), spawn.into(),
+                    )
+                } else {
+                    harddrop::can_reach_harddrop_no_rotation(
+                        goal, &board.into(), spawn.into(),
+                    )
+                }
             }
         }
     }
@@ -129,12 +178,29 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
             return false;
         }
 
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
         match self.allow_move {
             AllowMove::Softdrop => {
-                moves::can_reach_strictly_softdrop(self.rotation_system, goal, &board.into(), spawn)
+                if is_moving_in_rotation {
+                    softdrop::can_reach_strictly_softdrop_with_rotation(
+                        self.rotation_system, goal, &board.into(), spawn.into(),
+                    )
+                } else {
+                    softdrop::can_reach_strictly_softdrop_no_rotation(
+                        goal, &board.into(), spawn.into(),
+                    )
+                }
             }
             AllowMove::Harddrop => {
-                moves::can_reach_strictly_harddrop(self.rotation_system, goal, &board.into(), spawn)
+                if is_moving_in_rotation {
+                    harddrop::can_reach_strictly_harddrop_with_rotation(
+                        self.rotation_system, goal, &board.into(), spawn.into(),
+                    )
+                } else {
+                    harddrop::can_reach_strictly_harddrop_no_rotation(
+                        goal, &board.into(), spawn.into(),
+                    )
+                }
             }
         }
     }
