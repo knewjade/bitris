@@ -94,6 +94,7 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // left
         data[index] |= data[index + 1] & free_space[index];
         // down
+        // TODO まとめて？
         data[index] |= (data[index] >> 1) & free_space[index];
     }
     for index in 1..9 {

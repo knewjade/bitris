@@ -119,7 +119,7 @@ fn generate_free(path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
         b._use("crate::internal_moves::u64::free_space::FreeSpace64");
-        b._use("crate::pieces::Shape");
+        b._use("crate::pieces::{Shape, Orientation, Piece}");
 
         b.newline();
         b.println("#[inline(always)]");
@@ -133,12 +133,49 @@ fn generate_free(path: &str) {
                         b.println(format!("Shape::{} => [", shape).as_str());
                         b.deep(|b| {
                             let shape = shape.to_string().to_lowercase();
-                            b.println(format!("{}_north(free_space_block.clone()),", shape).as_str());
-                            b.println(format!("{}_east(free_space_block.clone()),", shape).as_str());
-                            b.println(format!("{}_south(free_space_block.clone()),", shape).as_str());
+                            b.println(
+                                format!("{}_north(free_space_block.clone()),", shape).as_str(),
+                            );
+                            b.println(
+                                format!("{}_east(free_space_block.clone()),", shape).as_str(),
+                            );
+                            b.println(
+                                format!("{}_south(free_space_block.clone()),", shape).as_str(),
+                            );
                             b.println(format!("{}_west(free_space_block),", shape).as_str());
                         });
                         b.println("],");
+                    }
+                });
+            },
+        );
+
+        b.newline();
+        b.println("#[inline(always)]");
+        b._pub_fn(
+            "to_free_space",
+            "free_space_block: FreeSpace64, piece: Piece",
+            "FreeSpace64",
+            |b| {
+                b._match("piece.shape", |b| {
+                    for shape in Shape::all_iter() {
+                        b.println(format!("Shape::{} => {{", shape).as_str());
+                        b.deep(|b| {
+                            b._match("piece.orientation", |b| {
+                                for orientation in Orientation::all_iter() {
+                                    b.println(
+                                        format!(
+                                            "Orientation::{} => {}_{}(free_space_block.clone()),",
+                                            orientation,
+                                            shape.to_string().to_lowercase(),
+                                            orientation.to_string().to_lowercase(),
+                                        )
+                                        .as_str(),
+                                    );
+                                }
+                            });
+                        });
+                        b.println("},");
                     }
                 });
             },

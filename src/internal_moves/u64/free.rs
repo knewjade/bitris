@@ -1,6 +1,6 @@
 /** It's auto generated. */
 use crate::internal_moves::u64::free_space::FreeSpace64;
-use crate::pieces::Shape;
+use crate::pieces::{Shape, Orientation, Piece};
 
 #[inline(always)]
 pub fn to_free_spaces(free_space_block: FreeSpace64, shape: Shape) -> [FreeSpace64; 4] {
@@ -47,6 +47,68 @@ pub fn to_free_spaces(free_space_block: FreeSpace64, shape: Shape) -> [FreeSpace
             z_south(free_space_block.clone()),
             z_west(free_space_block),
         ],
+    }
+}
+
+#[inline(always)]
+pub fn to_free_space(free_space_block: FreeSpace64, piece: Piece) -> FreeSpace64 {
+    match piece.shape {
+        Shape::T => {
+            match piece.orientation {
+                Orientation::North => t_north(free_space_block.clone()),
+                Orientation::East => t_east(free_space_block.clone()),
+                Orientation::South => t_south(free_space_block.clone()),
+                Orientation::West => t_west(free_space_block.clone()),
+            }
+        },
+        Shape::I => {
+            match piece.orientation {
+                Orientation::North => i_north(free_space_block.clone()),
+                Orientation::East => i_east(free_space_block.clone()),
+                Orientation::South => i_south(free_space_block.clone()),
+                Orientation::West => i_west(free_space_block.clone()),
+            }
+        },
+        Shape::O => {
+            match piece.orientation {
+                Orientation::North => o_north(free_space_block.clone()),
+                Orientation::East => o_east(free_space_block.clone()),
+                Orientation::South => o_south(free_space_block.clone()),
+                Orientation::West => o_west(free_space_block.clone()),
+            }
+        },
+        Shape::L => {
+            match piece.orientation {
+                Orientation::North => l_north(free_space_block.clone()),
+                Orientation::East => l_east(free_space_block.clone()),
+                Orientation::South => l_south(free_space_block.clone()),
+                Orientation::West => l_west(free_space_block.clone()),
+            }
+        },
+        Shape::J => {
+            match piece.orientation {
+                Orientation::North => j_north(free_space_block.clone()),
+                Orientation::East => j_east(free_space_block.clone()),
+                Orientation::South => j_south(free_space_block.clone()),
+                Orientation::West => j_west(free_space_block.clone()),
+            }
+        },
+        Shape::S => {
+            match piece.orientation {
+                Orientation::North => s_north(free_space_block.clone()),
+                Orientation::East => s_east(free_space_block.clone()),
+                Orientation::South => s_south(free_space_block.clone()),
+                Orientation::West => s_west(free_space_block.clone()),
+            }
+        },
+        Shape::Z => {
+            match piece.orientation {
+                Orientation::North => z_north(free_space_block.clone()),
+                Orientation::East => z_east(free_space_block.clone()),
+                Orientation::South => z_south(free_space_block.clone()),
+                Orientation::West => z_west(free_space_block.clone()),
+            }
+        },
     }
 }
 

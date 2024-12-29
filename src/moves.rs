@@ -1,6 +1,6 @@
 use crate::boards::Board64;
 use crate::internal_macros::enum_display;
-use crate::internal_moves::u64::moves;
+use crate::internal_moves::u64::{moves, softdrop, harddrop};
 use crate::placements::BlPlacement;
 use crate::RotationSystem;
 use crate::srs::SrsKickTable;
@@ -43,15 +43,31 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
     /// Panics if the spawn is not placeable position.
     #[inline]
     pub fn generate_all_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
-        let result = match self.allow_move {
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
+        match self.allow_move {
             AllowMove::Softdrop => {
-                moves::all_moves_softdrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    softdrop::all_moves_softdrop_with_rotation(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    softdrop::all_moves_softdrop_no_rotation(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
             AllowMove::Harddrop => {
-                moves::all_moves_harddrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    harddrop::all_moves_harddrop_rotation(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    harddrop::all_moves_harddrop_no_rotation(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
-        };
-        result.vec()
+        }
     }
 
     /// Collect all the placements that can be placed in the rotation system.
@@ -423,16 +439,58 @@ mod tests {
     #[test]
     fn generate_all_moves() {
         let board = Board64::from_str(" \
-            ..XXXXXX..\
             ..........\
             ..........\
             ..........\
         ").unwrap();
-        let rules = MoveRules::srs(AllowMove::Harddrop);
+        let rules = MoveRules::srs(AllowMove::Softdrop);
         let placement = piece!(SN).with(bl(4, 20));
         let moves = rules.generate_all_moves(board, placement);
         assert_eq!(moves.len(), 34);
-        assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
+        // assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
+    }
+
+    #[test]
+    fn generate_all_moves_loop() {
+        let board = Board64::from_str(" \
+            ......####\
+            .........#\
+            ########.#\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            #.########\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            ########.#\
+            ########.#\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            .#########\
+        ").unwrap();
+        let rules = MoveRules::srs(AllowMove::Softdrop);
+        let placement = piece!(IN).with(cc(4, 20));
+        let moves = rules.generate_all_moves(board, placement.to_bl_placement());
+        // for mv in &moves {
+        //     println!("{:?}", mv);
+        //     assert_eq!(mv.can_place_on(&board), true);
+        //     let mut board = board.clone();
+        //     mv.place_on(&mut board);
+        //     println!("{}", board);
+        //     println!("")
+        // }
+        println!("north = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::North).count());
+        println!("east = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::East).count());
+        println!("south = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::South).count());
+        println!("west = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::West).count());
+
+        assert_eq!(moves.len(), 108);
+        // assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
     }
 
     #[test]

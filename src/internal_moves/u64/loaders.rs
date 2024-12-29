@@ -1,29 +1,52 @@
 use crate::boards::Board64;
-use crate::internal_moves::u64::free::to_free_spaces;
+use crate::internal_moves::u64::free;
 use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Piece, Shape};
-use crate::placements::BlPlacement;
-use crate::{Rotation, RotationSystem};
+use crate::{Rotate, Rotation, RotationSystem, With};
+use crate::prelude::CcPlacement;
 
 // ブロックと空を反転して読み込み
-pub fn free_spaces_each_pieces(board: &Board64, shape: Shape) -> [FreeSpace64; 4] {
+#[inline(always)]
+pub fn to_free_spaces(board: &Board64, shape: Shape) -> [FreeSpace64; 4] {
     let free_space_block = FreeSpace64::new(board.cols.map(|col| !col));
-    to_free_spaces(free_space_block, shape)
+    free::to_free_spaces(free_space_block, shape)
 }
 
-pub fn spawn_and_harddrop_reachable(
-    spawn: BlPlacement,
+// ブロックと空を反転して読み込み
+#[inline(always)]
+pub fn to_free_space(board: &Board64, piece: Piece) -> FreeSpace64 {
+    let free_space_block = FreeSpace64::new(board.cols.map(|col| !col));
+    free::to_free_space(free_space_block, piece)
+}
+
+#[inline(always)]
+pub fn spawn_and_harddrop_reachables(
+    spawn: CcPlacement,
     free_spaces: &[FreeSpace64; 4],
 ) -> [Reachable64; 4] {
+    let orientation_index = spawn.piece.orientation as usize;
+
+    let mut reachables = [
+        Reachable64::blank(),
+        Reachable64::blank(),
+        Reachable64::blank(),
+        Reachable64::blank(),
+    ];
+    reachables[orientation_index] = spawn_and_harddrop_reachable(spawn, &free_spaces[orientation_index]);
+
+    reachables
+}
+
+#[inline(always)]
+pub fn spawn_and_harddrop_reachable(spawn: CcPlacement, free_space: &FreeSpace64) -> Reachable64 {
     // index
     let spawn_location = spawn.position.to_location();
-    let orientation_index = spawn.piece.orientation as usize;
     let spawn_x = spawn_location.x as usize;
 
     // boards
     let mut spawn_reachable = Reachable64::blank();
-    let spawn_free_space = free_spaces[orientation_index].cols;
+    let spawn_free_space = free_space.cols;
 
     // a spawn bit
     let spawn_bit = 1u64 << spawn_location.y;
@@ -60,18 +83,10 @@ pub fn spawn_and_harddrop_reachable(
             spawn_reachable.cols[x] = spawn_bit | reachable;
         }
     }
-
-    let mut reachables = [
-        Reachable64::blank(),
-        Reachable64::blank(),
-        Reachable64::blank(),
-        Reachable64::blank(),
-    ];
-    reachables[orientation_index] = spawn_reachable;
-
-    reachables
+    spawn_reachable
 }
 
+#[inline(always)]
 pub fn rotate(
     rotation_system: &impl RotationSystem,
     rotation: Rotation,
@@ -151,7 +166,7 @@ mod tests {
         )
         .unwrap();
 
-        let free_spaces = free_spaces_each_pieces(&board, from_piece.shape);
+        let free_spaces = to_free_spaces(&board, from_piece.shape);
         println!("{}", Board64::from(&free_spaces[0]));
 
         let src_reachable = Reachable64 {
