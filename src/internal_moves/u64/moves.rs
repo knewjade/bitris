@@ -3,7 +3,7 @@ use std::ops::{Not, Shl, Shr};
 
 use crate::boards::Board;
 use crate::coordinates::{bl, BlPosition, Offset};
-use crate::internal_moves::u64::loaders::{free_spaces_each_pieces, rotate, spawn_reachable};
+use crate::internal_moves::u64::loaders::{free_spaces_each_pieces, rotate, spawn_and_harddrop_reachable};
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Orientation, Piece, Shape};
 use crate::placements::BlPlacement;
@@ -571,7 +571,7 @@ pub(crate) fn all_moves_softdrop(
     spawn: BlPlacement,
 ) -> Moves {
     let mut free_spaces = free_spaces_each_pieces(board, spawn.piece.shape);
-    let mut reachables = spawn_reachable(spawn);
+    let mut reachables = spawn_and_harddrop_reachable(spawn, &free_spaces);
 
     const ORIENTATIONS_ORDER: [Orientation; 4] = [
         Orientation::North,

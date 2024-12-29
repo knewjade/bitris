@@ -12,16 +12,29 @@ pub fn free_spaces_each_pieces(board: &Board64, shape: Shape) -> [FreeSpace64; 4
     to_free_spaces(free_space_block, shape)
 }
 
-pub fn spawn_reachable(spawn: BlPlacement) -> [Reachable64; 4] {
+pub fn spawn_and_harddrop_reachable(
+    spawn: BlPlacement,
+    free_spaces: &[FreeSpace64; 4],
+) -> [Reachable64; 4] {
     let mut reachables = [
         Reachable64::blank(),
         Reachable64::blank(),
         Reachable64::blank(),
         Reachable64::blank(),
     ];
-    let index = spawn.piece.orientation as usize;
     let location = spawn.position.to_location();
-    reachables[index] = reachables[index].clone().set_at(location);
+    let orientation_index = spawn.piece.orientation as usize;
+    let column_index = location.x as usize;
+
+    // harddrop from spawn position
+    let spawn_column = 1u64 << location.y;
+    let free_space = free_spaces[orientation_index].cols[column_index];
+    let harddrop_dest_y = 64 - (!free_space).leading_zeros();
+    if harddrop_dest_y < location.y as u32 {
+        let ok = (spawn_column - 1) - ((1 << harddrop_dest_y) - 1);
+        reachables[orientation_index].cols[column_index] = spawn_column | ok;
+    }
+
     reachables
 }
 
