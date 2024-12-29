@@ -20,7 +20,7 @@ pub(crate) fn search_with_rotation(
         Orientation::West,
     ];
 
-    let mut needs_update: u8 = 1 << spawn.orientation() as usize;
+    let mut needs_update: u8 = 0b1111;
 
     let mut left = [true; 4];
     let mut current_index: usize = spawn.orientation() as usize;
@@ -42,7 +42,7 @@ pub(crate) fn search_with_rotation(
         loop {
             left[src_index] = !left[src_index];
 
-            // println!("  move");
+            // println!("  move, left {}", left[src_index]);
             let reachable = reachables[src_index].clone();
             let reachable = reachable.move_n(&free_spaces[src_index], left[src_index]);
 
@@ -118,7 +118,7 @@ pub fn all_moves_softdrop_with_rotation(
 ) -> Moves4 {
     let spawn = spawn.to_cc_placement();
     let free_spaces = to_free_spaces(board, spawn.piece.shape);
-    let reachables = spawn_and_harddrop_reachables(spawn, &free_spaces);
+    let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
     let reachables = search_with_rotation(rotation_system, spawn, reachables, &free_spaces);
 
     // landed

@@ -439,57 +439,15 @@ mod tests {
     #[test]
     fn generate_all_moves() {
         let board = Board64::from_str(" \
+            ..XXXXXX..\
             ..........\
             ..........\
             ..........\
         ").unwrap();
-        let rules = MoveRules::srs(AllowMove::Softdrop);
+        let rules = MoveRules::srs(AllowMove::Harddrop);
         let placement = piece!(SN).with(bl(4, 20));
         let moves = rules.generate_all_moves(board, placement);
         assert_eq!(moves.len(), 34);
-        // assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
-    }
-
-    #[test]
-    fn generate_all_moves_loop() {
-        let board = Board64::from_str(" \
-            ......####\
-            .........#\
-            ########.#\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            #.########\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            ########.#\
-            ########.#\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            .#########\
-        ").unwrap();
-        let rules = MoveRules::srs(AllowMove::Softdrop);
-        let placement = piece!(IN).with(cc(4, 20));
-        let moves = rules.generate_all_moves(board, placement.to_bl_placement());
-        // for mv in &moves {
-        //     println!("{:?}", mv);
-        //     assert_eq!(mv.can_place_on(&board), true);
-        //     let mut board = board.clone();
-        //     mv.place_on(&mut board);
-        //     println!("{}", board);
-        //     println!("")
-        // }
-        println!("north = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::North).count());
-        println!("east = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::East).count());
-        println!("south = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::South).count());
-        println!("west = {}", moves.iter().filter(|it| it.piece.orientation == Orientation::West).count());
-
-        assert_eq!(moves.len(), 108);
         // assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
     }
 

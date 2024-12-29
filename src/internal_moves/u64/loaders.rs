@@ -22,20 +22,50 @@ pub fn to_free_space(board: &Board64, piece: Piece) -> FreeSpace64 {
 
 #[inline(always)]
 pub fn spawn_and_harddrop_reachables(
+    rotation_system: &impl RotationSystem,
     spawn: CcPlacement,
     free_spaces: &[FreeSpace64; 4],
 ) -> [Reachable64; 4] {
-    let orientation_index = spawn.piece.orientation as usize;
+    let mut placements = [None; 4];
 
-    let mut reachables = [
-        Reachable64::blank(),
-        Reachable64::blank(),
-        Reachable64::blank(),
-        Reachable64::blank(),
-    ];
-    reachables[orientation_index] = spawn_and_harddrop_reachable(spawn, &free_spaces[orientation_index]);
+    // spawn
+    placements[spawn.piece.orientation as usize] = Some(spawn);
 
-    reachables
+    // cw
+    for rotation in [Rotation::Cw, Rotation::Ccw] {
+        let mut prev = spawn;
+        for _ in 0..3 {
+            let current_piece = prev.piece.rotate(rotation);
+            let orientation_index = current_piece.orientation as usize;
+
+            if placements[orientation_index].is_some() {
+                break
+            }
+
+            // use first kick
+            let offset = rotation_system.iter_kicks(prev.piece, rotation)
+                .next()
+                .unwrap()
+                .offset;
+            let current_position = prev.position + offset;
+            if !free_spaces[orientation_index].is_free_space(current_position.to_location()) {
+                break
+            }
+
+            let current = current_piece.with(current_position);
+            placements[orientation_index] = Some(current);
+            prev = current;
+        }
+    }
+
+    let mut index = 0;
+    placements.map(|placement| {
+        let reachable = placement
+            .map(|p| spawn_and_harddrop_reachable(p, &free_spaces[index]))
+            .unwrap_or_else(|| Reachable64::blank());
+        index += 1;
+        reachable
+    })
 }
 
 #[inline(always)]
