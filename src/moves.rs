@@ -51,18 +51,19 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
                         self.rotation_system, &board.into(), spawn.into(),
                     ).vec()
                 } else {
-                    softdrop::all_moves_softdrop_no_rotation(&board.into(), spawn.into(),
+                    softdrop::all_moves_softdrop_no_rotation(
+                        &board.into(), spawn.into(),
                     ).vec()
                 }
             }
             AllowMove::Harddrop => {
                 if is_moving_in_rotation {
-                    harddrop::all_moves_harddrop_rotation(
+                    harddrop::all_moves_harddrop_with_rotation(
                         self.rotation_system, &board.into(), spawn.into(),
                     ).vec()
                 } else {
                     harddrop::all_moves_harddrop_no_rotation(
-                        self.rotation_system, &board.into(), spawn.into(),
+                        &board.into(), spawn.into(),
                     ).vec()
                 }
             }
@@ -447,7 +448,7 @@ mod tests {
         let placement = piece!(SN).with(bl(4, 20));
         let moves = rules.generate_all_moves(board, placement);
         assert_eq!(moves.len(), 34);
-        // assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
+        assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 4);
     }
 
     #[test]

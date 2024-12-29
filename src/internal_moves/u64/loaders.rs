@@ -31,7 +31,7 @@ pub fn spawn_and_harddrop_reachables(
     // spawn
     placements[spawn.piece.orientation as usize] = Some(spawn);
 
-    // cw
+    // rotate
     for rotation in [Rotation::Cw, Rotation::Ccw] {
         let mut prev = spawn;
         for _ in 0..3 {
