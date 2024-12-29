@@ -2,9 +2,8 @@ use crate::boards::Board64;
 use crate::internal_moves::u64::free;
 use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::reachable::Reachable64;
-use crate::pieces::{Piece, Shape};
+use crate::pieces::{Orientation, Piece, Shape};
 use crate::{Rotate, Rotation, RotationSystem, With};
-use crate::internal_moves::u64::moves::ReachablePieceBoards;
 use crate::prelude::CcPlacement;
 
 // ブロックと空を反転して読み込み
@@ -174,4 +173,19 @@ pub fn minimize(reachables: [Reachable64; 4], shape: Shape) -> [Reachable64; 4] 
         }
     }
     reachables
+}
+
+pub fn can_reach4(reachables: &[Reachable64; 4], goals: &[CcPlacement]) -> bool {
+    goals
+        .iter()
+        .any(|&goal_placement| {
+            let orientation_index = goal_placement.piece.orientation as usize;
+            let location = goal_placement.position.to_location();
+            reachables[orientation_index].is_visited(location)
+        })
+}
+
+pub fn can_reach1(reachable: &Reachable64, goal: CcPlacement) -> bool {
+    let location = goal.position.to_location();
+    reachable.is_visited(location)
 }
