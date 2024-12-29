@@ -28,6 +28,9 @@ pub fn spawn_and_harddrop_reachable(
     // a spawn bit
     let spawn_bit = 1u64 << spawn_location.y;
 
+    // 1-mask over spawn y
+    let mask = u64::MAX - ((1u64 << (spawn_location.y + 1)) - 1);
+
     // left
     for x in (0..spawn_x).rev() {
         let free_space = spawn_free_space[x];
@@ -36,7 +39,7 @@ pub fn spawn_and_harddrop_reachable(
         }
 
         // harddrop
-        let harddrop_dest_y = 64 - (!free_space).leading_zeros();
+        let harddrop_dest_y = 64 - (!(free_space | mask)).leading_zeros();
         if harddrop_dest_y < spawn_location.y as u32 {
             let reachable = (spawn_bit - 1) - ((1 << harddrop_dest_y) - 1);
             spawn_reachable.cols[x] = spawn_bit | reachable;
@@ -51,7 +54,7 @@ pub fn spawn_and_harddrop_reachable(
         }
 
         // harddrop
-        let harddrop_dest_y = 64 - (!free_space).leading_zeros();
+        let harddrop_dest_y = 64 - (!(free_space | mask)).leading_zeros();
         if harddrop_dest_y < spawn_location.y as u32 {
             let reachable = (spawn_bit - 1) - ((1 << harddrop_dest_y) - 1);
             spawn_reachable.cols[x] = spawn_bit | reachable;
@@ -102,4 +105,70 @@ pub fn rotate(
     }
 
     dest_reachable
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pieces::{Orientation, Shape};
+    use crate::srs::SrsKickTable;
+    use crate::{
+        boards::Board64,
+        internal_moves::u64::reachable::Reachable64, pieces::Piece, Rotate, Rotation,
+    };
+    use std::str::FromStr;
+
+    #[test]
+    fn test_rotate() {
+        let rotation_system = SrsKickTable;
+        let from_piece = Piece {
+            shape: Shape::I,
+            orientation: Orientation::North,
+        };
+
+        let board = Board64::from_str(
+            " \
+            ......####\
+            .........#\
+            ########.#\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            #.########\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            ########.#\
+            ########.#\
+            #........#\
+            #.######.#\
+            #.######.#\
+            #........#\
+            .#########\
+        ",
+        )
+        .unwrap();
+
+        let free_spaces = free_spaces_each_pieces(&board, from_piece.shape);
+        println!("{}", Board64::from(&free_spaces[0]));
+
+        let src_reachable = Reachable64 {
+            cols: [0, 0, 1 << 12, 0, 0, 0, 0, 0, 0, 0],
+        };
+
+        let result = rotate(
+            &rotation_system,
+            Rotation::Cw,
+            from_piece,
+            &src_reachable,
+            &free_spaces[from_piece.cw().orientation as usize],
+        );
+
+        let expected_result = Reachable64 {
+            cols: [0, 1 << 12, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        assert_eq!(result, expected_result);
+    }
 }

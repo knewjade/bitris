@@ -1,8 +1,8 @@
 /** This file is for internal */
 use std::ops::{Not, Shl, Shr};
 
-use crate::boards::Board;
-use crate::coordinates::{bl, BlPosition, Offset};
+use crate::boards::{Board, Board64};
+use crate::coordinates::{bl, cc, BlPosition, Offset};
 use crate::internal_moves::u64::loaders::{free_spaces_each_pieces, rotate, spawn_and_harddrop_reachable};
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Orientation, Piece, Shape};
@@ -555,7 +555,7 @@ impl Moves {
                 let mut col = cols[lx];
                 while 0 < col {
                     let by = col.trailing_zeros();
-                    out.push(piece.with(bl(lx as i32, by as i32)));
+                    out.push(piece.with(cc(lx as i32, by as i32)).to_bl_placement());
                     col -= 1u64 << by;
                 }
             }
@@ -652,9 +652,9 @@ pub(crate) fn all_moves_softdrop(
     // landed
     let mut index = 0;
     let reachables = reachables.map(|reachable| {
-        let r = reachable.land(&free_spaces[index]);
+        let candidate = reachable.land(&free_spaces[index]);
         index += 1;
-        r
+        candidate
     });
 
     Moves { spawn, reachables }

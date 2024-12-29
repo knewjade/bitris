@@ -52,22 +52,6 @@ pub fn to_free_spaces(free_space_block: FreeSpace64, shape: Shape) -> [FreeSpace
 
 #[inline(always)]
 fn t_north(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<1, 0, 0, 0>()
-        .and(space.clone())
-        .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.shift::<0, 0, 0, 1>())
-}
-
-#[inline(always)]
-fn t_east(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 0, 0, 1>()
-        .and(space.clone())
-        .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.shift::<0, 1, 0, 0>())
-}
-
-#[inline(always)]
-fn t_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 1, 0, 0>()
         .and(space.clone())
         .and(space.clone().shift::<1, 0, 0, 0>())
@@ -75,7 +59,7 @@ fn t_south(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn t_west(space: FreeSpace64) -> FreeSpace64 {
+fn t_east(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 0, 1, 0>()
         .and(space.clone())
         .and(space.clone().shift::<0, 0, 0, 1>())
@@ -83,23 +67,23 @@ fn t_west(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn i_north(space: FreeSpace64) -> FreeSpace64 {
+fn t_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<1, 0, 0, 0>()
         .and(space.clone())
         .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.shift::<0, 2, 0, 0>())
+        .and(space.shift::<0, 0, 0, 1>())
 }
 
 #[inline(always)]
-fn i_east(space: FreeSpace64) -> FreeSpace64 {
+fn t_west(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 0, 0, 1>()
         .and(space.clone())
         .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.shift::<0, 0, 2, 0>())
+        .and(space.shift::<0, 1, 0, 0>())
 }
 
 #[inline(always)]
-fn i_south(space: FreeSpace64) -> FreeSpace64 {
+fn i_north(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 1, 0, 0>()
         .and(space.clone())
         .and(space.clone().shift::<1, 0, 0, 0>())
@@ -107,7 +91,7 @@ fn i_south(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn i_west(space: FreeSpace64) -> FreeSpace64 {
+fn i_east(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 0, 1, 0>()
         .and(space.clone())
         .and(space.clone().shift::<0, 0, 0, 1>())
@@ -115,63 +99,63 @@ fn i_west(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
+fn i_south(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<1, 0, 0, 0>()
+        .and(space.clone())
+        .and(space.clone().shift::<0, 1, 0, 0>())
+        .and(space.shift::<0, 2, 0, 0>())
+}
+
+#[inline(always)]
+fn i_west(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 0, 0, 1>()
+        .and(space.clone())
+        .and(space.clone().shift::<0, 0, 1, 0>())
+        .and(space.shift::<0, 0, 2, 0>())
+}
+
+#[inline(always)]
 fn o_north(space: FreeSpace64) -> FreeSpace64 {
     space.clone()
-        .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.clone().shift::<0, 0, 0, 1>())
-        .and(space.shift::<0, 1, 0, 1>())
+        .and(space.clone().shift::<1, 0, 0, 0>())
+        .and(space.clone().shift::<0, 0, 1, 0>())
+        .and(space.shift::<1, 0, 1, 0>())
 }
 
 #[inline(always)]
 fn o_east(space: FreeSpace64) -> FreeSpace64 {
     space.clone()
-        .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.shift::<0, 1, 1, 0>())
+        .and(space.clone().shift::<0, 0, 0, 1>())
+        .and(space.clone().shift::<1, 0, 0, 0>())
+        .and(space.shift::<1, 0, 0, 1>())
 }
 
 #[inline(always)]
 fn o_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone()
-        .and(space.clone().shift::<1, 0, 0, 0>())
-        .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.shift::<1, 0, 1, 0>())
+        .and(space.clone().shift::<0, 1, 0, 0>())
+        .and(space.clone().shift::<0, 0, 0, 1>())
+        .and(space.shift::<0, 1, 0, 1>())
 }
 
 #[inline(always)]
 fn o_west(space: FreeSpace64) -> FreeSpace64 {
     space.clone()
-        .and(space.clone().shift::<0, 0, 0, 1>())
-        .and(space.clone().shift::<1, 0, 0, 0>())
-        .and(space.shift::<1, 0, 0, 1>())
+        .and(space.clone().shift::<0, 0, 1, 0>())
+        .and(space.clone().shift::<0, 1, 0, 0>())
+        .and(space.shift::<0, 1, 1, 0>())
 }
 
 #[inline(always)]
 fn l_north(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<1, 0, 0, 0>()
+    space.clone().shift::<0, 1, 0, 0>()
         .and(space.clone())
-        .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.shift::<0, 1, 0, 1>())
+        .and(space.clone().shift::<1, 0, 0, 0>())
+        .and(space.shift::<1, 0, 1, 0>())
 }
 
 #[inline(always)]
 fn l_east(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 0, 0, 1>()
-        .and(space.clone())
-        .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.shift::<0, 1, 1, 0>())
-}
-
-#[inline(always)]
-fn l_south(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 1, 0, 0>()
-        .and(space.clone())
-        .and(space.clone().shift::<1, 0, 0, 0>())
-        .and(space.shift::<1, 0, 1, 0>())
-}
-
-#[inline(always)]
-fn l_west(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 0, 1, 0>()
         .and(space.clone())
         .and(space.clone().shift::<0, 0, 0, 1>())
@@ -179,23 +163,23 @@ fn l_west(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
+fn l_south(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<1, 0, 0, 0>()
+        .and(space.clone())
+        .and(space.clone().shift::<0, 1, 0, 0>())
+        .and(space.shift::<0, 1, 0, 1>())
+}
+
+#[inline(always)]
+fn l_west(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 0, 0, 1>()
+        .and(space.clone())
+        .and(space.clone().shift::<0, 0, 1, 0>())
+        .and(space.shift::<0, 1, 1, 0>())
+}
+
+#[inline(always)]
 fn j_north(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<1, 0, 0, 1>()
-        .and(space.clone().shift::<1, 0, 0, 0>())
-        .and(space.clone())
-        .and(space.shift::<0, 1, 0, 0>())
-}
-
-#[inline(always)]
-fn j_east(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 1, 0, 1>()
-        .and(space.clone().shift::<0, 0, 0, 1>())
-        .and(space.clone())
-        .and(space.shift::<0, 0, 1, 0>())
-}
-
-#[inline(always)]
-fn j_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 1, 1, 0>()
         .and(space.clone().shift::<0, 1, 0, 0>())
         .and(space.clone())
@@ -203,7 +187,7 @@ fn j_south(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn j_west(space: FreeSpace64) -> FreeSpace64 {
+fn j_east(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<1, 0, 1, 0>()
         .and(space.clone().shift::<0, 0, 1, 0>())
         .and(space.clone())
@@ -211,7 +195,39 @@ fn j_west(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
+fn j_south(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<1, 0, 0, 1>()
+        .and(space.clone().shift::<1, 0, 0, 0>())
+        .and(space.clone())
+        .and(space.shift::<0, 1, 0, 0>())
+}
+
+#[inline(always)]
+fn j_west(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 1, 0, 1>()
+        .and(space.clone().shift::<0, 0, 0, 1>())
+        .and(space.clone())
+        .and(space.shift::<0, 0, 1, 0>())
+}
+
+#[inline(always)]
 fn s_north(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 1, 0, 0>()
+        .and(space.clone())
+        .and(space.clone().shift::<0, 0, 1, 0>())
+        .and(space.shift::<1, 0, 1, 0>())
+}
+
+#[inline(always)]
+fn s_east(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 0, 1, 0>()
+        .and(space.clone())
+        .and(space.clone().shift::<1, 0, 0, 0>())
+        .and(space.shift::<1, 0, 0, 1>())
+}
+
+#[inline(always)]
+fn s_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<1, 0, 0, 0>()
         .and(space.clone())
         .and(space.clone().shift::<0, 0, 0, 1>())
@@ -219,7 +235,7 @@ fn s_north(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn s_east(space: FreeSpace64) -> FreeSpace64 {
+fn s_west(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 0, 0, 1>()
         .and(space.clone())
         .and(space.clone().shift::<0, 1, 0, 0>())
@@ -227,39 +243,7 @@ fn s_east(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn s_south(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 1, 0, 0>()
-        .and(space.clone())
-        .and(space.clone().shift::<0, 0, 1, 0>())
-        .and(space.shift::<1, 0, 1, 0>())
-}
-
-#[inline(always)]
-fn s_west(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 0, 1, 0>()
-        .and(space.clone())
-        .and(space.clone().shift::<1, 0, 0, 0>())
-        .and(space.shift::<1, 0, 0, 1>())
-}
-
-#[inline(always)]
 fn z_north(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<1, 0, 0, 1>()
-        .and(space.clone().shift::<0, 0, 0, 1>())
-        .and(space.clone())
-        .and(space.shift::<0, 1, 0, 0>())
-}
-
-#[inline(always)]
-fn z_east(space: FreeSpace64) -> FreeSpace64 {
-    space.clone().shift::<0, 1, 0, 1>()
-        .and(space.clone().shift::<0, 1, 0, 0>())
-        .and(space.clone())
-        .and(space.shift::<0, 0, 1, 0>())
-}
-
-#[inline(always)]
-fn z_south(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<0, 1, 1, 0>()
         .and(space.clone().shift::<0, 0, 1, 0>())
         .and(space.clone())
@@ -267,9 +251,25 @@ fn z_south(space: FreeSpace64) -> FreeSpace64 {
 }
 
 #[inline(always)]
-fn z_west(space: FreeSpace64) -> FreeSpace64 {
+fn z_east(space: FreeSpace64) -> FreeSpace64 {
     space.clone().shift::<1, 0, 1, 0>()
         .and(space.clone().shift::<1, 0, 0, 0>())
         .and(space.clone())
         .and(space.shift::<0, 0, 0, 1>())
+}
+
+#[inline(always)]
+fn z_south(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<1, 0, 0, 1>()
+        .and(space.clone().shift::<0, 0, 0, 1>())
+        .and(space.clone())
+        .and(space.shift::<0, 1, 0, 0>())
+}
+
+#[inline(always)]
+fn z_west(space: FreeSpace64) -> FreeSpace64 {
+    space.clone().shift::<0, 1, 0, 1>()
+        .and(space.clone().shift::<0, 1, 0, 0>())
+        .and(space.clone())
+        .and(space.shift::<0, 0, 1, 0>())
 }

@@ -95,9 +95,9 @@ fn format_offset(offset: Offset) -> String {
     let mut line = String::with_capacity(16);
 
     if 0 < offset.dx {
-        line.push_str(format!("{}, {}", 0, offset.dx).as_str());
+        line.push_str(format!("{}, {}", offset.dx, 0).as_str());
     } else if offset.dx < 0 {
-        line.push_str(format!("{}, {}", -offset.dx, 0).as_str());
+        line.push_str(format!("{}, {}", 0, -offset.dx).as_str());
     } else {
         line.push_str("0, 0");
     }
@@ -105,9 +105,9 @@ fn format_offset(offset: Offset) -> String {
     line.push_str(", ");
 
     if 0 < offset.dy {
-        line.push_str(format!("{}, {}", 0, offset.dy).as_str());
+        line.push_str(format!("{}, {}", offset.dy, 0).as_str());
     } else if offset.dy < 0 {
-        line.push_str(format!("{}, {}", -offset.dy, 0).as_str());
+        line.push_str(format!("{}, {}", 0, -offset.dy).as_str());
     } else {
         line.push_str("0, 0");
     }
