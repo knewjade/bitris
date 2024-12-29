@@ -1,8 +1,8 @@
-pub mod moves;
-pub mod softdrop;
-pub mod harddrop;
+mod free;
 mod free_space;
+pub mod harddrop;
+mod loaders;
+pub mod moves;
 mod opu64;
 mod reachable;
-mod loaders;
-mod free;
+pub mod softdrop;

@@ -76,7 +76,6 @@ pub mod tr_ops {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;

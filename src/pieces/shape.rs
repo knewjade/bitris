@@ -16,7 +16,8 @@ use crate::With;
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum Shape {
-    #[default] T = 0,
+    #[default]
+    T = 0,
     I = 1,
     O = 2,
     L = 3,
@@ -26,7 +27,15 @@ pub enum Shape {
 }
 
 impl Shape {
-    const VALUES: [Shape; 7] = [Shape::T, Shape::I, Shape::O, Shape::L, Shape::J, Shape::S, Shape::Z];
+    const VALUES: [Shape; 7] = [
+        Shape::T,
+        Shape::I,
+        Shape::O,
+        Shape::L,
+        Shape::J,
+        Shape::S,
+        Shape::Z,
+    ];
 
     /// ```
     /// use bitris::prelude::*;
@@ -41,7 +50,7 @@ impl Shape {
     /// assert_eq!(None, iter.next());
     /// ```
     #[inline]
-    pub fn all_iter() -> impl Iterator<Item=Shape> {
+    pub fn all_iter() -> impl Iterator<Item = Shape> {
         Self::VALUES.into_iter()
     }
 
@@ -58,7 +67,7 @@ impl Shape {
     /// assert_eq!(Shape::O.canonical_pieces_iter().collect::<Vec<Piece>>(), vec![Shape::O.with(North)]);
     /// ```
     #[inline]
-    pub fn canonical_pieces_iter(self) -> impl Iterator<Item=Piece> {
+    pub fn canonical_pieces_iter(self) -> impl Iterator<Item = Piece> {
         use Orientation::*;
         let slice: &[Orientation] = match self {
             Shape::T | Shape::L | Shape::J => &[North, East, South, West],
@@ -81,7 +90,7 @@ impl Shape {
     /// assert_eq!(Shape::O.no_canonical_pieces_iter().collect::<Vec<Piece>>(), vec![Shape::O.with(East), Shape::O.with(South), Shape::O.with(West)]);
     /// ```
     #[inline]
-    pub fn no_canonical_pieces_iter(self) -> impl Iterator<Item=Piece> {
+    pub fn no_canonical_pieces_iter(self) -> impl Iterator<Item = Piece> {
         use Orientation::*;
         let slice: &[Orientation] = match self {
             Shape::T | Shape::L | Shape::J => &[],
@@ -103,7 +112,7 @@ impl Shape {
     /// );
     /// ```
     #[inline]
-    pub fn all_pieces_iter(self) -> impl Iterator<Item=Piece> {
+    pub fn all_pieces_iter(self) -> impl Iterator<Item = Piece> {
         Orientation::all_iter().map(move |orientation| self.with(orientation))
     }
 }
@@ -145,7 +154,6 @@ impl TryFrom<usize> for Shape {
 }
 
 enum_display! { Shape, has T,I,O,L,J,S,Z }
-
 
 #[cfg(test)]
 mod tests {

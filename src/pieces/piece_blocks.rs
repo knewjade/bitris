@@ -2,10 +2,10 @@ use std::cmp;
 
 use tinyvec::ArrayVec;
 
-use crate::{Rotate, Rotation};
-use crate::coordinates::{bl, BlPosition, cc, CcPosition, dd, Location, Offset, tr, TrPosition};
+use crate::coordinates::{bl, cc, dd, tr, BlPosition, CcPosition, Location, Offset, TrPosition};
 use crate::internal_macros::add_member_for_from;
 use crate::pieces::{Orientation, Piece, Shape};
+use crate::{Rotate, Rotation};
 
 /// The offsets of blocks that make up a piece. Usually, you should obtain it from `PieceBlocksFactory`.
 ///
@@ -142,7 +142,9 @@ impl PieceBlocks {
     #[inline]
     pub fn touching_offsets(&self) -> ArrayVec<[Offset; 4]> {
         let lx = self.bottom_left.dx;
-        let min_dys = self.offsets.iter()
+        let min_dys = self
+            .offsets
+            .iter()
             .fold([i32::MAX; 4], |mut min_dys, offset| {
                 let index = (offset.dx - lx) as usize;
                 min_dys[index] = cmp::min(offset.dy, min_dys[index]);
@@ -225,7 +227,8 @@ impl ToBlPosition<PieceBlocks> for TrPosition {
     /// ```
     #[inline]
     fn to_bl_position(&self, piece_blocks: &PieceBlocks) -> BlPosition {
-        self.to_cc_position(piece_blocks).to_bl_position(piece_blocks)
+        self.to_cc_position(piece_blocks)
+            .to_bl_position(piece_blocks)
     }
 }
 
@@ -259,7 +262,8 @@ impl ToTrPosition<PieceBlocks> for BlPosition {
     /// ```
     #[inline]
     fn to_tr_position(&self, piece_blocks: &PieceBlocks) -> TrPosition {
-        self.to_cc_position(piece_blocks).to_tr_position(piece_blocks)
+        self.to_cc_position(piece_blocks)
+            .to_tr_position(piece_blocks)
     }
 }
 
@@ -310,7 +314,6 @@ impl From<Piece> for PieceBlocks {
         Self::new(piece)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

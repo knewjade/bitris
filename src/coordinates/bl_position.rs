@@ -37,7 +37,10 @@ impl ops::Add<Offset> for BlPosition {
     type Output = BlPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        BlPosition { lx: self.lx + rhs.dx, by: self.by + rhs.dy }
+        BlPosition {
+            lx: self.lx + rhs.dx,
+            by: self.by + rhs.dy,
+        }
     }
 }
 
@@ -66,7 +69,6 @@ add_member_for_from!(Location, to_location, to BlPosition);
 pub const fn bl(lx: i32, by: i32) -> BlPosition {
     BlPosition { lx, by }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -1,10 +1,10 @@
 use std::fmt;
 
-use crate::{Rotate, Rotation, With};
 use crate::coordinates::{BlPosition, CcPosition, TrPosition};
 use crate::internal_macros::forward_ref_from;
 use crate::pieces::{Orientation, PieceBlocks, PieceBlocksFactory, Shape};
 use crate::placements::{BlPlacement, CcPlacement, TrPlacement};
+use crate::{Rotate, Rotation, With};
 
 /// It has shape and orientation as a piece.
 /// ```
@@ -98,15 +98,30 @@ impl Piece {
             Shape::T | Shape::L | Shape::J => None,
             Shape::I | Shape::S | Shape::Z => match self.orientation {
                 North => None,
-                South => Some(Piece { shape: self.shape, orientation: North }),
+                South => Some(Piece {
+                    shape: self.shape,
+                    orientation: North,
+                }),
                 East => None,
-                West => Some(Piece { shape: self.shape, orientation: East }),
+                West => Some(Piece {
+                    shape: self.shape,
+                    orientation: East,
+                }),
             },
             Shape::O => match self.orientation {
                 North => None,
-                South => Some(Piece { shape: self.shape, orientation: North }),
-                East => Some(Piece { shape: self.shape, orientation: North }),
-                West => Some(Piece { shape: self.shape, orientation: North }),
+                South => Some(Piece {
+                    shape: self.shape,
+                    orientation: North,
+                }),
+                East => Some(Piece {
+                    shape: self.shape,
+                    orientation: North,
+                }),
+                West => Some(Piece {
+                    shape: self.shape,
+                    orientation: North,
+                }),
             },
         }
     }
@@ -208,9 +223,10 @@ impl Piece {
     /// assert_eq!(vec.len(), 4 * 7);
     /// ```
     #[inline]
-    pub fn all_iter() -> impl Iterator<Item=Piece> {
-        Shape::all_iter()
-            .flat_map(|shape| Orientation::all_iter().map(move |orientation| shape.with(orientation)))
+    pub fn all_iter() -> impl Iterator<Item = Piece> {
+        Shape::all_iter().flat_map(|shape| {
+            Orientation::all_iter().map(move |orientation| shape.with(orientation))
+        })
     }
 }
 
@@ -260,7 +276,6 @@ impl From<&PieceBlocks> for Piece {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -272,7 +287,10 @@ mod tests {
     fn string() {
         assert_eq!(String::from("T-North"), piece!(TN).to_string());
         assert_eq!(String::from("O-East"), format!("{}", piece!(OE)));
-        assert_eq!(String::from("Piece { shape: Z, orientation: West }"), format!("{:?}", piece!(ZW)));
+        assert_eq!(
+            String::from("Piece { shape: Z, orientation: West }"),
+            format!("{:?}", piece!(ZW))
+        );
     }
 
     #[rstest]
@@ -295,8 +313,14 @@ mod tests {
         use Orientation::*;
         assert_eq!(Piece::new(shape, North).canonical(), None);
         assert_eq!(Piece::new(shape, East).canonical(), None);
-        assert_eq!(Piece::new(shape, South).canonical(), Some(Piece::new(shape, North)));
-        assert_eq!(Piece::new(shape, West).canonical(), Some(Piece::new(shape, East)));
+        assert_eq!(
+            Piece::new(shape, South).canonical(),
+            Some(Piece::new(shape, North))
+        );
+        assert_eq!(
+            Piece::new(shape, West).canonical(),
+            Some(Piece::new(shape, East))
+        );
     }
 
     #[rstest]
@@ -304,9 +328,18 @@ mod tests {
     fn piece_canonical_360(#[case] shape: Shape) {
         use Orientation::*;
         assert_eq!(Piece::new(shape, North).canonical(), None);
-        assert_eq!(Piece::new(shape, East).canonical(), Some(Piece::new(shape, North)));
-        assert_eq!(Piece::new(shape, South).canonical(), Some(Piece::new(shape, North)));
-        assert_eq!(Piece::new(shape, West).canonical(), Some(Piece::new(shape, North)));
+        assert_eq!(
+            Piece::new(shape, East).canonical(),
+            Some(Piece::new(shape, North))
+        );
+        assert_eq!(
+            Piece::new(shape, South).canonical(),
+            Some(Piece::new(shape, North))
+        );
+        assert_eq!(
+            Piece::new(shape, West).canonical(),
+            Some(Piece::new(shape, North))
+        );
     }
 
     #[test]

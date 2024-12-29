@@ -7,21 +7,8 @@ pub use traits::*;
 
 #[doc(hidden)]
 pub mod prelude {
-    pub use crate::{
-        enums::*,
-        kicks::*,
-        moves::*,
-        order::*,
-        rotation::*,
-        traits::*,
-    };
-    pub use crate::{
-        boards::*,
-        coordinates::*,
-        pieces::*,
-        placements::*,
-        srs::SrsKickTable,
-    };
+    pub use crate::{boards::*, coordinates::*, pieces::*, placements::*, srs::SrsKickTable};
+    pub use crate::{enums::*, kicks::*, moves::*, order::*, rotation::*, traits::*};
 }
 
 // Exposed modules
@@ -32,9 +19,9 @@ pub mod pieces;
 pub mod placements;
 
 // Internals
+mod enums;
 mod internal_macros;
 mod internal_moves;
-mod enums;
 mod kicks;
 mod moves;
 mod order;

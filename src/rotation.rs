@@ -35,7 +35,8 @@ enum_display! { Rotation, has Cw,Ccw,R180 }
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum Rotation {
-    #[default] Cw = 0,
+    #[default]
+    Cw = 0,
     Ccw = 1,
     R180 = 2,
 }
@@ -52,11 +53,10 @@ impl Rotation {
     /// assert_eq!(None, iter.next());
     /// ```
     #[inline]
-    pub fn all_iter() -> impl Iterator<Item=Rotation> {
+    pub fn all_iter() -> impl Iterator<Item = Rotation> {
         Self::VALUES.into_iter()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

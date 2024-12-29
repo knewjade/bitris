@@ -97,7 +97,7 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }
@@ -111,7 +111,7 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }
@@ -124,7 +124,7 @@ pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }
@@ -145,7 +145,7 @@ pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }
@@ -159,7 +159,7 @@ pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }
@@ -172,7 +172,7 @@ pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         loop {
             let d = (data[index] | (data[index] >> 1)) & free_space[index];
             if d == data[index] {
-                break
+                break;
             }
             data[index] = d;
         }

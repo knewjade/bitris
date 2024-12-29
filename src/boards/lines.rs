@@ -109,7 +109,7 @@ impl Lines {
 
     /// Returns all y-coordinate of the enabled rows. See `Self::ys()`.
     #[inline]
-    pub fn ys_iter(&self) -> impl Iterator<Item=u8> {
+    pub fn ys_iter(&self) -> impl Iterator<Item = u8> {
         let mut vec = Vec::with_capacity(self.count() as usize);
         let mut key = self.key;
         while key != 0 {
@@ -208,11 +208,8 @@ impl fmt::Display for Lines {
 }
 
 impl FromIterator<u8> for Lines {
-    fn from_iter<T: IntoIterator<Item=u8>>(iter: T) -> Self {
-        let key = iter.into_iter()
-            .fold(0u64, |key, y| {
-                key | (1u64 << y)
-            });
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        let key = iter.into_iter().fold(0u64, |key, y| key | (1u64 << y));
         Lines::new(key)
     }
 }
@@ -296,18 +293,35 @@ forward_ref_op! { Lines, |= Lines }
 forward_ref_op! { Lines, ^ Lines, = Lines }
 forward_ref_op! { Lines, ^= Lines }
 
-
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
 
     #[test]
     fn intercept() {
-        assert_eq!(Lines::new(0b00111111).intercept(Lines::new(0)), Lines::new(0b00111111));
-        assert_eq!(Lines::new(0b00111111).intercept(Lines::filled_up_to(1)), Lines::new(0b00111111 << 1));
-        assert_eq!(Lines::new(0b00111111).intercept(Lines::filled_up_to(5)), Lines::new(0b00111111 << 5));
-        assert_eq!(Lines::new(1).intercept(Lines::filled_up_to(63)), Lines::new(1 << 63));
-        assert_eq!(Lines::new(0).intercept(Lines::filled_up_to(63)), Lines::new(0));
-        assert_eq!(Lines::new(0b00111111).intercept(Lines::new_at(63)), Lines::new(0b00111111));
+        assert_eq!(
+            Lines::new(0b00111111).intercept(Lines::new(0)),
+            Lines::new(0b00111111)
+        );
+        assert_eq!(
+            Lines::new(0b00111111).intercept(Lines::filled_up_to(1)),
+            Lines::new(0b00111111 << 1)
+        );
+        assert_eq!(
+            Lines::new(0b00111111).intercept(Lines::filled_up_to(5)),
+            Lines::new(0b00111111 << 5)
+        );
+        assert_eq!(
+            Lines::new(1).intercept(Lines::filled_up_to(63)),
+            Lines::new(1 << 63)
+        );
+        assert_eq!(
+            Lines::new(0).intercept(Lines::filled_up_to(63)),
+            Lines::new(0)
+        );
+        assert_eq!(
+            Lines::new(0b00111111).intercept(Lines::new_at(63)),
+            Lines::new(0b00111111)
+        );
     }
 }

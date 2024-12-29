@@ -2,9 +2,9 @@ use crate::boards::Board64;
 use crate::internal_moves::u64::free;
 use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::reachable::Reachable64;
-use crate::pieces::{Orientation, Piece, Shape};
-use crate::{Rotate, Rotation, RotationSystem, With};
+use crate::pieces::{Piece, Shape};
 use crate::prelude::CcPlacement;
+use crate::{Rotate, Rotation, RotationSystem, With};
 
 // ブロックと空を反転して読み込み
 #[inline(always)]
@@ -39,17 +39,18 @@ pub fn spawn_and_harddrop_reachables(
             let orientation_index = current_piece.orientation as usize;
 
             if placements[orientation_index].is_some() {
-                break
+                break;
             }
 
             // use first kick
-            let offset = rotation_system.iter_kicks(prev.piece, rotation)
+            let offset = rotation_system
+                .iter_kicks(prev.piece, rotation)
                 .next()
                 .unwrap()
                 .offset;
             let current_position = prev.position + offset;
             if !free_spaces[orientation_index].is_free_space(current_position.to_location()) {
-                break
+                break;
             }
 
             let current = current_piece.with(current_position);
@@ -158,9 +159,7 @@ pub fn minimize(reachables: [Reachable64; 4], shape: Shape) -> [Reachable64; 4] 
     let mut reachables = reachables;
     for piece in shape.all_pieces_iter() {
         match piece.canonical() {
-            None => {
-                continue
-            }
+            None => continue,
             Some(dest) => {
                 let src_bl = piece.to_piece_blocks().bottom_left;
                 let dest_bl = dest.to_piece_blocks().bottom_left;
@@ -176,13 +175,11 @@ pub fn minimize(reachables: [Reachable64; 4], shape: Shape) -> [Reachable64; 4] 
 }
 
 pub fn can_reach4(reachables: &[Reachable64; 4], goals: &[CcPlacement]) -> bool {
-    goals
-        .iter()
-        .any(|&goal_placement| {
-            let orientation_index = goal_placement.piece.orientation as usize;
-            let location = goal_placement.position.to_location();
-            reachables[orientation_index].is_visited(location)
-        })
+    goals.iter().any(|&goal_placement| {
+        let orientation_index = goal_placement.piece.orientation as usize;
+        let location = goal_placement.position.to_location();
+        reachables[orientation_index].is_visited(location)
+    })
 }
 
 pub fn can_reach1(reachable: &Reachable64, goal: CcPlacement) -> bool {

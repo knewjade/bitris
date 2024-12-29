@@ -2,12 +2,12 @@ use std::{fmt, ops};
 
 use tinyvec::ArrayVec;
 
-use crate::{Rotate, Rotation};
 use crate::boards::{BoardOp, Lines};
-use crate::coordinates::{CcPosition, dd, Location, Offset};
+use crate::coordinates::{dd, CcPosition, Location, Offset};
 use crate::internal_macros::{add_member_for_from, forward_ref_from, forward_ref_op};
 use crate::pieces::{Orientation, Piece, PieceBlocks, PieceBlocksFactory, Shape};
 use crate::placements::{BlPlacement, PlacedPiece, TrPlacement};
+use crate::{Rotate, Rotation};
 
 /// The position to be placed, based on the center of the piece.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -62,7 +62,9 @@ impl CcPlacement {
     #[inline]
     pub fn touching_locations(&self) -> ArrayVec<[Location; 4]> {
         let cc = self.position.to_location();
-        self.to_piece_blocks().touching_offsets().into_iter()
+        self.to_piece_blocks()
+            .touching_offsets()
+            .into_iter()
             .map(|offset| cc + offset)
             .collect()
     }
@@ -89,7 +91,8 @@ impl CcPlacement {
     /// ```
     #[inline]
     pub fn using_rows(&self) -> Lines {
-        self.locations().iter()
+        self.locations()
+            .iter()
             .fold(Lines::blank(), |lines, location| {
                 lines | Lines::new_at(location.y as u8)
             })
@@ -186,7 +189,8 @@ impl CcPlacement {
     #[inline]
     pub fn is_landing(&self, board: &impl BoardOp) -> bool {
         let below = self.position + dd(0, -1);
-        self.to_piece_blocks().to_locations(below)
+        self.to_piece_blocks()
+            .to_locations(below)
             .into_iter()
             .any(|location| !board.test_access(location) || board.is_occupied_at(location))
     }
@@ -195,7 +199,8 @@ impl CcPlacement {
     /// Whether the placement is landing or not is independent of the result.
     #[inline]
     pub fn is_in_free_space(&self, board: &impl BoardOp) -> bool {
-        self.to_piece_blocks().to_locations(self.position)
+        self.to_piece_blocks()
+            .to_locations(self.position)
             .into_iter()
             .all(|location| board.test_access(location) && board.is_free_at(location))
     }
@@ -277,7 +282,6 @@ forward_ref_from!(CcPlacement, from TrPlacement);
 
 add_member_for_from!(BlPlacement, to_bl_placement, to CcPlacement);
 add_member_for_from!(TrPlacement, to_tr_placement, to CcPlacement);
-
 
 #[cfg(test)]
 mod tests {
@@ -445,18 +449,45 @@ mod tests {
 
     #[apply(all_boards)]
     fn cc_place_on_and_clear_lines(mut board: impl BoardOp) {
-        assert_eq!(piece!(ON).with(cc(0, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(2, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(4, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(6, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(8, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0b11)));
+        assert_eq!(
+            piece!(ON)
+                .with(cc(0, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(2, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(4, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(6, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(8, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0b11))
+        );
         assert_eq!(board.count_blocks(), 0);
     }
 
     #[test]
     fn to_placed_piece() {
         assert_eq!(
-            piece!(IE).with(cc(5, 4)).with_interception(Lines::new(0b01010000)),
+            piece!(IE)
+                .with(cc(5, 4))
+                .with_interception(Lines::new(0b01010000)),
             PlacedPiece::new(piece!(IE), 5, array_vec![2, 3, 5, 7]),
         );
     }

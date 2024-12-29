@@ -1,7 +1,8 @@
 /// A collection of operations to take one from a order.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum PopOp {
-    #[default] First,
+    #[default]
+    First,
     Second,
 }
 
@@ -37,7 +38,7 @@ impl<'a, T> OrderCursor<'a, T> {
 
     /// Returns shapes that have not been used as an order.
     #[inline]
-    pub fn iter_remaining(&self) -> impl Iterator<Item=&T> {
+    pub fn iter_remaining(&self) -> impl Iterator<Item = &T> {
         let current = match self.current {
             Some(index) => &self.items[index..=index],
             None => &[],
@@ -65,38 +66,41 @@ impl<'a, T> OrderCursor<'a, T> {
     #[inline]
     pub fn pop(self, op: PopOp) -> (Option<&'a T>, OrderCursor<'a, T>) {
         return match op {
-            PopOp::First => {
-                match self.current {
-                    None => (None, self),
-                    Some(current_index) => {
-                        let item = self.items.get(current_index);
-                        match self.next {
-                            None => (item, OrderCursor {
+            PopOp::First => match self.current {
+                None => (None, self),
+                Some(current_index) => {
+                    let item = self.items.get(current_index);
+                    match self.next {
+                        None => (
+                            item,
+                            OrderCursor {
                                 items: self.items,
                                 current: None,
                                 next: None,
-                            }),
-                            Some(next_index) => {
-                                (item, OrderCursor {
-                                    items: self.items,
-                                    current: self.next,
-                                    next: if next_index + 1 < self.items.len() {
-                                        Some(next_index + 1)
-                                    } else {
-                                        None
-                                    },
-                                })
-                            }
-                        }
+                            },
+                        ),
+                        Some(next_index) => (
+                            item,
+                            OrderCursor {
+                                items: self.items,
+                                current: self.next,
+                                next: if next_index + 1 < self.items.len() {
+                                    Some(next_index + 1)
+                                } else {
+                                    None
+                                },
+                            },
+                        ),
                     }
                 }
-            }
-            PopOp::Second => {
-                match self.next {
-                    None => (None, self),
-                    Some(index) => {
-                        let item = self.items.get(index);
-                        (item, OrderCursor {
+            },
+            PopOp::Second => match self.next {
+                None => (None, self),
+                Some(index) => {
+                    let item = self.items.get(index);
+                    (
+                        item,
+                        OrderCursor {
                             items: self.items,
                             current: self.current,
                             next: if index + 1 < self.items.len() {
@@ -104,10 +108,10 @@ impl<'a, T> OrderCursor<'a, T> {
                             } else {
                                 None
                             },
-                        })
-                    }
+                        },
+                    )
                 }
-            }
+            },
         };
     }
 
@@ -153,9 +157,21 @@ impl<'a, T: PartialEq> OrderCursor<'a, T> {
 impl<'a, T> From<&'a [T]> for OrderCursor<'a, T> {
     fn from(items: &'a [T]) -> Self {
         match items.len() {
-            0 => Self { items, current: None, next: None },
-            1 => Self { items, current: Some(0), next: None },
-            _ => Self { items, current: Some(0), next: Some(1) },
+            0 => Self {
+                items,
+                current: None,
+                next: None,
+            },
+            1 => Self {
+                items,
+                current: Some(0),
+                next: None,
+            },
+            _ => Self {
+                items,
+                current: Some(0),
+                next: Some(1),
+            },
         }
     }
 }
@@ -165,7 +181,6 @@ impl<'a, T> From<&'a Vec<T>> for OrderCursor<'a, T> {
         Self::from(items.as_slice())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
