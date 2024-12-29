@@ -16,24 +16,55 @@ pub fn spawn_and_harddrop_reachable(
     spawn: BlPlacement,
     free_spaces: &[FreeSpace64; 4],
 ) -> [Reachable64; 4] {
+    // index
+    let spawn_location = spawn.position.to_location();
+    let orientation_index = spawn.piece.orientation as usize;
+    let spawn_x = spawn_location.x as usize;
+
+    // boards
+    let mut spawn_reachable = Reachable64::blank();
+    let spawn_free_space = free_spaces[orientation_index].cols;
+
+    // a spawn bit
+    let spawn_bit = 1u64 << spawn_location.y;
+
+    // left
+    for x in (0..spawn_x).rev() {
+        let free_space = spawn_free_space[x];
+        if (spawn_bit & free_space) == 0 {
+            break;
+        }
+
+        // harddrop
+        let harddrop_dest_y = 64 - (!free_space).leading_zeros();
+        if harddrop_dest_y < spawn_location.y as u32 {
+            let reachable = (spawn_bit - 1) - ((1 << harddrop_dest_y) - 1);
+            spawn_reachable.cols[x] = spawn_bit | reachable;
+        }
+    }
+
+    // right
+    for x in spawn_x..10 {
+        let free_space = spawn_free_space[x];
+        if (spawn_bit & free_space) == 0 {
+            break;
+        }
+
+        // harddrop
+        let harddrop_dest_y = 64 - (!free_space).leading_zeros();
+        if harddrop_dest_y < spawn_location.y as u32 {
+            let reachable = (spawn_bit - 1) - ((1 << harddrop_dest_y) - 1);
+            spawn_reachable.cols[x] = spawn_bit | reachable;
+        }
+    }
+
     let mut reachables = [
         Reachable64::blank(),
         Reachable64::blank(),
         Reachable64::blank(),
         Reachable64::blank(),
     ];
-    let location = spawn.position.to_location();
-    let orientation_index = spawn.piece.orientation as usize;
-    let column_index = location.x as usize;
-
-    // harddrop from spawn position
-    let spawn_column = 1u64 << location.y;
-    let free_space = free_spaces[orientation_index].cols[column_index];
-    let harddrop_dest_y = 64 - (!free_space).leading_zeros();
-    if harddrop_dest_y < location.y as u32 {
-        let ok = (spawn_column - 1) - ((1 << harddrop_dest_y) - 1);
-        reachables[orientation_index].cols[column_index] = spawn_column | ok;
-    }
+    reachables[orientation_index] = spawn_reachable;
 
     reachables
 }

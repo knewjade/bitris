@@ -584,10 +584,13 @@ pub(crate) fn all_moves_softdrop(
     let allows_rotation = true; // TODO
     let mut needs_update: u8 = 1 << spawn.orientation() as usize;
 
+    let mut left = [false; 4];
     let mut current_index: usize = spawn.orientation() as usize;
     while needs_update != 0 {
+        // println!("current_index: {}", current_index);
         // if the current index is not updated, skip it.
         if needs_update & (1 << current_index) == 0 {
+            // println!("  skip");
             current_index = (current_index + 1) % ORIENTATIONS_ORDER.len();
             continue;
         }
@@ -599,8 +602,9 @@ pub(crate) fn all_moves_softdrop(
 
         // move
         loop {
+            // println!("  move");
             let reachable = reachables[src_index].clone();
-            let reachable = reachable.move_n(&free_spaces[src_index]);
+            let reachable = reachable.move_n(&free_spaces[src_index], left[src_index]);
 
             if reachables[src_index] == reachable {
                 break;
@@ -642,6 +646,7 @@ pub(crate) fn all_moves_softdrop(
         }
 
         current_index = (current_index + 1) % ORIENTATIONS_ORDER.len();
+        left[src_index] = !left[src_index];
     }
 
     // landed

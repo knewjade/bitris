@@ -44,8 +44,12 @@ impl Reachable64 {
 
     // ボードを左右下方向にシフトしてマージ
     #[inline(always)]
-    pub fn move_n(self, free_space: &FreeSpace64) -> Self {
-        Self::new(opu64::move_n(self.cols, free_space.cols))
+    pub fn move_n(self, free_space: &FreeSpace64, left: bool) -> Self {
+        if left {
+            Self::new(opu64::move_nl(self.cols, free_space.cols))
+        } else {
+            Self::new(opu64::move_nr(self.cols, free_space.cols))
+        }
     }
 
     #[inline(always)]

@@ -86,7 +86,7 @@ pub fn shift_by_offset(data: [u64; 10], offset: Offset) -> [u64; 10] {
 
 // ボードを左右下方向にシフトしてマージ
 #[inline(always)]
-pub fn move_n(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
+pub fn move_nr(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
     let mut data = data;
 
     {
@@ -94,13 +94,7 @@ pub fn move_n(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // left
         data[index] |= data[index + 1] & free_space[index];
         // down
-        loop {
-            let d = data[index] | (data[index] >> 1) & free_space[index];
-            if d == data[index] {
-                break
-            }
-            data[index] = d;
-        }
+        data[index] |= (data[index] >> 1) & free_space[index];
     }
     for index in 1..9 {
         // left
@@ -108,26 +102,44 @@ pub fn move_n(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        loop {
-            let d = data[index] | (data[index] >> 1) & free_space[index];
-            if d == data[index] {
-                break
-            }
-            data[index] = d;
-        }
+        data[index] |= (data[index] >> 1) & free_space[index];
     }
     {
         let index = 9;
         // right
         data[index] |= data[index - 1] & free_space[index];
         // down
-        loop {
-            let d = data[index] | (data[index] >> 1) & free_space[index];
-            if d == data[index] {
-                break
-            }
-            data[index] = d;
-        }
+        data[index] |= (data[index] >> 1) & free_space[index];
+    }
+
+    data
+}
+
+#[inline(always)]
+pub fn move_nl(data: [u64; 10], free_space: [u64; 10]) -> [u64; 10] {
+    let mut data = data;
+
+    {
+        let index = 9;
+        // right
+        data[index] |= data[index - 1] & free_space[index];
+        // down
+        data[index] |= (data[index] >> 1) & free_space[index];
+    }
+    for index in (1..9).rev() {
+        // left
+        data[index] |= data[index + 1] & free_space[index];
+        // right
+        data[index] |= data[index - 1] & free_space[index];
+        // down
+        data[index] |= (data[index] >> 1) & free_space[index];
+    }
+    {
+        let index = 0;
+        // left
+        data[index] |= data[index + 1] & free_space[index];
+        // down
+        data[index] |= (data[index] >> 1) & free_space[index];
     }
 
     data
