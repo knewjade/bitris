@@ -133,7 +133,6 @@ pub fn all_moves_softdrop_with_rotation(
 }
 
 pub fn all_moves_softdrop_no_rotation(
-    rotation_system: &impl RotationSystem,
     board: &Board<u64>,
     spawn: BlPlacement,
 ) -> Moves1 {

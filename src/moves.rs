@@ -51,8 +51,7 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
                         self.rotation_system, &board.into(), spawn.into(),
                     ).vec()
                 } else {
-                    softdrop::all_moves_softdrop_no_rotation(
-                        self.rotation_system, &board.into(), spawn.into(),
+                    softdrop::all_moves_softdrop_no_rotation(&board.into(), spawn.into(),
                     ).vec()
                 }
             }
