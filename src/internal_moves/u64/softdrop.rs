@@ -1,7 +1,7 @@
 use crate::internal_moves::u64::free_space::FreeSpace64;
-use crate::internal_moves::u64::loaders::{rotate, to_free_space, to_free_spaces, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables};
+use crate::internal_moves::u64::loaders::{rotate, to_free_space, to_free_spaces, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, minimize};
 use crate::internal_moves::u64::reachable::Reachable64;
-use crate::pieces::{Orientation, Piece, Shape};
+use crate::pieces::{Orientation, Piece};
 use crate::placements::{BlPlacement, CcPlacement};
 use crate::{Rotate, Rotation, RotationSystem};
 use crate::boards::Board;
@@ -111,7 +111,7 @@ pub(crate) fn search_no_rotation(
     reachable
 }
 
-pub fn all_moves_softdrop_with_rotation(
+pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     rotation_system: &impl RotationSystem,
     board: &Board<u64>,
     spawn: BlPlacement,
@@ -129,10 +129,16 @@ pub fn all_moves_softdrop_with_rotation(
         candidate
     });
 
+    let reachables = if MINIMIZE {
+        minimize(reachables, spawn.piece.shape)
+    } else {
+        reachables
+    };
+
     Moves4 { spawn, reachables }
 }
 
-pub fn all_moves_softdrop_no_rotation(
+pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     board: &Board<u64>,
     spawn: BlPlacement,
 ) -> Moves1 {
@@ -143,5 +149,5 @@ pub fn all_moves_softdrop_no_rotation(
     let reachable = search_no_rotation(reachable, &free_space);
     let reachable = reachable.land(&free_space);
 
-    Moves1 { spawn, reachable, all_moves: true }
+    Moves1 { spawn, reachable, minimized: MINIMIZE }
 }

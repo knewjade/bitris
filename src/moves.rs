@@ -47,22 +47,22 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
         match self.allow_move {
             AllowMove::Softdrop => {
                 if is_moving_in_rotation {
-                    softdrop::all_moves_softdrop_with_rotation(
+                    softdrop::moves_softdrop_with_rotation::<false>(
                         self.rotation_system, &board.into(), spawn.into(),
                     ).vec()
                 } else {
-                    softdrop::all_moves_softdrop_no_rotation(
+                    softdrop::moves_softdrop_no_rotation::<false>(
                         &board.into(), spawn.into(),
                     ).vec()
                 }
             }
             AllowMove::Harddrop => {
                 if is_moving_in_rotation {
-                    harddrop::all_moves_harddrop_with_rotation(
+                    harddrop::moves_harddrop_with_rotation::<false>(
                         self.rotation_system, &board.into(), spawn.into(),
                     ).vec()
                 } else {
-                    harddrop::all_moves_harddrop_no_rotation(
+                    harddrop::moves_harddrop_no_rotation::<false>(
                         &board.into(), spawn.into(),
                     ).vec()
                 }
@@ -77,15 +77,31 @@ impl<'a, T> MoveRules<'a, T> where T: RotationSystem {
     /// Panics if the spawn is not placeable position.
     #[inline]
     pub fn generate_minimized_moves(&self, board: Board64, spawn: BlPlacement) -> Vec<BlPlacement> {
-        let result = match self.allow_move {
+        let is_moving_in_rotation = self.rotation_system.is_moving_in_rotation(spawn.piece.shape);
+        match self.allow_move {
             AllowMove::Softdrop => {
-                moves::minimized_moves_softdrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    softdrop::moves_softdrop_with_rotation::<true>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    softdrop::moves_softdrop_no_rotation::<true>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
             AllowMove::Harddrop => {
-                moves::minimized_moves_harddrop(self.rotation_system, &board.into(), spawn.into())
+                if is_moving_in_rotation {
+                    harddrop::moves_harddrop_with_rotation::<true>(
+                        self.rotation_system, &board.into(), spawn.into(),
+                    ).vec()
+                } else {
+                    harddrop::moves_harddrop_no_rotation::<true>(
+                        &board.into(), spawn.into(),
+                    ).vec()
+                }
             }
-        };
-        result.vec()
+        }
     }
 
     /// Return true when the piece can be carried to the placement.

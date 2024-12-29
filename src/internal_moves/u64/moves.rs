@@ -569,7 +569,7 @@ impl Moves4 {
 pub struct Moves1 {
     pub spawn: CcPlacement,
     pub reachable: Reachable64,
-    pub all_moves: bool,
+    pub minimized: bool,
 }
 
 impl Moves1 {
@@ -587,12 +587,12 @@ impl Moves1 {
             while 0 < col {
                 let cy = col.trailing_zeros();
                 let bl_position = cc(cx as i32, cy as i32).to_bl_position(piece_blocks);
-                if self.all_moves {
+                if self.minimized {
+                    out.push(self.spawn.piece.with(bl_position));
+                } else {
                     for orientation in Orientation::all_iter() {
                         out.push(shape.with(orientation).with(bl_position));
                     }
-                } else {
-                    out.push(self.spawn.piece.with(bl_position));
                 }
                 col -= 1u64 << cy;
             }
@@ -600,22 +600,6 @@ impl Moves1 {
 
         out
     }
-}
-
-pub(crate) fn minimized_moves_softdrop(
-    rotation_system: &impl RotationSystem,
-    board: &Board<u64>,
-    spawn: BlPlacement,
-) -> Moves4 {
-    // let free_board = FreeBoard::from(board);
-    // let free_piece_boards = FreePieceBoards::new_according_to(spawn.piece.shape, &free_board);
-    //
-    // let mut reachable_piece_boards = gen_reachable_softdrop(&spawn, &free_piece_boards, rotation_system);
-    // reachable_piece_boards.extract_landed_positions(&free_piece_boards);
-    // reachable_piece_boards.minimize(spawn.piece.shape);
-    //
-    // Moves { spawn, reachable_piece_boards }
-    todo!()
 }
 
 pub(crate) fn can_reach_softdrop(
@@ -678,26 +662,6 @@ pub(crate) fn can_reach_strictly_softdrop(
     );
 
     can_reach(&reachable_piece_boards, goal)
-}
-
-pub(crate) fn minimized_moves_harddrop<'a>(
-    rotation_system: &impl RotationSystem,
-    board: &Board<u64>,
-    spawn: BlPlacement,
-) -> Moves4 {
-    // let free_board = FreeBoard::from(board);
-    // let free_piece_boards = FreePieceBoards::new_according_to(spawn.piece.shape, &free_board);
-    //
-    // let mut reachable_piece_boards =
-    //     gen_reachable_harddrop(&spawn, &free_piece_boards, rotation_system);
-    // reachable_piece_boards.extract_landed_positions(&free_piece_boards);
-    // reachable_piece_boards.minimize(spawn.piece.shape);
-    //
-    // Moves {
-    //     spawn,
-    //     reachables: reachable_piece_boards,
-    // }
-    todo!()
 }
 
 pub(crate) fn can_reach_harddrop(

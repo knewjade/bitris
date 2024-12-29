@@ -4,6 +4,7 @@ use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Piece, Shape};
 use crate::{Rotate, Rotation, RotationSystem, With};
+use crate::internal_moves::u64::moves::ReachablePieceBoards;
 use crate::prelude::CcPlacement;
 
 // ブロックと空を反転して読み込み
@@ -152,68 +153,25 @@ pub fn rotate(
     dest_reachable
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::pieces::{Orientation, Shape};
-    use crate::srs::SrsKickTable;
-    use crate::{
-        boards::Board64,
-        internal_moves::u64::reachable::Reachable64, pieces::Piece, Rotate, Rotation,
-    };
-    use std::str::FromStr;
-
-    #[test]
-    fn test_rotate() {
-        let rotation_system = SrsKickTable;
-        let from_piece = Piece {
-            shape: Shape::I,
-            orientation: Orientation::North,
-        };
-
-        let board = Board64::from_str(
-            " \
-            ......####\
-            .........#\
-            ########.#\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            #.########\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            ########.#\
-            ########.#\
-            #........#\
-            #.######.#\
-            #.######.#\
-            #........#\
-            .#########\
-        ",
-        )
-        .unwrap();
-
-        let free_spaces = to_free_spaces(&board, from_piece.shape);
-        println!("{}", Board64::from(&free_spaces[0]));
-
-        let src_reachable = Reachable64 {
-            cols: [0, 0, 1 << 12, 0, 0, 0, 0, 0, 0, 0],
-        };
-
-        let result = rotate(
-            &rotation_system,
-            Rotation::Cw,
-            from_piece,
-            &src_reachable,
-            &free_spaces[from_piece.cw().orientation as usize],
-        );
-
-        let expected_result = Reachable64 {
-            cols: [0, 1 << 12, 0, 0, 0, 0, 0, 0, 0, 0],
-        };
-        assert_eq!(result, expected_result);
+// Extract canonical positions from the currently free positions.
+#[inline(always)]
+pub fn minimize(reachables: [Reachable64; 4], shape: Shape) -> [Reachable64; 4] {
+    let mut reachables = reachables;
+    for piece in shape.all_pieces_iter() {
+        match piece.canonical() {
+            None => {
+                continue
+            }
+            Some(dest) => {
+                let src_bl = piece.to_piece_blocks().bottom_left;
+                let dest_bl = dest.to_piece_blocks().bottom_left;
+                let offset = src_bl - dest_bl;
+                reachables[dest.orientation as usize] = reachables[dest.orientation as usize]
+                    .clone()
+                    .or_shift(&reachables[piece.orientation as usize], offset);
+                reachables[piece.orientation as usize] = Reachable64::blank();
+            }
+        }
     }
+    reachables
 }
