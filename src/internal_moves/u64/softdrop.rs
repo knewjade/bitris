@@ -195,7 +195,7 @@ pub(crate) fn search_no_rotation(
         left = !left;
 
         let new_reachable = reachable.clone();
-        let new_reachable = new_reachable.move_n(&free_space, left);
+        let new_reachable = new_reachable.move_n(free_space, left);
 
         if reachable == new_reachable {
             break;
@@ -216,7 +216,7 @@ pub(crate) fn can_reach_no_rotation(
         left = !left;
 
         let new_reachable = reachable.clone();
-        let new_reachable = new_reachable.move_n(&free_space, left);
+        let new_reachable = new_reachable.move_n(free_space, left);
 
         if reachable == new_reachable {
             break;

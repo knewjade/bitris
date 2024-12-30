@@ -63,7 +63,7 @@ pub fn spawn_and_harddrop_reachables(
     placements.map(|placement| {
         let reachable = placement
             .map(|p| spawn_and_harddrop_reachable(p, &free_spaces[index]))
-            .unwrap_or_else(|| Reachable64::blank());
+            .unwrap_or_else(Reachable64::blank);
         index += 1;
         reachable
     })

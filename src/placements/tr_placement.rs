@@ -281,19 +281,19 @@ mod tests {
         let piece = Piece::new(Shape::T, Orientation::North);
 
         let placement = piece.with(cc(4, 3));
-        assert_eq!(CcPlacement::from(placement), piece.with(cc(4, 3)));
+        assert_eq!(placement, piece.with(cc(4, 3)));
 
         let placement = piece.with(bl(4, 3));
         assert_eq!(CcPlacement::from(placement), piece.with(cc(5, 3)));
         assert_eq!(CcPlacement::from(&placement), piece.with(cc(5, 3)));
         assert_eq!(placement.to_cc_placement(), piece.with(cc(5, 3)));
-        assert_eq!((&placement).to_cc_placement(), piece.with(cc(5, 3)));
+        assert_eq!(placement.to_cc_placement(), piece.with(cc(5, 3)));
 
         let placement = piece.with(tr(4, 3));
         assert_eq!(CcPlacement::from(placement), piece.with(cc(3, 2)));
         assert_eq!(CcPlacement::from(&placement), piece.with(cc(3, 2)));
         assert_eq!(placement.to_cc_placement(), piece.with(cc(3, 2)));
-        assert_eq!((&placement).to_cc_placement(), piece.with(cc(3, 2)));
+        assert_eq!(placement.to_cc_placement(), piece.with(cc(3, 2)));
     }
 
     #[test]

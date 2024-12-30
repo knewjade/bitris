@@ -67,7 +67,6 @@ impl PlacedPiece {
                     .flat_map(move |ys: ArrayVec<[u8; 4]>| {
                         let max = 10 - piece_blocks.width as u8 + 1;
                         (0..max)
-                            .into_iter()
                             .map(move |lx| PlacedPiece::new(piece, lx, ys))
                     })
             })
@@ -111,7 +110,7 @@ impl PlacedPiece {
                                 self.pieces.push(PlacedPiece::new(
                                     self.piece,
                                     lx as u8,
-                                    self.ys.clone(),
+                                    self.ys,
                                 ));
                             }
                             self.ys.pop();
@@ -294,7 +293,7 @@ mod tests {
 
     #[test]
     fn make_canonical_all_iter() {
-        for (height, expected) in vec![(0, 0), (1, 7), (2, 87), (3, 312), (4, 764), (5, 1535)] {
+        for (height, expected) in [(0, 0), (1, 7), (2, 87), (3, 312), (4, 764), (5, 1535)] {
             assert_eq!(
                 PlacedPiece::make_canonical_all_iter(height).count(),
                 expected
@@ -311,7 +310,7 @@ mod tests {
     #[test]
     fn make_canonical_on_board_iter_high_board() {
         let mut board = Board64::blank();
-        for y in 0..64 as i32 {
+        for y in 0..64_i32 {
             for x in 0..9 {
                 board.set_at(xy(x, y));
             }

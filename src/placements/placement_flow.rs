@@ -22,7 +22,7 @@ fn satisfies_dyn(
             return false;
         }
 
-        if let None = placement.place_on_and_clear_lines(&mut board) {
+        if placement.place_on_and_clear_lines(&mut board).is_none() {
             return false;
         }
     }
@@ -42,7 +42,7 @@ pub struct PlacementFlow {
 impl PlacementFlow {
     #[inline]
     pub fn new<P: Into<CcPlacement>>(initial_board: Board64, placements: Vec<P>) -> Self {
-        Self::from_iter(initial_board, placements.into_iter())
+        Self::from_iter(initial_board, placements)
     }
 
     #[inline]
@@ -76,9 +76,7 @@ impl PlacementFlow {
     pub fn board_all_placed(&self) -> Option<Board64> {
         let mut board = self.initial_board.after_clearing();
         for placement in &self.placements {
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return None;
-            }
+            placement.place_on_and_clear_lines(&mut board)?;
         }
         Some(board)
     }

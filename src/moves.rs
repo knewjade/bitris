@@ -23,7 +23,7 @@ where
     pub allow_move: AllowMove,
 }
 
-impl<'a> MoveRules<'a, SrsKickTable> {
+impl MoveRules<'_, SrsKickTable> {
     #[inline]
     pub fn default() -> Self {
         Self::srs(AllowMove::Softdrop)
@@ -64,24 +64,24 @@ where
                 if is_moving_in_rotation {
                     softdrop::moves_softdrop_with_rotation::<false>(
                         self.rotation_system,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                     .vec()
                 } else {
-                    softdrop::moves_softdrop_no_rotation::<false>(&board.into(), spawn.into()).vec()
+                    softdrop::moves_softdrop_no_rotation::<false>(&board, spawn).vec()
                 }
             }
             AllowMove::Harddrop => {
                 if is_moving_in_rotation {
                     harddrop::moves_harddrop_with_rotation::<false>(
                         self.rotation_system,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                     .vec()
                 } else {
-                    harddrop::moves_harddrop_no_rotation::<false>(&board.into(), spawn.into()).vec()
+                    harddrop::moves_harddrop_no_rotation::<false>(&board, spawn).vec()
                 }
             }
         }
@@ -102,24 +102,24 @@ where
                 if is_moving_in_rotation {
                     softdrop::moves_softdrop_with_rotation::<true>(
                         self.rotation_system,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                     .vec()
                 } else {
-                    softdrop::moves_softdrop_no_rotation::<true>(&board.into(), spawn.into()).vec()
+                    softdrop::moves_softdrop_no_rotation::<true>(&board, spawn).vec()
                 }
             }
             AllowMove::Harddrop => {
                 if is_moving_in_rotation {
                     harddrop::moves_harddrop_with_rotation::<true>(
                         self.rotation_system,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                     .vec()
                 } else {
-                    harddrop::moves_harddrop_no_rotation::<true>(&board.into(), spawn.into()).vec()
+                    harddrop::moves_harddrop_no_rotation::<true>(&board, spawn).vec()
                 }
             }
         }
@@ -158,7 +158,7 @@ where
     /// ```
     pub fn can_reach(&self, goal: BlPlacement, board: Board64, spawn: BlPlacement) -> bool {
         let (goal, board, spawn): (BlPlacement, Board64, BlPlacement) =
-            (goal.into(), board.into(), spawn.into());
+            (goal, board, spawn);
         assert_eq!(goal.piece.shape, spawn.piece.shape);
 
         if !goal.can_place_on(&board) {
@@ -174,11 +174,11 @@ where
                     softdrop::can_reach_softdrop_with_rotation(
                         self.rotation_system,
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 } else {
-                    softdrop::can_reach_softdrop_no_rotation(goal, &board.into(), spawn.into())
+                    softdrop::can_reach_softdrop_no_rotation(goal, &board, spawn)
                 }
             }
             AllowMove::Harddrop => {
@@ -186,11 +186,11 @@ where
                     harddrop::can_reach_harddrop_with_rotation(
                         self.rotation_system,
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 } else {
-                    harddrop::can_reach_harddrop_no_rotation(goal, &board.into(), spawn.into())
+                    harddrop::can_reach_harddrop_no_rotation(goal, &board, spawn)
                 }
             }
         }
@@ -218,14 +218,14 @@ where
                     softdrop::can_reach_strictly_softdrop_with_rotation(
                         self.rotation_system,
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 } else {
                     softdrop::can_reach_strictly_softdrop_no_rotation(
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 }
             }
@@ -234,14 +234,14 @@ where
                     harddrop::can_reach_strictly_harddrop_with_rotation(
                         self.rotation_system,
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 } else {
                     harddrop::can_reach_strictly_harddrop_no_rotation(
                         goal,
-                        &board.into(),
-                        spawn.into(),
+                        &board,
+                        spawn,
                     )
                 }
             }
@@ -408,90 +408,6 @@ pub mod srs {
         }
     }
 
-    #[cfg(test)]
-    mod tests {
-        use std::str::FromStr;
-
-        use itertools::assert_equal;
-
-        use crate::piece;
-        use crate::prelude::*;
-        use crate::srs::*;
-
-        #[test]
-        fn srs_t_from_north_to_east() {
-            let kicks =
-                SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::Cw);
-            assert_equal(
-                kicks.map(|it| it.offset),
-                vec![dd(0, 0), dd(-1, 0), dd(-1, 1), dd(0, -2), dd(-1, -2)].into_iter(),
-            );
-        }
-
-        #[test]
-        #[should_panic]
-        fn srs_is_not_unsupported_rotate_180() {
-            let _ =
-                SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::R180);
-        }
-
-        #[test]
-        fn test_kick() {
-            let board = Board64::from_str(
-                "\
-            XXX.......\
-            XX........\
-            XX.XXXXXXX\
-            XX..XXXXXX\
-            XX.XXXXXXX\
-        ",
-            )
-            .unwrap();
-            let placement = piece!(TN).with(cc(3, 3));
-            let rotation = Rotation::Cw;
-            assert_eq!(
-                SrsKickTable.test_kick(&board, placement, rotation),
-                Some(TestKickResult {
-                    test_index: 4,
-                    kick: *SrsKickTable
-                        .iter_kicks(placement.piece, rotation)
-                        .skip(4)
-                        .next()
-                        .unwrap(),
-                    destination: CcPlacement {
-                        piece: piece!(TE),
-                        position: cc(2, 1)
-                    },
-                })
-            );
-
-            let board = Board64::from_str(
-                "\
-            XX..XXXXXX\
-            XXX..XXXXX\
-        ",
-            )
-            .unwrap();
-            let placement = piece!(ZW).with(cc(4, 2));
-            let rotation = Rotation::Ccw;
-            assert_eq!(
-                SrsKickTable.test_kick(&board, placement, rotation),
-                Some(TestKickResult {
-                    test_index: 2,
-                    kick: *SrsKickTable
-                        .iter_kicks(placement.piece, rotation)
-                        .skip(2)
-                        .next()
-                        .unwrap(),
-                    destination: CcPlacement {
-                        piece: piece!(ZS),
-                        position: cc(3, 1)
-                    },
-                })
-            );
-        }
-    }
-
     /// Collect all the places that can be placed in srs.
     /// If the placements have the same block positions, but the orientations are different, each will be collected.
     /// ```
@@ -568,6 +484,86 @@ pub mod srs {
     ) -> bool {
         let move_rules = MoveRules::srs(allow_move);
         move_rules.can_reach_strictly(goal, board, spawn)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use std::str::FromStr;
+
+        use itertools::assert_equal;
+
+        use crate::piece;
+        use crate::prelude::*;
+        use crate::srs::*;
+
+        #[test]
+        fn srs_t_from_north_to_east() {
+            let kicks =
+                SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::Cw);
+            assert_equal(
+                kicks.map(|it| it.offset),
+                vec![dd(0, 0), dd(-1, 0), dd(-1, 1), dd(0, -2), dd(-1, -2)],
+            );
+        }
+
+        #[test]
+        #[should_panic]
+        fn srs_is_not_unsupported_rotate_180() {
+            let _ =
+                SrsKickTable.iter_kicks(Piece::new(Shape::T, Orientation::North), Rotation::R180);
+        }
+
+        #[test]
+        fn test_kick() {
+            let board = Board64::from_str(
+                "\
+            XXX.......\
+            XX........\
+            XX.XXXXXXX\
+            XX..XXXXXX\
+            XX.XXXXXXX\
+        ",
+            )
+            .unwrap();
+            let placement = piece!(TN).with(cc(3, 3));
+            let rotation = Rotation::Cw;
+            assert_eq!(
+                SrsKickTable.test_kick(&board, placement, rotation),
+                Some(TestKickResult {
+                    test_index: 4,
+                    kick: *SrsKickTable
+                        .iter_kicks(placement.piece, rotation).nth(4)
+                        .unwrap(),
+                    destination: CcPlacement {
+                        piece: piece!(TE),
+                        position: cc(2, 1)
+                    },
+                })
+            );
+
+            let board = Board64::from_str(
+                "\
+            XX..XXXXXX\
+            XXX..XXXXX\
+        ",
+            )
+            .unwrap();
+            let placement = piece!(ZW).with(cc(4, 2));
+            let rotation = Rotation::Ccw;
+            assert_eq!(
+                SrsKickTable.test_kick(&board, placement, rotation),
+                Some(TestKickResult {
+                    test_index: 2,
+                    kick: *SrsKickTable
+                        .iter_kicks(placement.piece, rotation).nth(2)
+                        .unwrap(),
+                    destination: CcPlacement {
+                        piece: piece!(ZS),
+                        position: cc(3, 1)
+                    },
+                })
+            );
+        }
     }
 }
 

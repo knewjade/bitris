@@ -22,7 +22,10 @@ fn bench_boards(c: &mut Criterion) {
 
     for dy in [1, 2, 4, 8] {
         group.bench_function(BenchmarkId::new("set_at", dy), |b| {
-            b.iter(|| black_box(set_at(black_box(dy))))
+            b.iter(|| {
+                set_at(black_box(dy));
+                black_box(())
+            })
         });
     }
 

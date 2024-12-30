@@ -347,11 +347,11 @@ mod tests {
         for piece in Piece::all_iter() {
             assert_eq!(
                 piece.shape.canonical_pieces_iter().any(|it| it == piece),
-                piece.canonical() == None,
+                piece.canonical().is_none(),
             );
             assert_eq!(
                 piece.shape.no_canonical_pieces_iter().any(|it| it == piece),
-                piece.canonical() != None,
+                piece.canonical().is_some(),
             );
         }
     }

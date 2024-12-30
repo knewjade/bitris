@@ -29,7 +29,7 @@ fn minimized_moves(board: Board64, shape: Shape, spawn: CcPosition, expected: us
 fn bench_moves_in_srs(c: &mut Criterion) {
     use Shape::*;
     let mirror = |board: Board64| {
-        let mut freeze = board.clone();
+        let mut freeze = board;
         freeze.mirror();
         freeze
     };
@@ -757,12 +757,13 @@ fn bench_moves_in_srs(c: &mut Criterion) {
         for (shape, expected) in &benchmark.expected_all_moves {
             group.bench_function(BenchmarkId::new("all_moves", shape), |b| {
                 b.iter(|| {
-                    black_box(all_moves(
+                    all_moves(
                         black_box(benchmark.board),
                         black_box(*shape),
                         black_box(benchmark.spawn),
                         black_box(*expected),
-                    ));
+                    );
+                    black_box(());
                 })
             });
         }
@@ -771,12 +772,13 @@ fn bench_moves_in_srs(c: &mut Criterion) {
         for (shape, expected) in &benchmark.expected_minimized_moves {
             group.bench_function(BenchmarkId::new("minimized_moves", shape), |b| {
                 b.iter(|| {
-                    black_box(minimized_moves(
+                    minimized_moves(
                         black_box(benchmark.board),
                         black_box(*shape),
                         black_box(benchmark.spawn),
                         black_box(*expected),
-                    ));
+                    );
+                    black_box(());
                 })
             });
         }

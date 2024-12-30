@@ -16,7 +16,7 @@ impl Lines {
 
     #[inline]
     pub fn from_slice(ys: &[u8]) -> Self {
-        Self::from_iter(ys.iter().map(|&y| y))
+        Self::from_iter(ys.iter().copied())
     }
 
     /// ```

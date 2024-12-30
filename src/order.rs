@@ -65,7 +65,7 @@ impl<'a, T> OrderCursor<'a, T> {
     ///   Note, however, this means that "The second is not always the hold because the last one is assigned to the first, regardless of the hold".
     #[inline]
     pub fn pop(self, op: PopOp) -> (Option<&'a T>, OrderCursor<'a, T>) {
-        return match op {
+        match op {
             PopOp::First => match self.current {
                 None => (None, self),
                 Some(current_index) => {
@@ -112,7 +112,7 @@ impl<'a, T> OrderCursor<'a, T> {
                     )
                 }
             },
-        };
+        }
     }
 
     /// Returns a current item based on Op.
@@ -137,7 +137,7 @@ impl<'a, T> OrderCursor<'a, T> {
     }
 }
 
-impl<'a, T: PartialEq> OrderCursor<'a, T> {
+impl<T: PartialEq> OrderCursor<'_, T> {
     #[inline]
     pub fn decide_next_op(&self, value: &T) -> Option<PopOp> {
         if let Some(item) = self.peek_first() {
@@ -196,7 +196,7 @@ mod tests {
         // []()
         assert!(!cursor.has_next());
         assert_eq!(cursor.len_remaining(), 0);
-        assert_equal(cursor.iter_remaining(), vec![].iter());
+        assert_equal(cursor.iter_remaining(), [].iter());
         assert_eq!(cursor.peek_first(), None);
         assert_eq!(cursor.peek_second(), None);
 
@@ -336,7 +336,7 @@ mod tests {
 
         assert!(!cursor.has_next());
         assert_eq!(cursor.len_remaining(), 0);
-        assert_equal(cursor.iter_remaining(), vec![].iter());
+        assert_equal(cursor.iter_remaining(), [].iter());
         assert_eq!(cursor.peek(PopOp::First), None);
         assert_eq!(cursor.peek(PopOp::Second), None);
     }

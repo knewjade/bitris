@@ -215,7 +215,7 @@ fn generate_free(path: &str) {
                             format_space(piece_blocks.offsets[2], true),
                             format_space(piece_blocks.offsets[3], false),
                         ];
-                        b.println(format!("{}", spaces[0]).as_str());
+                        b.println(spaces[0].to_string().as_str());
                         b.deep(|b| {
                             b.println(format!(".and({})", spaces[1]).as_str());
                             b.println(format!(".and({})", spaces[2]).as_str());
