@@ -88,7 +88,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-pco".to_string(),
+            name: "mirrored_pco".to_string(),
             board: Board64::from_str(
                 "\
                 ##.....###\
@@ -166,7 +166,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-loop".to_string(),
+            name: "mirrored_loop".to_string(),
             board: Board64::from_str(
                 "\
                 ......####\
@@ -254,7 +254,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-hatetris".to_string(),
+            name: "mirrored_hatetris".to_string(),
             board: Board64::from_str(
                 "\
                 ##........\
@@ -296,7 +296,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "side-4-wide".to_string(),
+            name: "side_4_wide".to_string(),
             board: Board64::from_str(
                 "\
                 ....######\
@@ -343,7 +343,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-side-4-wide".to_string(),
+            name: "mirrored_side_4_wide".to_string(),
             board: Board64::from_str(
                 "\
                 ....######\
@@ -391,7 +391,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "center-4-wide".to_string(),
+            name: "center_4_wide".to_string(),
             board: Board64::from_str(
                 "\
                 ###....###\
@@ -438,7 +438,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-center-4-wide".to_string(),
+            name: "mirrored_center_4_wide".to_string(),
             board: Board64::from_str(
                 "\
                 ###....###\
@@ -521,7 +521,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-dt".to_string(),
+            name: "mirrored_dt".to_string(),
             board: Board64::from_str(
                 "\
                 .....#....\
@@ -557,7 +557,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "rotating-early".to_string(),
+            name: "rotating_early".to_string(),
             board: Board64::from_str(
                 "\
                 .#........\
@@ -604,7 +604,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-rotating-early".to_string(),
+            name: "mirrored_rotating_early".to_string(),
             board: Board64::from_str(
                 "\
                 .#........\
@@ -699,7 +699,7 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             ],
         },
         MovesBenchmarkData {
-            name: "mirrored-randomize".to_string(),
+            name: "mirrored_randomize".to_string(),
             board: Board64::from_str(
                 "\
                 ..........\
