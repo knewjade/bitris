@@ -13,6 +13,8 @@ pub enum AllowMove {
     Harddrop,
 }
 
+enum_display! { AllowMove, has Softdrop,Harddrop }
+
 /// Rules to be applied during move generation.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct MoveRules<'a, T>
@@ -159,7 +161,7 @@ where
     pub fn can_reach(&self, goal: BlPlacement, board: Board64, spawn: BlPlacement) -> bool {
         assert_eq!(goal.piece.shape, spawn.piece.shape);
 
-        if !goal.can_place_on(&board) {
+        if !goal.is_in_free_space(&board) {
             return false;
         }
 
@@ -203,7 +205,7 @@ where
     ) -> bool {
         assert_eq!(goal.piece.shape, spawn.piece.shape);
 
-        if !goal.can_place_on(&board) {
+        if !goal.is_in_free_space(&board) {
             return false;
         }
 
@@ -600,5 +602,55 @@ mod tests {
         let moves = rules.generate_minimized_moves(board, placement);
         assert_eq!(moves.len(), 17);
         assert_eq!(moves.iter().filter(|it| it.position.by == 0).count(), 2);
+    }
+
+    #[test]
+    fn can_reach_and_strictly_softdrop() {
+        let board = Board64::from_str(
+            "\
+            ..........\
+            ...#......\
+            #####_####\
+            ####__####\
+            ####_#####\
+            ",
+        )
+        .unwrap();
+
+        let srs_softdrop = MoveRules::srs(AllowMove::Softdrop);
+        let spawn = piece!(ZN).with(bl(4, 20));
+
+        assert!(srs_softdrop.can_reach(piece!(ZE).with(bl(4, 0)), board, spawn));
+        assert!(srs_softdrop.can_reach(piece!(ZW).with(bl(4, 0)), board, spawn));
+
+        assert!(srs_softdrop.can_reach_strictly(piece!(ZE).with(bl(4, 0)), board, spawn));
+        assert!(!srs_softdrop.can_reach_strictly(piece!(ZW).with(bl(4, 0)), board, spawn));
+    }
+
+    #[test]
+    fn can_reach_and_strictly_harddrop() {
+        let board = Board64::from_str(
+            "\
+            ####.#####\
+            ####.#####\
+            #........#\
+            ####.#####\
+            ####.#####\
+            ####.#####\
+            ",
+        )
+        .unwrap();
+
+        let srs_harddrop = MoveRules::srs(AllowMove::Harddrop);
+        let spawn = piece!(IN).with(bl(4, 20));
+
+        assert!(srs_harddrop.can_reach(piece!(IE).with(bl(4, 0)), board, spawn));
+        assert!(srs_harddrop.can_reach_strictly(piece!(IE).with(bl(4, 0)), board, spawn));
+
+        assert!(srs_harddrop.can_reach(piece!(IW).with(bl(4, 1)), board, spawn));
+        assert!(srs_harddrop.can_reach_strictly(piece!(IW).with(bl(4, 1)), board, spawn));
+
+        assert!(!srs_harddrop.can_reach(piece!(IN).with(bl(1, 3)), board, spawn));
+        assert!(!srs_harddrop.can_reach_strictly(piece!(IS).with(bl(1, 3)), board, spawn));
     }
 }

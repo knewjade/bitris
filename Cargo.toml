@@ -27,3 +27,7 @@ harness = false
 [[bench]]
 name = "moves_in_srs"
 harness = false
+
+[[bench]]
+name = "can_reach_in_srs"
+harness = false
