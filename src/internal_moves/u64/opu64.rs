@@ -38,9 +38,7 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
     } else if 0 < RIGHT {
         let mut dest = [0u64; 10];
         let right = RIGHT as usize;
-        for index in 0..(10 - right) {
-            dest[index + right] = data[index];
-        }
+        dest[right..10].copy_from_slice(&data[..(10 - right)]);
         dest
     } else {
         data
