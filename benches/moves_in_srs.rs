@@ -14,14 +14,12 @@ struct MovesBenchmarkData {
     expected_minimized_moves: Vec<(Shape, usize)>,
 }
 
-fn all_moves(board: Board64, shape: Shape, spawn: CcPosition, expected: usize) {
-    let spawn = shape.with(Orientation::North).with(spawn);
+fn all_moves(board: Board64, spawn: CcPlacement, expected: usize) {
     let moves = srs::generate_all_moves(AllowMove::Softdrop, board, spawn.into());
     assert_eq!(moves.len(), expected);
 }
 
-fn minimized_moves(board: Board64, shape: Shape, spawn: CcPosition, expected: usize) {
-    let spawn = shape.with(Orientation::North).with(spawn);
+fn minimized_moves(board: Board64, spawn: CcPlacement, expected: usize) {
     let moves = srs::generate_minimized_moves(AllowMove::Softdrop, board, spawn.into());
     assert_eq!(moves.len(), expected);
 }
@@ -757,7 +755,11 @@ fn bench_moves_in_srs(c: &mut Criterion) {
         for (shape, expected) in &benchmark.expected_all_moves {
             group.bench_function(BenchmarkId::new("all_moves", shape), |b| {
                 b.iter(|| {
-                    all_moves(benchmark.board, *shape, benchmark.spawn, *expected);
+                    all_moves(
+                        benchmark.board,
+                        shape.with(Orientation::North).with(benchmark.spawn),
+                        *expected,
+                    );
                     black_box(());
                 })
             });
@@ -767,7 +769,11 @@ fn bench_moves_in_srs(c: &mut Criterion) {
         for (shape, expected) in &benchmark.expected_minimized_moves {
             group.bench_function(BenchmarkId::new("minimized_moves", shape), |b| {
                 b.iter(|| {
-                    minimized_moves(benchmark.board, *shape, benchmark.spawn, *expected);
+                    minimized_moves(
+                        benchmark.board,
+                        shape.with(Orientation::North).with(benchmark.spawn),
+                        *expected,
+                    );
                     black_box(());
                 })
             });
