@@ -19,8 +19,7 @@ impl Moves4 {
 
         for piece in self.spawn.piece.shape.all_pieces_iter() {
             let cols = self.reachables[piece.orientation as usize].cols;
-            for (cx, col) in cols.into_iter().enumerate() {
-                let mut col = col;
+            for (cx, mut col) in cols.into_iter().enumerate() {
                 while 0 < col {
                     let cy = col.trailing_zeros();
                     out.push(piece.with(cc(cx as i32, cy as i32)).to_bl_placement());
@@ -50,8 +49,7 @@ impl Moves1 {
         let shape = self.spawn.piece.shape;
         let piece_blocks = self.spawn.piece.to_piece_blocks();
         let cols = self.reachable.cols;
-        for cx in 0..10 {
-            let mut col = cols[cx];
+        for (cx, mut col) in cols.into_iter().enumerate() {
             while 0 < col {
                 let cy = col.trailing_zeros();
                 let bl_position = cc(cx as i32, cy as i32).to_bl_position(piece_blocks);
