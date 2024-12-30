@@ -25,12 +25,14 @@ where
     pub allow_move: AllowMove,
 }
 
-impl MoveRules<'_, SrsKickTable> {
+impl Default for MoveRules<'_, SrsKickTable> {
     #[inline]
-    pub fn default() -> Self {
+    fn default() -> Self {
         Self::srs(AllowMove::Softdrop)
     }
+}
 
+impl MoveRules<'_, SrsKickTable> {
     #[inline]
     pub fn srs(allow_move: AllowMove) -> Self {
         Self {

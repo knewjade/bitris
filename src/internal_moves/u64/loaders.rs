@@ -86,8 +86,7 @@ pub fn spawn_and_harddrop_reachable(spawn: CcPlacement, free_space: &FreeSpace64
     let mask = u64::MAX - ((1u64 << (spawn_location.y + 1)) - 1);
 
     // left
-    for x in (0..spawn_x).rev() {
-        let free_space = spawn_free_space[x];
+    for (x, free_space) in spawn_free_space.iter().enumerate().take(spawn_x).rev() {
         if (spawn_bit & free_space) == 0 {
             break;
         }
@@ -101,8 +100,7 @@ pub fn spawn_and_harddrop_reachable(spawn: CcPlacement, free_space: &FreeSpace64
     }
 
     // right
-    for x in spawn_x..10 {
-        let free_space = spawn_free_space[x];
+    for (x, free_space) in spawn_free_space.iter().enumerate().skip(spawn_x) {
         if (spawn_bit & free_space) == 0 {
             break;
         }

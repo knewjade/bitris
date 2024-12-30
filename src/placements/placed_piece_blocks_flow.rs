@@ -666,6 +666,11 @@ impl<'a> PlacedPieceBlocksFlow<'a> {
         self.refs.len()
     }
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.refs.is_empty()
+    }
+
     /// Returns the board with all blocks merged.
     /// The result is always returned, regardless of block overlap, no placeable combinations, etc.
     /// ```

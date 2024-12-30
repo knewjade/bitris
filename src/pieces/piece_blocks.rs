@@ -152,9 +152,9 @@ impl PieceBlocks {
             });
 
         let mut vec = ArrayVec::<[Offset; 4]>::new();
-        for index in 0..self.width as usize {
+        for (index, dy) in min_dys.iter().enumerate().take(self.width as usize) {
             let dx = lx + index as i32;
-            vec.push(Offset::new(dx, min_dys[index]));
+            vec.push(Offset::new(dx, *dy));
         }
         vec
     }

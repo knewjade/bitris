@@ -1,6 +1,7 @@
 use crate::coordinates::Offset;
 
 #[inline(always)]
+#[allow(clippy::nonminimal_bool)]
 pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
     data: [u64; 10],
 ) -> [u64; 10] {
@@ -31,15 +32,12 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
     if 0 < LEFT {
         let mut dest = [0u64; 10];
         let left = LEFT as usize;
-        for index in 0..(10 - left) {
-            dest[index] = data[index + left];
-        }
+        dest[..(10 - left)].copy_from_slice(&data[left..10]);
         dest
     } else if 0 < RIGHT {
         let mut dest = [0u64; 10];
         let right = RIGHT as usize;
         for index in 0..(10 - right) {
-            let index = index;
             dest[index + right] = data[index];
         }
         dest

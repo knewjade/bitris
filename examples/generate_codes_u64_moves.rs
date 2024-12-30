@@ -1,4 +1,5 @@
 use bitris::prelude::*;
+use std::cmp::Ordering::{Equal, Greater, Less};
 use std::fs::File;
 use std::io::Write;
 
@@ -94,22 +95,18 @@ fn begin(func: fn(b: &mut Buffer)) -> String {
 fn format_offset(offset: Offset) -> String {
     let mut line = String::with_capacity(16);
 
-    if 0 < offset.dx {
-        line.push_str(format!("{}, {}", offset.dx, 0).as_str());
-    } else if offset.dx < 0 {
-        line.push_str(format!("{}, {}", 0, -offset.dx).as_str());
-    } else {
-        line.push_str("0, 0");
+    match offset.dx.cmp(&0) {
+        Greater => line.push_str(format!("{}, {}", offset.dx, 0).as_str()),
+        Less => line.push_str(format!("{}, {}", 0, -offset.dx).as_str()),
+        Equal => line.push_str("0, 0"),
     }
 
     line.push_str(", ");
 
-    if 0 < offset.dy {
-        line.push_str(format!("{}, {}", offset.dy, 0).as_str());
-    } else if offset.dy < 0 {
-        line.push_str(format!("{}, {}", 0, -offset.dy).as_str());
-    } else {
-        line.push_str("0, 0");
+    match offset.dy.cmp(&0) {
+        Greater => line.push_str(format!("{}, {}", offset.dy, 0).as_str()),
+        Less => line.push_str(format!("{}, {}", 0, -offset.dy).as_str()),
+        Equal => line.push_str("0, 0"),
     }
 
     line

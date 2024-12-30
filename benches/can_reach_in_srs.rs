@@ -4,12 +4,6 @@ use bitris::prelude::*;
 use criterion::*;
 use std::hint::black_box;
 
-fn mirror(board: &Board64) -> Board64 {
-    let mut freeze = *board;
-    freeze.mirror();
-    freeze
-}
-
 #[derive(Debug)]
 struct CanReachBenchmarkData {
     name: String,

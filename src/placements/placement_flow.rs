@@ -72,6 +72,11 @@ impl PlacementFlow {
         self.placements.len()
     }
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.placements.is_empty()
+    }
+
     /// Returns the board after all have been placed.
     pub fn board_all_placed(&self) -> Option<Board64> {
         let mut board = self.initial_board.after_clearing();

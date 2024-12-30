@@ -366,14 +366,14 @@ mod tests {
         assert!(os.with(bl(4, 0)).place_on(&mut board));
         assert!(os.with(bl(6, 0)).place_on(&mut board));
 
-        assert!(!os.with(bl(7, 0)).can_place_on(&mut board));
-        assert!(os.with(bl(8, 0)).can_place_on(&mut board));
+        assert!(!os.with(bl(7, 0)).can_place_on(&board));
+        assert!(os.with(bl(8, 0)).can_place_on(&board));
 
-        assert!(!os.with(bl(7, 0)).is_in_free_space(&mut board));
-        assert!(os.with(bl(8, 0)).is_in_free_space(&mut board));
+        assert!(!os.with(bl(7, 0)).is_in_free_space(&board));
+        assert!(os.with(bl(8, 0)).is_in_free_space(&board));
 
-        assert!(!os.with(bl(8, 1)).is_landing(&mut board));
-        assert!(os.with(bl(8, 0)).is_landing(&mut board));
+        assert!(!os.with(bl(8, 1)).is_landing(&board));
+        assert!(os.with(bl(8, 0)).is_landing(&board));
 
         assert_eq!(
             os.with(bl(8, 0)).place_on_and_clear_lines(&mut board),

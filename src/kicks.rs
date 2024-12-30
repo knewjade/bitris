@@ -56,8 +56,7 @@ pub trait RotationSystem {
         let from: CcPlacement = placement.into();
         let to = from.rotate(rotation);
 
-        let mut test_index = 0;
-        for kick in self.iter_kicks(from.piece, rotation) {
+        for (test_index, kick) in self.iter_kicks(from.piece, rotation).enumerate() {
             let destination = to + kick.offset;
             if destination.is_in_free_space(board) {
                 return Some(TestKickResult {
@@ -66,7 +65,6 @@ pub trait RotationSystem {
                     destination,
                 });
             }
-            test_index += 1;
         }
 
         None
