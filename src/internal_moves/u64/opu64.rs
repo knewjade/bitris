@@ -46,6 +46,7 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
 }
 
 #[inline(always)]
+#[allow(clippy::manual_memcpy)]
 pub fn shift_by_offset(data: [u64; 10], offset: Offset) -> [u64; 10] {
     if offset == Offset::new(0, 0) {
         return data;
