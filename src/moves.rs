@@ -157,8 +157,6 @@ where
     /// assert!(!srs_harddrop.can_reach(S.with(North).with(bl(2, 0)), board, spawn));
     /// ```
     pub fn can_reach(&self, goal: BlPlacement, board: Board64, spawn: BlPlacement) -> bool {
-        let (goal, board, spawn): (BlPlacement, Board64, BlPlacement) =
-            (goal, board, spawn);
         assert_eq!(goal.piece.shape, spawn.piece.shape);
 
         if !goal.can_place_on(&board) {
@@ -222,11 +220,7 @@ where
                         spawn,
                     )
                 } else {
-                    softdrop::can_reach_strictly_softdrop_no_rotation(
-                        goal,
-                        &board,
-                        spawn,
-                    )
+                    softdrop::can_reach_strictly_softdrop_no_rotation(goal, &board, spawn)
                 }
             }
             AllowMove::Harddrop => {
@@ -238,11 +232,7 @@ where
                         spawn,
                     )
                 } else {
-                    harddrop::can_reach_strictly_harddrop_no_rotation(
-                        goal,
-                        &board,
-                        spawn,
-                    )
+                    harddrop::can_reach_strictly_harddrop_no_rotation(goal, &board, spawn)
                 }
             }
         }
@@ -532,7 +522,8 @@ pub mod srs {
                 Some(TestKickResult {
                     test_index: 4,
                     kick: *SrsKickTable
-                        .iter_kicks(placement.piece, rotation).nth(4)
+                        .iter_kicks(placement.piece, rotation)
+                        .nth(4)
                         .unwrap(),
                     destination: CcPlacement {
                         piece: piece!(TE),
@@ -555,7 +546,8 @@ pub mod srs {
                 Some(TestKickResult {
                     test_index: 2,
                     kick: *SrsKickTable
-                        .iter_kicks(placement.piece, rotation).nth(2)
+                        .iter_kicks(placement.piece, rotation)
+                        .nth(2)
                         .unwrap(),
                     destination: CcPlacement {
                         piece: piece!(ZS),

@@ -66,8 +66,7 @@ impl PlacedPiece {
                     .map(|ys| ys.into_iter().sorted().collect())
                     .flat_map(move |ys: ArrayVec<[u8; 4]>| {
                         let max = 10 - piece_blocks.width as u8 + 1;
-                        (0..max)
-                            .map(move |lx| PlacedPiece::new(piece, lx, ys))
+                        (0..max).map(move |lx| PlacedPiece::new(piece, lx, ys))
                     })
             })
     }
@@ -107,11 +106,8 @@ impl PlacedPiece {
                             if depth + 1 < self.dxs_each_dy.len() {
                                 self.run(lx, y + 1, height + 1, depth + 1)
                             } else {
-                                self.pieces.push(PlacedPiece::new(
-                                    self.piece,
-                                    lx as u8,
-                                    self.ys,
-                                ));
+                                self.pieces
+                                    .push(PlacedPiece::new(self.piece, lx as u8, self.ys));
                             }
                             self.ys.pop();
                         }

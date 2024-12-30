@@ -1062,9 +1062,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(ON), 1, array_vec![0, 3])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(ON), 1, array_vec![0, 3])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(JN), 0, array_vec![2, 3])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LS), 0, array_vec![0, 1]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LS), 0, array_vec![0, 1])),
+        ];
 
         let placed_piece_flow =
             PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
@@ -1127,9 +1129,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(SS), 2, array_vec![0, 5])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SS), 2, array_vec![0, 5])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(SS), 2, array_vec![1, 4])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SS), 2, array_vec![2, 3]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SS), 2, array_vec![2, 3])),
+        ];
 
         let placed_piece_flow =
             PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
@@ -1199,9 +1203,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 2, array_vec![0, 5])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 2, array_vec![0, 5])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 2, array_vec![1, 4])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 2, array_vec![2, 3]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 2, array_vec![2, 3])),
+        ];
 
         let placed_piece_flow =
             PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
@@ -1267,9 +1273,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
+        ];
         let refs: Vec<&PlacedPieceBlocks> = placed_piece_blocks.iter().collect();
 
         let move_rules = MoveRules::srs(AllowMove::Softdrop);
@@ -1390,9 +1398,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(IN), 0, array_vec![0])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(IN), 0, array_vec![0])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(SN), 4, array_vec![1, 2])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(ON), 8, array_vec![2, 3]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(ON), 8, array_vec![2, 3])),
+        ];
         let refs: Vec<&PlacedPieceBlocks> = placed_piece_blocks.iter().collect();
 
         let spawn = bl(4, 20);
@@ -1534,9 +1544,11 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = [PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
+        let placed_piece_blocks = [
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
-            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2]))];
+            PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
+        ];
 
         let placed_piece_flow =
             PlacedPieceBlocksFlow::new(board, placed_piece_blocks.iter().collect());
@@ -1570,7 +1582,7 @@ mod tests {
         ",
         )
         .unwrap();
-        let placed_piece_blocks = vec![
+        let placed_piece_blocks = [
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(LE), 0, array_vec![0, 1, 2])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(JS), 0, array_vec![2, 3])),
             PlacedPieceBlocks::make(PlacedPiece::new(piece!(SW), 1, array_vec![0, 1, 2])),
