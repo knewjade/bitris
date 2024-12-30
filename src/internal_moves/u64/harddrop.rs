@@ -106,5 +106,5 @@ pub(crate) fn can_reach_strictly_harddrop_no_rotation(
     board: &Board<u64>,
     spawn: BlPlacement,
 ) -> bool {
-    crate::internal_moves::u64::softdrop::can_reach_softdrop_no_rotation(goal, board, spawn)
+    can_reach_harddrop_no_rotation(goal, board, spawn)
 }

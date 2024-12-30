@@ -241,8 +241,6 @@ where
     }
 }
 
-enum_display! { AllowMove, has Softdrop,Harddrop }
-
 pub mod srs {
     use std::slice::Iter;
 
@@ -605,7 +603,7 @@ mod tests {
     }
 
     #[test]
-    fn can_reach_and_strictly_softdrop() {
+    fn can_reach_and_strictly_softdrop1() {
         let board = Board64::from_str(
             "\
             ..........\
@@ -652,5 +650,44 @@ mod tests {
 
         assert!(!srs_harddrop.can_reach(piece!(IN).with(bl(1, 3)), board, spawn));
         assert!(!srs_harddrop.can_reach_strictly(piece!(IS).with(bl(1, 3)), board, spawn));
+    }
+
+    #[test]
+    fn can_reach_and_strictly_softdrop2() {
+        let board = Board64::from_str(
+            "\
+            ..........\
+            ##......##\
+            #........#\
+            #.....#..#\
+            ",
+        )
+        .unwrap();
+
+        let srs_softdrop = MoveRules::srs(AllowMove::Softdrop);
+        let spawn = piece!(ON).with(bl(4, 20));
+
+        assert!(srs_softdrop.can_reach(piece!(ON).with(bl(1, 0)), board, spawn));
+        assert!(!srs_softdrop.can_reach(piece!(ON).with(bl(7, 0)), board, spawn));
+    }
+
+    #[test]
+    fn can_reach_and_strictly_harddrop2() {
+        let board = Board64::from_str(
+            "\
+            ..........\
+            ##......##\
+            #........#\
+            #.....#..#\
+            ",
+        )
+            .unwrap();
+
+        let srs_softdrop = MoveRules::srs(AllowMove::Harddrop);
+        let spawn = piece!(ON).with(bl(4, 20));
+
+        assert!(srs_softdrop.can_reach(piece!(ON).with(bl(0, 3)), board, spawn));
+        assert!(!srs_softdrop.can_reach(piece!(ON).with(bl(1, 0)), board, spawn));
+        assert!(!srs_softdrop.can_reach(piece!(ON).with(bl(7, 0)), board, spawn));
     }
 }

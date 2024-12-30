@@ -222,7 +222,7 @@ pub(crate) fn can_reach_no_rotation(
             break;
         }
 
-        if can_reach1(&reachable, goal) {
+        if can_reach1(&new_reachable, goal) {
             return true;
         }
 
