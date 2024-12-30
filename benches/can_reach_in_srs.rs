@@ -168,7 +168,7 @@ fn bench_can_reach_in_srs(c: &mut Criterion) {
                 #.........\
                 ",
             )
-                .unwrap(),
+            .unwrap(),
             spawn: O.with(Orientation::North).with(cc(4, 20)),
             cases: vec![
                 CanReachCase {

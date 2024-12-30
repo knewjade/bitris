@@ -681,7 +681,7 @@ mod tests {
             #.....#..#\
             ",
         )
-            .unwrap();
+        .unwrap();
 
         let srs_softdrop = MoveRules::srs(AllowMove::Harddrop);
         let spawn = piece!(ON).with(bl(4, 20));
