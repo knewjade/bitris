@@ -758,10 +758,10 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("all_moves", shape), |b| {
                 b.iter(|| {
                     all_moves(
-                        black_box(benchmark.board),
-                        black_box(*shape),
-                        black_box(benchmark.spawn),
-                        black_box(*expected),
+                        benchmark.board,
+                        *shape,
+                        benchmark.spawn,
+                        *expected,
                     );
                     black_box(());
                 })
@@ -773,10 +773,10 @@ fn bench_moves_in_srs(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("minimized_moves", shape), |b| {
                 b.iter(|| {
                     minimized_moves(
-                        black_box(benchmark.board),
-                        black_box(*shape),
-                        black_box(benchmark.spawn),
-                        black_box(*expected),
+                        benchmark.board,
+                        *shape,
+                        benchmark.spawn,
+                        *expected,
                     );
                     black_box(());
                 })
