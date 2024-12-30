@@ -1,5 +1,5 @@
-use std::cmp::Ordering::{Equal, Greater, Less};
 use crate::coordinates::Offset;
+use std::cmp::Ordering::{Equal, Greater, Less};
 
 #[inline(always)]
 #[allow(clippy::nonminimal_bool)]
@@ -60,22 +60,24 @@ pub fn shift_by_offset(data: [u64; 10], offset: Offset) -> [u64; 10] {
     };
 
     // left ot right
-    if offset.dx < 0 {
-        let mut dest = [0u64; 10];
-        let left = (-offset.dx) as usize;
-        for index in 0..(10 - left) {
-            dest[index] = data[index + left];
+    match offset.dx.cmp(&0) {
+        Less => {
+            let mut dest = [0u64; 10];
+            let left = (-offset.dx) as usize;
+            for index in 0..(10 - left) {
+                dest[index] = data[index + left];
+            }
+            dest
         }
-        dest
-    } else if 0 < offset.dx {
-        let mut dest = [0u64; 10];
-        let right = offset.dx as usize;
-        for index in 0..(10 - right) {
-            dest[index + right] = data[index];
+        Greater => {
+            let mut dest = [0u64; 10];
+            let right = offset.dx as usize;
+            for index in 0..(10 - right) {
+                dest[index + right] = data[index];
+            }
+            dest
         }
-        dest
-    } else {
-        data
+        Equal => data,
     }
 }
 
