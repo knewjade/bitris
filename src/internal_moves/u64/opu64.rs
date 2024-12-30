@@ -1,3 +1,4 @@
+use std::cmp::Ordering::{Equal, Greater, Less};
 use crate::coordinates::Offset;
 
 #[inline(always)]
@@ -53,12 +54,10 @@ pub fn shift_by_offset(data: [u64; 10], offset: Offset) -> [u64; 10] {
     }
 
     // down or up
-    let data = if offset.dy < 0 {
-        data.map(|v| v >> -offset.dy)
-    } else if 0 < offset.dy {
-        data.map(|v| v << offset.dy)
-    } else {
-        data
+    let data = match offset.dy.cmp(&0) {
+        Less => data.map(|v| v >> -offset.dy),
+        Greater => data.map(|v| v << offset.dy),
+        Equal => data,
     };
 
     // left ot right
@@ -73,7 +72,6 @@ pub fn shift_by_offset(data: [u64; 10], offset: Offset) -> [u64; 10] {
         let mut dest = [0u64; 10];
         let right = offset.dx as usize;
         for index in 0..(10 - right) {
-            let index = index;
             dest[index + right] = data[index];
         }
         dest
