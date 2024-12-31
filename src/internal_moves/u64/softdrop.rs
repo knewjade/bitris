@@ -1,3 +1,4 @@
+use crate::array_map::zip2_map4;
 use crate::boards::Board;
 use crate::internal_moves::u64::free_space::FreeSpace64;
 use crate::internal_moves::u64::loaders::{
@@ -10,7 +11,6 @@ use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Orientation, Piece, ToCcPosition};
 use crate::placements::{BlPlacement, CcPlacement};
 use crate::{Rotate, Rotation, RotationSystem, With};
-use crate::array_map::{map4, map_indexed4, zip2_map4};
 
 const ORIENTATIONS_ORDER: [Orientation; 4] = [
     Orientation::North,
@@ -245,7 +245,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     let reachables = search_with_rotation(rotation_system, spawn, reachables, &free_spaces);
 
     // landed
-    let reachables = zip2_map4(reachables, free_spaces,|reachable, free_space| {
+    let reachables = zip2_map4(reachables, free_spaces, |reachable, free_space| {
         reachable.land(&free_space)
     });
 

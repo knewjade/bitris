@@ -13,19 +13,6 @@ where
 }
 
 #[inline(always)]
-pub fn map4<F, T, U>(data: [T; 4], mut f: F) -> [U; 4]
-where
-    F: FnMut(T) -> U {
-    let [a, b, c, d] = data;
-    [
-        f(a),
-        f(b),
-        f(c),
-        f(d),
-    ]
-}
-
-#[inline(always)]
 pub fn zip2_map4<F, T1, T2, U>(first: [T1; 4], second: [T2; 4], mut f: F) -> [U; 4]
 where
     F: FnMut(T1, T2) -> U {
