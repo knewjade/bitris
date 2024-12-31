@@ -27,3 +27,4 @@ mod moves;
 mod order;
 mod rotation;
 mod traits;
+mod array_map;

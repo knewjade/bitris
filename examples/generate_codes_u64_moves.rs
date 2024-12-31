@@ -31,7 +31,7 @@ impl Buffer {
     }
 
     pub fn _comment_block(&mut self, comment: &str) {
-        self.println(format!("/** {} */", comment).as_str());
+        self.println(format!("/*! {} */", comment).as_str());
     }
 
     pub fn _use(&mut self, package: &str) {
@@ -96,16 +96,16 @@ fn format_offset(offset: Offset) -> String {
     let mut line = String::with_capacity(16);
 
     match offset.dx.cmp(&0) {
-        Greater => line.push_str(format!("{}, {}", offset.dx, 0).as_str()),
-        Less => line.push_str(format!("{}, {}", 0, -offset.dx).as_str()),
+        Greater => line.push_str(format!("{}, {}", 0, offset.dx).as_str()),
+        Less => line.push_str(format!("{}, {}", -offset.dx, 0).as_str()),
         Equal => line.push_str("0, 0"),
     }
 
     line.push_str(", ");
 
     match offset.dy.cmp(&0) {
-        Greater => line.push_str(format!("{}, {}", offset.dy, 0).as_str()),
-        Less => line.push_str(format!("{}, {}", 0, -offset.dy).as_str()),
+        Greater => line.push_str(format!("{}, {}", 0, offset.dy).as_str()),
+        Less => line.push_str(format!("{}, {}", -offset.dy, 0).as_str()),
         Equal => line.push_str("0, 0"),
     }
 
@@ -200,7 +200,7 @@ fn generate_free(path: &str) {
 
                             if offset != Offset::new(0, 0) {
                                 line.push_str(".shift::<");
-                                line.push_str(format_offset(offset).as_str());
+                                line.push_str(format_offset(-offset).as_str());
                                 line.push_str(">()");
                             }
                             line

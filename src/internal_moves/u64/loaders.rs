@@ -5,6 +5,7 @@ use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Piece, Shape};
 use crate::prelude::CcPlacement;
 use crate::{Rotate, Rotation, RotationSystem, With};
+use crate::array_map::map_indexed4;
 
 // ブロックと空を反転して読み込み
 #[inline(always)]
@@ -59,13 +60,10 @@ pub fn spawn_and_harddrop_reachables(
         }
     }
 
-    let mut index = 0;
-    placements.map(|placement| {
-        let reachable = placement
+    map_indexed4(placements, |index, placement| {
+        placement
             .map(|p| spawn_and_harddrop_reachable(p, &free_spaces[index]))
-            .unwrap_or_else(Reachable64::blank);
-        index += 1;
-        reachable
+            .unwrap_or_else(Reachable64::blank)
     })
 }
 
@@ -149,27 +147,6 @@ pub fn rotate(
     }
 
     dest_reachable
-}
-
-// Extract canonical positions from the currently free positions.
-#[inline(always)]
-pub fn minimize(reachables: [Reachable64; 4], shape: Shape) -> [Reachable64; 4] {
-    let mut reachables = reachables;
-    for piece in shape.all_pieces_iter() {
-        match piece.canonical() {
-            None => continue,
-            Some(dest) => {
-                let src_bl = piece.to_piece_blocks().bottom_left;
-                let dest_bl = dest.to_piece_blocks().bottom_left;
-                let offset = src_bl - dest_bl;
-                reachables[dest.orientation as usize] = reachables[dest.orientation as usize]
-                    .clone()
-                    .or_shift(&reachables[piece.orientation as usize], offset);
-                reachables[piece.orientation as usize] = Reachable64::blank();
-            }
-        }
-    }
-    reachables
 }
 
 pub fn can_reach4(reachables: &[Reachable64; 4], goals: &[CcPlacement]) -> bool {

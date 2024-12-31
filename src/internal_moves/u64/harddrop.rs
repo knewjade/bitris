@@ -1,12 +1,14 @@
 use crate::boards::Board;
 use crate::internal_moves::u64::loaders::{
-    can_reach1, can_reach4, minimize, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables,
+    can_reach1, can_reach4, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables,
     to_free_space, to_free_spaces,
 };
+use crate::internal_moves::u64::minimize::minimize;
 use crate::internal_moves::u64::moves::{Moves1, Moves4};
 use crate::pieces::ToCcPosition;
 use crate::placements::BlPlacement;
 use crate::{RotationSystem, With};
+use crate::array_map::zip2_map4;
 
 pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
     rotation_system: &impl RotationSystem,
@@ -18,11 +20,8 @@ pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
     let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
 
     // landed
-    let mut index = 0;
-    let reachables = reachables.map(|reachable| {
-        let candidate = reachable.land(&free_spaces[index]);
-        index += 1;
-        candidate
+    let reachables = zip2_map4(reachables, free_spaces,|reachable, free_space| {
+        reachable.land(&free_space)
     });
 
     let reachables = if MINIMIZE {

@@ -6,3 +6,4 @@ pub mod moves;
 mod opu64;
 mod reachable;
 pub mod softdrop;
+mod minimize;

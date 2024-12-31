@@ -1,4 +1,3 @@
-/** This file is for internal */
 use crate::coordinates::cc;
 use crate::internal_moves::u64::reachable::Reachable64;
 use crate::pieces::{Orientation, ToBlPosition};

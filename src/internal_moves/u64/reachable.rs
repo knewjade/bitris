@@ -26,13 +26,6 @@ impl Reachable64 {
     }
 
     #[inline(always)]
-    pub fn set_at(self, location: Location) -> Self {
-        let mut cols = self.cols;
-        cols[location.x as usize] |= 1 << location.y;
-        Self::new(cols)
-    }
-
-    #[inline(always)]
     pub fn is_visited(&self, location: Location) -> bool {
         self.cols[location.x as usize] & (1 << location.y) != 0
     }
