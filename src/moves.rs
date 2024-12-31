@@ -65,6 +65,18 @@ where
             .is_moving_in_rotation(spawn.piece.shape);
         match self.allow_move {
             AllowMove::Softdrop => {
+                #[cfg(target_feature = "avx2")]
+                {
+                    use crate::internal_moves::avx2::softdrop;
+
+                    if is_moving_in_rotation {
+                        return softdrop::moves_softdrop_with_rotation::<false>(&board, spawn).vec();
+                    } else {
+                        return softdrop::moves_softdrop_no_rotation::<false>(&board, spawn).vec();
+                    }
+                }
+
+                #[cfg(not(target_feature = "avx2"))]
                 if is_moving_in_rotation {
                     softdrop::moves_softdrop_with_rotation::<false>(
                         self.rotation_system,
@@ -103,6 +115,18 @@ where
             .is_moving_in_rotation(spawn.piece.shape);
         match self.allow_move {
             AllowMove::Softdrop => {
+                #[cfg(target_feature = "avx2")]
+                {
+                    use crate::internal_moves::avx2::softdrop;
+
+                    if is_moving_in_rotation {
+                        return softdrop::moves_softdrop_with_rotation::<true>(&board, spawn).vec();
+                    } else {
+                        return softdrop::moves_softdrop_no_rotation::<true>(&board, spawn).vec();
+                    }
+                }
+
+                #[cfg(not(target_feature = "avx2"))]
                 if is_moving_in_rotation {
                     softdrop::moves_softdrop_with_rotation::<true>(
                         self.rotation_system,

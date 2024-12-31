@@ -25,3 +25,15 @@ where
         f(d1, d2),
     ]
 }
+
+#[inline(always)]
+pub fn ref_zip2_map4<F, T1, T2, U>(first: &[T1; 4], second: &[T2; 4], mut f: F) -> [U; 4]
+where
+    F: FnMut(&T1, &T2) -> U {
+    [
+        f(&first[0], &second[0]),
+        f(&first[1], &second[1]),
+        f(&first[2], &second[2]),
+        f(&first[3], &second[3]),
+    ]
+}

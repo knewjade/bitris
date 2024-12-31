@@ -63,7 +63,7 @@ impl Reachable64 {
     }
 
     #[inline(always)]
-    pub fn or_shift(self, target: &Reachable64, offset: Offset) -> Self {
+    pub fn or_shift(self, target: Reachable64, offset: Offset) -> Self {
         let shift = opu64::shift_by_offset(target.cols, offset);
         Self::new(opu64::or(self.cols, shift))
     }

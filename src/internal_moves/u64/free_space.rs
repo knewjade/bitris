@@ -30,7 +30,7 @@ impl FreeSpace64 {
     }
 
     #[inline(always)]
-    pub fn is_free_space(&self, location: Location) -> bool {
+    pub fn is_free_at(&self, location: Location) -> bool {
         self.cols[location.x as usize] & (1u64 << location.y as usize) != 0
     }
 }

@@ -50,7 +50,7 @@ pub fn spawn_and_harddrop_reachables(
                 .unwrap()
                 .offset;
             let current_position = prev.position + offset;
-            if !free_spaces[orientation_index].is_free_space(current_position.to_location()) {
+            if !free_spaces[orientation_index].is_free_at(current_position.to_location()) {
                 break;
             }
 
