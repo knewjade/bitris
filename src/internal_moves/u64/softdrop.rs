@@ -255,7 +255,10 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
         reachables
     };
 
-    Moves4 { spawn, reachables }
+    Moves4 {
+        spawn_piece: spawn.piece,
+        reachables,
+    }
 }
 
 pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
@@ -270,7 +273,7 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     let reachable = reachable.land(&free_space);
 
     Moves1 {
-        spawn,
+        spawn_piece: spawn.piece,
         reachable,
         minimized: MINIMIZE,
     }
@@ -298,7 +301,13 @@ pub(crate) fn can_reach_softdrop_with_rotation(
         return true;
     }
 
-    can_reach_with_rotation(rotation_system, spawn.piece, reachables, &free_spaces, &goals)
+    can_reach_with_rotation(
+        rotation_system,
+        spawn.piece,
+        reachables,
+        &free_spaces,
+        &goals,
+    )
 }
 
 pub(crate) fn can_reach_strictly_softdrop_with_rotation(
@@ -317,7 +326,13 @@ pub(crate) fn can_reach_strictly_softdrop_with_rotation(
         return true;
     }
 
-    can_reach_with_rotation(rotation_system, spawn.piece, reachables, &free_spaces, &goals)
+    can_reach_with_rotation(
+        rotation_system,
+        spawn.piece,
+        reachables,
+        &free_spaces,
+        &goals,
+    )
 }
 
 pub(crate) fn can_reach_softdrop_no_rotation(

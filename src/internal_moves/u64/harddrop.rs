@@ -1,3 +1,4 @@
+use crate::array_map::zip2_map4;
 use crate::boards::Board;
 use crate::internal_moves::u64::loaders::{
     can_reach1, can_reach4, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables,
@@ -8,7 +9,6 @@ use crate::internal_moves::u64::moves::{Moves1, Moves4};
 use crate::pieces::ToCcPosition;
 use crate::placements::BlPlacement;
 use crate::{RotationSystem, With};
-use crate::array_map::zip2_map4;
 
 pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
     rotation_system: &impl RotationSystem,
@@ -20,7 +20,7 @@ pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
     let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
 
     // landed
-    let reachables = zip2_map4(reachables, free_spaces,|reachable, free_space| {
+    let reachables = zip2_map4(reachables, free_spaces, |reachable, free_space| {
         reachable.land(&free_space)
     });
 
@@ -30,7 +30,10 @@ pub fn moves_harddrop_with_rotation<const MINIMIZE: bool>(
         reachables
     };
 
-    Moves4 { spawn, reachables }
+    Moves4 {
+        spawn_piece: spawn.piece,
+        reachables,
+    }
 }
 
 pub fn moves_harddrop_no_rotation<const MINIMIZE: bool>(
@@ -44,7 +47,7 @@ pub fn moves_harddrop_no_rotation<const MINIMIZE: bool>(
     let reachable = reachable.land(&free_space);
 
     Moves1 {
-        spawn,
+        spawn_piece: spawn.piece,
         reachable,
         minimized: MINIMIZE,
     }
