@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+  default:
+    cmd: task --list-all --sort alphanumeric
+    silent: true
+
+  build:
+    cmd: cargo build
+
+  tests:
+    cmds:
+      - cargo test
+      - cargo test --benches
