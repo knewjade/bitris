@@ -263,12 +263,12 @@ pub fn land(
         ref_zip2_map4(
             &reachables_pair.lower,
             &free_spaces_pair.lower,
-            |&reachable, free_space| reachable.land(free_space),
+            |reachable, free_space| reachable.clone().land(free_space),
         ),
         ref_zip2_map4(
             &reachables_pair.upper,
             &free_spaces_pair.upper,
-            |&reachable, free_space| reachable.clone().clip(0xFFFE).land(free_space),
+            |reachable, free_space| reachable.clone().clip(0xFFFE).land(free_space),
         ),
     )
 }
@@ -308,11 +308,11 @@ pub fn to_bytes_u32(
 
 pub fn can_reach4_pair(reachables_pair: &Pair<[ReachableSimd16; 4]>, goals: &[CcPlacement]) -> bool {
     todo!()
-    goals.iter().any(|&goal_placement| {
-        let orientation_index = goal_placement.piece.orientation as usize;
-        let location = goal_placement.position.to_location();
-        reachables[orientation_index].is_visited(location)
-    })
+    // goals.iter().any(|&goal_placement| {
+    //     let orientation_index = goal_placement.piece.orientation as usize;
+    //     let location = goal_placement.position.to_location();
+    //     reachables[orientation_index].is_visited(location)
+    // })
 }
 
 pub fn can_reach4(reachables: &[ReachableSimd16; 4], goals: &[CcPlacement]) -> bool {

@@ -359,9 +359,9 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     // 11を許容できる理由はwith_rotationと同じ。
     // 加えて、スポーン位置がcy<=13であれば、upperに移動できなくなるのでlowerだけで十分
     if board.well_top() <= 11 || spawn.position.cy <= 13 {
-        moves_softdrop_no_rotation_lower_only(board, spawn)
+        moves_softdrop_no_rotation_lower_only::<MINIMIZE>(board, spawn)
     } else {
-        moves_softdrop_no_rotation_2boards(board, spawn)
+        moves_softdrop_no_rotation_2boards::<MINIMIZE>(board, spawn)
     }
 }
 
