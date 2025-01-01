@@ -3,7 +3,7 @@ use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 use crate::pieces::Shape;
 
 #[inline(always)]
-pub fn minimize(mut reachables: [ReachableSimd16; 4], shape: Shape) -> [ReachableSimd16; 4] {
+pub fn minimize(reachables: [ReachableSimd16; 4], shape: Shape) -> [ReachableSimd16; 4] {
     match shape {
         Shape::T => reachables,
         Shape::I => [

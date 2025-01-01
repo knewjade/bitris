@@ -1,11 +1,12 @@
 use crate::array_map::map_indexed4;
 use crate::boards::Board;
 use crate::coordinates::cc;
-use crate::internal_moves::avx2::loaders::*;
-use crate::internal_moves::avx2::minimize::minimize;
+use crate::internal_moves::avx2::h16;
+use crate::internal_moves::avx2::h16::loaders::*;
+use crate::internal_moves::avx2::h16::minimize::minimize;
+use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
+use crate::internal_moves::avx2::h16::x2::loaders::*;
 use crate::internal_moves::avx2::moves::{Moves1, Moves4};
-use crate::internal_moves::avx2::reachable::ReachableSimd16;
-use crate::internal_moves::avx2::softdrop16;
 use crate::pieces::Orientation;
 use crate::placements::CcPlacement;
 use crate::With;
@@ -50,7 +51,7 @@ pub(crate) fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
                 upper: reachables_upper,
             } = reachables_pair.clone();
 
-            reachables_pair.lower = softdrop16::search_with_rotation::<false>(
+            reachables_pair.lower = h16::softdrop::search_with_rotation::<false>(
                 spawn.piece,
                 reachables_lower,
                 &free_spaces_pair.lower,
@@ -70,7 +71,7 @@ pub(crate) fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
                 upper: reachables_upper,
             } = reachables_pair.clone();
 
-            reachables_pair.upper = softdrop16::search_with_rotation::<true>(
+            reachables_pair.upper = h16::softdrop::search_with_rotation::<true>(
                 spawn.piece,
                 reachables_upper,
                 &free_spaces_pair.upper,
@@ -121,12 +122,13 @@ pub(crate) fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
 
     // search upper
     let reachable_upper = spawn_and_harddrop_reachable(spawn, &free_space_pair.upper);
-    let reachable_upper = softdrop16::search_no_rotation(reachable_upper, &free_space_pair.upper);
+    let reachable_upper =
+        h16::softdrop::search_no_rotation(reachable_upper, &free_space_pair.upper);
 
     // search lower
     let reachable_lower = ReachableSimd16::blank().or_shift::<0, 0, 0, 12>(&reachable_upper);
     let reachable_lower = if !reachable_lower.empty() {
-        softdrop16::search_no_rotation(reachable_lower, &free_space_pair.lower)
+        h16::softdrop::search_no_rotation(reachable_lower, &free_space_pair.lower)
     } else {
         reachable_lower
     };

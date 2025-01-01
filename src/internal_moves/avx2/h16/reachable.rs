@@ -1,7 +1,7 @@
 use crate::boards::Board16;
 use crate::coordinates::Location;
-use crate::internal_moves::avx2::h24::aligned::AlignedU16s;
-use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::aligned::AlignedU16s;
+use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
 use crate::internal_moves::avx2::h16::opsimd;
 use std::arch::x86_64::*;
 

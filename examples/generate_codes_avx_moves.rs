@@ -368,7 +368,7 @@ fn generate_minimize(path: &str) {
         b.println("#[inline(always)]");
         b._pub_fn(
             "minimize",
-            "mut reachables: [ReachableSimd16; 4], shape: Shape",
+            "reachables: [ReachableSimd16; 4], shape: Shape",
             "[ReachableSimd16; 4]",
             |b| {
                 b._match("shape", |b| {

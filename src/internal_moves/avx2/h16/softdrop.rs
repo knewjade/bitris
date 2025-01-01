@@ -1,12 +1,12 @@
 use crate::array_map::zip2_map4;
 use crate::boards::{Board, BoardOp};
 use crate::coordinates::cc;
-use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::loaders::*;
+use crate::internal_moves::avx2::h16::minimize::minimize;
+use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 use crate::internal_moves::avx2::h16::rotate::{rotate_ccw, rotate_cw};
-use crate::internal_moves::avx2::loaders::*;
-use crate::internal_moves::avx2::minimize::minimize;
 use crate::internal_moves::avx2::moves::{Moves1, Moves4};
-use crate::internal_moves::avx2::reachable::ReachableSimd16;
 use crate::pieces::{Orientation, Piece};
 use crate::placements::CcPlacement;
 use crate::{Rotate, With};

@@ -185,8 +185,7 @@ pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
 #[inline(always)]
 pub fn land(data: __m256i, free_space: __m256i) -> __m256i {
     unsafe {
-        let shifted_free_space =
-            crate::internal_moves::avx2::opsimd16::shift::<0, 0, 0, 1>(free_space);
+        let shifted_free_space = shift::<0, 0, 0, 1>(free_space);
         _mm256_andnot_si256(shifted_free_space, data)
     }
 }
