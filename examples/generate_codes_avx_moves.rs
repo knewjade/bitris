@@ -115,7 +115,7 @@ fn format_offset(offset: Offset) -> String {
 fn generate_free(path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
-        b._use("crate::internal_moves::avx2::free_space::FreeSpaceSimd16");
+        b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
         b._use("crate::pieces::{Orientation, Piece, Shape}");
 
         b.newline();
@@ -233,8 +233,8 @@ fn generate_rotate(path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
 
-        b._use("crate::internal_moves::avx2::free_space::FreeSpaceSimd16");
-        b._use("crate::internal_moves::avx2::reachable::ReachableSimd16");
+        b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
+        b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
         b._use("crate::pieces::{Orientation, Piece, Shape}");
 
         for rotation in [Rotation::Cw, Rotation::Ccw] {
@@ -282,8 +282,8 @@ fn generate_rotate(path: &str) {
         for rotation in [Rotation::Cw, Rotation::Ccw] {
             b.newline();
             b._pub_mod(format!("{}", rotation).to_lowercase().as_str(), |b| {
-                b._use("crate::internal_moves::avx2::free_space::FreeSpaceSimd16");
-                b._use("crate::internal_moves::avx2::reachable::ReachableSimd16");
+                b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
+                b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
 
                 for shape in Shape::all_iter() {
                     if shape == Shape::O {
@@ -361,7 +361,7 @@ fn generate_rotate(path: &str) {
 fn generate_minimize(path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
-        b._use("crate::internal_moves::avx2::reachable::ReachableSimd16");
+        b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
         b._use("crate::pieces::Shape");
 
         b.newline();
@@ -413,7 +413,7 @@ fn generate_minimize(path: &str) {
 }
 
 fn main() {
-    // generate_free("src/internal_moves/avx2/free.rs");
-    // generate_rotate("src/internal_moves/avx2/rotate.rs");
-    generate_minimize("src/internal_moves/avx2/minimize.rs");
+    generate_free("src/internal_moves/avx2/h16/free.rs");
+    generate_rotate("src/internal_moves/avx2/h16/rotate.rs");
+    generate_minimize("src/internal_moves/avx2/h16/minimize.rs");
 }

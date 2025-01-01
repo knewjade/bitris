@@ -1,5 +1,5 @@
 /*! It's auto generated. */
-use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
 use crate::pieces::{Orientation, Piece, Shape};
 
 #[inline(always)]

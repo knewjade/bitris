@@ -1,11 +1,4 @@
-mod aligned;
-mod free;
-mod free_space;
-pub mod harddrop;
-mod loaders;
-mod minimize;
-mod moves;
-mod opsimd;
-mod reachable;
-mod rotate;
+mod h16;
+mod h24;
+pub mod moves;
 pub mod softdrop;

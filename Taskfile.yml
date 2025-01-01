@@ -8,7 +8,16 @@ tasks:
   build:
     cmd: cargo build
 
+  clean:
+    cmd: cargo clean
+
   tests:
     cmds:
       - cargo test
       - cargo test --benches
+
+  bench:
+    cmd: cargo bench -- --baseline base
+
+  bench-save:
+    cmd: cargo bench -- --save-baseline base

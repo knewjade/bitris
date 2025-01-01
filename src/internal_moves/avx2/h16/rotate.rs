@@ -1,6 +1,6 @@
 /*! It's auto generated. */
-use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
-use crate::internal_moves::avx2::reachable::ReachableSimd16;
+use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 use crate::pieces::{Orientation, Piece, Shape};
 
 #[inline(always)]
@@ -118,8 +118,8 @@ pub fn rotate_ccw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_
 }
 
 pub mod cw {
-    use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
-    use crate::internal_moves::avx2::reachable::ReachableSimd16;
+    use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
+    use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 
     #[inline(always)]
     pub fn from_t_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
@@ -1203,8 +1203,8 @@ pub mod cw {
 }
 
 pub mod ccw {
-    use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
-    use crate::internal_moves::avx2::reachable::ReachableSimd16;
+    use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
+    use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 
     #[inline(always)]
     pub fn from_t_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {

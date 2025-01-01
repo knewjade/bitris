@@ -36,12 +36,16 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         (LEFT == 0 && RIGHT == 0) || (0 < LEFT && RIGHT == 0) || (0 < RIGHT && LEFT == 0)
     );
 
-    debug_assert!(0 <= DOWN);
-    debug_assert!(0 <= UP);
+    debug_assert!(0 <= DOWN && DOWN <= 16);
+    debug_assert!(0 <= UP && UP <= 16);
     debug_assert!((DOWN == 0 && UP == 0) || (0 < DOWN && UP == 0) || (0 < UP && DOWN == 0));
 
     if LEFT == 0 && RIGHT == 0 && DOWN == 0 && UP == 0 {
         return data;
+    }
+
+    if DOWN == 16 || UP == 16 {
+        return zeros();
     }
 
     // down or up
@@ -102,25 +106,21 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
 pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
     // right
     let data = unsafe {
-        let mask = _mm256_permute2x128_si256::<0x08>(data, data);
-        let shift = _mm256_alignr_epi8::<{ 16 - 2 * 1 }>(data, mask);
+        let shift = shift::<0, 1, 0, 0>(data);
         let candidate = _mm256_and_si256(free_space, shift);
         _mm256_or_si256(data, candidate)
     };
 
     // left
     let data = unsafe {
-        let data = _mm256_insert_epi64::<3>(data, 0);
-        let data = _mm256_insert_epi32::<5>(data, 0);
-        let mask = _mm256_permute2x128_si256::<0x81>(data, data);
-        let shift = _mm256_alignr_epi8::<2>(mask, data);
+        let shift = shift::<1, 0, 0, 0>(data);
         let candidate = _mm256_and_si256(free_space, shift);
         _mm256_or_si256(data, candidate)
     };
 
     // down
     unsafe {
-        let shift = _mm256_srli_epi16::<1>(data);
+        let shift = shift::<0, 0, 1, 0>(data);
         let candidate = _mm256_and_si256(free_space, shift);
         _mm256_or_si256(data, candidate)
     }
@@ -129,7 +129,7 @@ pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
 #[inline(always)]
 pub fn land(data: __m256i, free_space: __m256i) -> __m256i {
     unsafe {
-        let shifted_free_space = _mm256_slli_epi16::<1>(free_space);
+        let shifted_free_space = shift::<0, 0, 0, 1>(free_space);
         _mm256_andnot_si256(shifted_free_space, data)
     }
 }
@@ -137,7 +137,7 @@ pub fn land(data: __m256i, free_space: __m256i) -> __m256i {
 #[inline(always)]
 pub fn clip(data: __m256i, mask: u16) -> __m256i {
     unsafe {
-        let mask = _mm256_set1_epi16(mask as i16);
+        let mask = fill_with(mask as i16);
         _mm256_and_si256(data, mask)
     }
 }

@@ -1,9 +1,9 @@
-use crate::internal_moves::avx2::aligned::AlignedU8s;
-use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
-use crate::internal_moves::avx2::opsimd;
-use std::arch::x86_64::*;
 use crate::boards::Board16;
-use crate::coordinates::{Location, Offset};
+use crate::coordinates::Location;
+use crate::internal_moves::avx2::h24::aligned::AlignedU16s;
+use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::opsimd;
+use std::arch::x86_64::*;
 
 #[derive(Debug, Clone)]
 pub struct ReachableSimd16 {
@@ -12,7 +12,7 @@ pub struct ReachableSimd16 {
     //
     // 使用されない末尾96bit(8*12)の状態は未定義とする(0 or 1か確定しない)
     // * data[0]: x=0 の (0<=y<8) を表現
-    // * data[1]: x=0 の (8<=y<16) を表現
+    // * data[1]: x=0 の (8<=y<y16) を表現
     // * data[2]: x=1 の (0<=y<8) を表現
     // * ...
     //
@@ -73,7 +73,7 @@ impl ReachableSimd16 {
         free_space: &FreeSpaceSimd16,
     ) -> Self {
         let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data);
-        let merged =  opsimd::and(free_space.data, shift);
+        let merged = opsimd::and(free_space.data, shift);
         Self::new(merged)
     }
 
@@ -112,8 +112,8 @@ impl ReachableSimd16 {
     }
 }
 
-impl From<AlignedU8s> for ReachableSimd16 {
-    fn from(value: AlignedU8s) -> Self {
+impl From<AlignedU16s> for ReachableSimd16 {
+    fn from(value: AlignedU16s) -> Self {
         Self { data: value.load() }
     }
 }
