@@ -1,17 +1,13 @@
-use crate::array_map::{map_indexed4, ref_zip2_map4, zip2_map4};
-use crate::boards::{Board, Board16, BoardOp};
+use crate::array_map::{map_indexed4, zip2_map4};
+use crate::boards::{Board, BoardOp};
 use crate::coordinates::cc;
 use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
-use crate::internal_moves::avx2::loaders::{
-    can_reach1, can_reach4, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables,
-    to_bytes_u32, to_bytes_u32x4, to_free_space_lower, to_free_space_upper, to_free_spaces_lower,
-    to_free_spaces_upper,
-};
+use crate::internal_moves::avx2::loaders::{can_reach1, can_reach4, can_reach4_pair, land, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, spawn_and_harddrop_reachables_pair, to_bytes_u32, to_bytes_u32x4, to_free_space_lower, to_free_space_pair, to_free_space_upper, to_free_spaces_lower, to_free_spaces_pair, Pair};
 use crate::internal_moves::avx2::minimize::minimize;
 use crate::internal_moves::avx2::moves::{Moves1, Moves4};
 use crate::internal_moves::avx2::reachable::ReachableSimd16;
 use crate::internal_moves::avx2::rotate::{rotate_ccw, rotate_cw};
-use crate::pieces::{Orientation, Piece};
+use crate::pieces::{Orientation, Piece, ToCcPosition};
 use crate::placements::{BlPlacement, CcPlacement};
 use crate::{Rotate, With};
 
@@ -209,293 +205,396 @@ pub(crate) fn can_reach_no_rotation(
     false
 }
 
+#[inline(always)]
 pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     board: &Board<u64>,
     spawn: BlPlacement,
 ) -> Moves4 {
     let spawn = spawn.to_cc_placement();
 
-    // board.well_top() == ~12~ -> 11
-    //  > free_spaceの作成も16bitで可能
-    //  > y==11の地面に立つI-East(cy=14)もfree_spaceで集約できるため
-    //  > I-Westでcy=13は集約可能、c=14は集約不可なので、上2行は無条件でreachableとする必要がある
-    //  > かつspawn.cyは14<=なら問題ない。I-Eastでも地面に引っかからず横移動可能
-    //   （spawnの方向は関係なく14が必要。まず全方向に回転して移動することを考えるため。ミノの種類ごとに整理しても良いかも？）
-    //  > cy=13ならどうする？kickの移動で上部にはみ出ることはない？ Iの回転でy+2する回転があるため
-
-    // 結論: well_top<=11なら1つだけ利用する
-    //      12<=well_topなら2回チェックしてORをとれば境界もカバーできそう。overlapは4でカバーできそう（厳密には3かもだけど4の方が雰囲気良さそう）
-    //           y >> 12してチェックする
-    // 　　　つまりサポートは高さ28まで
-
-    // 実験メモ: spawnだけ記録してあとはすべてまかすパターンを実装する。その後、spawnをうまくできないか考える
-    //          well_top<=11で、14<=spawn.cyならspawnの記録は不可なので別途考える（画面上部はfreeが欠けている可能性があるため盤内でも注意が必要）
-    //               13<=spawn.cyなら13<=cyをすべてreachableにしてOK
-
+    // 地面がy<=11であれば、その上に置くI-East(cy=14)もfree_spaceで集約できるため問題が起きない。
+    // y=12だと、I-Eastが横移動で通れなくなる。
     if board.well_top() <= 11 {
-        let free_spaces = to_free_spaces_lower(board, spawn.piece.shape);
-
-        let spawn1 = if spawn.position.cy < 13 {
-            spawn
-        } else {
-            spawn.piece.with(cc(spawn.position.cx, 13))
-        };
-
-        let reachables = spawn_and_harddrop_reachables(spawn1, &free_spaces);
-        let reachables = search_with_rotation::<false>(spawn.piece, reachables, &free_spaces);
-
-        // landed
-        let reachables = zip2_map4(reachables, free_spaces, |reachable, free_space| {
-            reachable.land(&free_space)
-        });
-
-        let reachables = if MINIMIZE {
-            minimize(reachables, spawn.piece.shape)
-        } else {
-            reachables
-        };
-
-        Moves4 {
-            spawn,
-            reachables: reachables.map(|reachable| reachable.to_bytes_u32()),
-        }
+        moves_softdrop_with_rotation_lower_only::<MINIMIZE>(board, spawn)
     } else {
-        let mut free_spaces_x2 = [
-            to_free_spaces_lower(board, spawn.piece.shape),
-            to_free_spaces_upper(board, spawn.piece.shape),
-        ];
-        free_spaces_x2[0] = map_indexed4(free_spaces_x2[0].clone(), |index, reachable| {
-            reachable.or_shift::<0, 0, 0, 12>(&free_spaces_x2[1][index])
-        });
-        free_spaces_x2[1] = map_indexed4(free_spaces_x2[1].clone(), |index, reachable| {
-            reachable.or_shift::<0, 0, 12, 0>(&free_spaces_x2[0][index])
-        });
-
-        let mut reachables_x2 = [
-            spawn_and_harddrop_reachables(spawn, &free_spaces_x2[0]),
-            spawn_and_harddrop_reachables(
-                spawn
-                    .piece
-                    .with(cc(spawn.position.cx, spawn.position.cy - 12)),
-                &free_spaces_x2[1],
-            ),
-        ];
-
-        // println!("free_spaces_upper: {}", Board16::from(&free_spaces_x2[1][0]));
-        // println!("free_spaces_lower: {}", Board16::from(&free_spaces_x2[0][0]));
-        // println!("free_spaces_upper: {}", Board16::from(&free_spaces_x2[1][1]));
-        // println!("free_spaces_lower: {}", Board16::from(&free_spaces_x2[0][1]));
-        // println!("free_spaces_upper: {}", Board16::from(&free_spaces_x2[1][2]));
-        // println!("free_spaces_lower: {}", Board16::from(&free_spaces_x2[0][2]));
-        // println!("free_spaces_upper: {}", Board16::from(&free_spaces_x2[1][3]));
-        // println!("free_spaces_lower: {}", Board16::from(&free_spaces_x2[0][3]));
-        //
-        // println!("spawn = {}", spawn);
-        // println!("reachable_upper: {}", Board16::from(&reachables_x2[1][0]));
-        // println!("reachable_lower: {}", Board16::from(&reachables_x2[0][0]));
-        // println!("reachable_upper: {}", Board16::from(&reachables_x2[1][1]));
-        // println!("reachable_lower: {}", Board16::from(&reachables_x2[0][1]));
-        // println!("reachable_upper: {}", Board16::from(&reachables_x2[1][2]));
-        // println!("reachable_lower: {}", Board16::from(&reachables_x2[0][2]));
-        // println!("reachable_upper: {}", Board16::from(&reachables_x2[1][3]));
-        // println!("reachable_lower: {}", Board16::from(&reachables_x2[0][3]));
-
-        let mut index = 1;
-        let mut needs = [
-            *&reachables_x2[0].iter().any(|r| !r.empty()),
-            *&reachables_x2[1].iter().any(|r| !r.empty()),
-        ];
-        while needs[0] || needs[1] {
-            if !needs[index] {
-                index = (index + 1) % 2;
-                continue;
-            }
-            needs[index] = false;
-
-            if index == 0 {
-                // lower
-                // println!("lower");
-                let mut reachables0 = [
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                ];
-                std::mem::swap(&mut reachables_x2[0], &mut reachables0);
-
-                reachables_x2[0] =
-                    search_with_rotation::<false>(spawn.piece, reachables0, &free_spaces_x2[0]);
-
-                let reachables1 = reachables_x2[1].clone();
-                let indexed4 = map_indexed4(reachables1, |index, reachable| {
-                    reachable.or_shift::<0, 0, 12, 0>(&reachables_x2[0][index])
-                });
-                if reachables_x2[1] != indexed4 {
-                    reachables_x2[1] = indexed4;
-                    needs[1] = true;
-                }
-            } else {
-                // upper
-                // println!("upper");
-                let mut reachables1 = [
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                    ReachableSimd16::blank(),
-                ];
-                std::mem::swap(&mut reachables_x2[1], &mut reachables1);
-
-                reachables_x2[1] =
-                    search_with_rotation::<true>(spawn.piece, reachables1, &free_spaces_x2[1]);
-
-                let reachables0 = reachables_x2[0].clone();
-                let indexed4 = map_indexed4(reachables0, |index, reachable| {
-                    reachable.or_shift::<0, 0, 0, 12>(&reachables_x2[1][index])
-                });
-                if reachables_x2[0] != indexed4 {
-                    reachables_x2[0] = indexed4;
-                    needs[0] = true;
-                }
-            }
-
-            index = (index + 1) % 2;
-        }
-
-        // landed
-        let reachables_x2 = [
-            ref_zip2_map4(
-                &reachables_x2[0],
-                &free_spaces_x2[0],
-                |reachable, free_space| reachable.clone().land(&free_space),
-            ),
-            ref_zip2_map4(
-                &reachables_x2[1],
-                &free_spaces_x2[1],
-                |reachable, free_space| reachable.clone().clip(0xFFFE).land(&free_space),
-            ),
-        ];
-
-        let reachables_x2 = if MINIMIZE {
-            [
-                minimize(reachables_x2[0].clone(), spawn.piece.shape),
-                minimize(reachables_x2[1].clone(), spawn.piece.shape),
-            ]
-        } else {
-            reachables_x2
-        };
-
-        Moves4 {
-            spawn,
-            reachables: to_bytes_u32x4(&reachables_x2[0], &reachables_x2[1]),
-        }
+        moves_softdrop_with_rotation_2boards::<MINIMIZE>(board, spawn)
     }
 }
 
+#[inline(always)]
+fn moves_softdrop_with_rotation_lower_only<const MINIMIZE: bool>(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+) -> Moves4 {
+    debug_assert!(board.well_top() <= 11);
+
+    let free_spaces = to_free_spaces_lower(board, spawn.piece.shape);
+
+    // スポーン位置を下のボードまでスキップする。
+    // ボードで最も高いブロックの位置がy=10以下であるため、
+    // `I-East (cy=13)` が左右移動しても引っかからない。
+    // そのため、cy=13まで無条件でしても、その後の左右移動・ハードドロップに影響しない。
+    let spawn = if spawn.position.cy < 13 {
+        spawn
+    } else {
+        spawn.piece.with(cc(spawn.position.cx, 13))
+    };
+
+    let reachables = spawn_and_harddrop_reachables(spawn, &free_spaces);
+    let reachables = search_with_rotation::<false>(spawn.piece, reachables, &free_spaces);
+
+    // landed
+    let reachables = zip2_map4(reachables, free_spaces, |reachable, free_space| {
+        reachable.land(&free_space)
+    });
+
+    let reachables = if MINIMIZE {
+        minimize(reachables, spawn.piece.shape)
+    } else {
+        reachables
+    };
+
+    Moves4 {
+        spawn_piece: spawn.piece,
+        reachables: reachables.map(|reachable| reachable.to_bytes_u32()),
+    }
+}
+
+#[inline(always)]
+fn moves_softdrop_with_rotation_2boards<const MINIMIZE: bool>(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+) -> Moves4 {
+    let free_spaces_pair = to_free_spaces_pair(board, spawn);
+
+    let mut reachables_pair = spawn_and_harddrop_reachables_pair(spawn, &free_spaces_pair);
+
+    let mut current_index = 1;
+    let mut needs_update: u8 = 0b11;
+    if *&reachables_pair.lower.iter().all(|r| r.empty()) {
+        needs_update -= 0b01;
+    }
+    if *&reachables_pair.upper.iter().all(|r| r.empty()) {
+        needs_update -= 0b10;
+    }
+
+    while needs_update != 0 {
+        // if the current index is not updated, skip it.
+        if needs_update & (1 << current_index) == 0 {
+            current_index = (current_index + 1) % 2;
+            continue;
+        }
+        needs_update -= 1 << current_index;
+
+        if current_index == 0 {
+            // lower
+            let Pair {
+                lower: reachables_lower,
+                upper: reachables_upper,
+            } = reachables_pair.clone();
+
+            reachables_pair.lower = search_with_rotation::<false>(
+                spawn.piece,
+                reachables_lower,
+                &free_spaces_pair.lower,
+            );
+
+            let reachables_upper = map_indexed4(reachables_upper, |index, reachable| {
+                reachable.or_shift::<0, 0, 12, 0>(&reachables_pair.lower[index])
+            });
+            if reachables_pair.upper != reachables_upper {
+                reachables_pair.upper = reachables_upper;
+                needs_update |= 0b10;
+            }
+        } else {
+            // upper
+            let Pair {
+                lower: reachables_lower,
+                upper: reachables_upper,
+            } = reachables_pair.clone();
+
+            reachables_pair.upper = search_with_rotation::<true>(
+                spawn.piece,
+                reachables_upper,
+                &free_spaces_pair.upper,
+            );
+
+            let reachables_lower = map_indexed4(reachables_lower, |index, reachable| {
+                reachable.or_shift::<0, 0, 0, 12>(&reachables_pair.upper[index])
+            });
+            if reachables_pair.lower != reachables_lower {
+                reachables_pair.lower = reachables_lower;
+                needs_update |= 0b01;
+            }
+        }
+
+        current_index = (current_index + 1) % 2;
+    }
+
+    // landed
+    let reachables_pair = land(&reachables_pair, &free_spaces_pair);
+
+    let reachables_pair = if MINIMIZE {
+        Pair::new(
+            minimize(reachables_pair.lower, spawn.piece.shape),
+            minimize(reachables_pair.upper, spawn.piece.shape),
+        )
+    } else {
+        reachables_pair
+    };
+
+    Moves4 {
+        spawn_piece: spawn.piece,
+        reachables: to_bytes_u32x4(reachables_pair),
+    }
+}
+
+#[inline(always)]
 pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     board: &Board<u64>,
     spawn: BlPlacement,
 ) -> Moves1 {
     let spawn = spawn.canonical_or_self().to_cc_placement();
 
+    // 11を許容できる理由はwith_rotationと同じ。
+    // 加えて、スポーン位置がcy<=13であれば、upperに移動できなくなるのでlowerだけで十分
     if board.well_top() <= 11 || spawn.position.cy <= 13 {
-        let free_space = to_free_space_lower(board, spawn.piece);
-
-        let spawn1 = if spawn.position.cy < 13 {
-            spawn
-        } else {
-            spawn.piece.with(cc(spawn.position.cx, 13))
-        };
-
-        let reachable = spawn_and_harddrop_reachable(spawn1, &free_space);
-        let reachable = search_no_rotation(reachable, &free_space);
-
-        // landed
-        let reachable = reachable.land(&free_space);
-
-        Moves1 {
-            spawn,
-            reachable: reachable.to_bytes_u32(),
-            minimized: MINIMIZE,
-        }
+        moves_softdrop_no_rotation_lower_only(board, spawn)
     } else {
-        let mut free_space_upper = to_free_space_upper(board, spawn.piece);
-        let mut free_space_lower = to_free_space_lower(board, spawn.piece);
-
-        free_space_upper = free_space_upper.or_shift::<0, 0, 12, 0>(&free_space_lower);
-        free_space_lower = free_space_lower.or_shift::<0, 0, 0, 12>(&free_space_upper);
-
-        let reachable_upper = spawn_and_harddrop_reachable(
-            spawn
-                .piece
-                .with(cc(spawn.position.cx, spawn.position.cy - 12)),
-            &free_space_upper,
-        );
-        let reachable_upper = search_no_rotation(reachable_upper, &free_space_upper);
-
-        let reachable_lower = ReachableSimd16::blank().or_shift::<0, 0, 0, 12>(&reachable_upper);
-
-        let reachable_lower = if !reachable_lower.empty() {
-            search_no_rotation(reachable_lower, &free_space_lower)
-        } else {
-            reachable_lower
-        };
-
-        // landed
-        let reachable_lower = reachable_lower.land(&free_space_lower);
-        let reachable_upper = reachable_upper.clip(0xFFFE).land(&free_space_upper);
-
-        Moves1 {
-            spawn,
-            reachable: to_bytes_u32(&reachable_lower, &reachable_upper),
-            minimized: MINIMIZE,
-        }
+        moves_softdrop_no_rotation_2boards(board, spawn)
     }
 }
 
-// pub(crate) fn can_reach_softdrop_with_rotation(
-//     rotation_system: &impl RotationSystem,
-//     goal: BlPlacement,
-//     board: &Board<u64>,
-//     spawn: BlPlacement,
-// ) -> bool {
-//     let spawn = spawn.to_cc_placement();
-//     let goals = goal
-//         .piece
-//         .orientations_having_same_form()
-//         .iter()
-//         .map(|&orientation| goal.piece.shape.with(orientation))
-//         .map(|piece| piece.with(goal.position.to_cc_position(piece.to_piece_blocks())))
-//         .collect::<Vec<_>>();
-//
-//     let free_spaces = to_free_spaces(board, spawn.piece.shape);
-//     let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
-//
-//     if can_reach4(&reachables, &goals) {
-//         return true;
-//     }
-//
-//     can_reach_with_rotation(rotation_system, spawn, reachables, &free_spaces, &goals)
-// }
-//
-// pub(crate) fn can_reach_strictly_softdrop_with_rotation(
-//     rotation_system: &impl RotationSystem,
-//     goal: BlPlacement,
-//     board: &Board<u64>,
-//     spawn: BlPlacement,
-// ) -> bool {
-//     let spawn = spawn.to_cc_placement();
-//     let goals = vec![goal.to_cc_placement()];
-//
-//     let free_spaces = to_free_spaces(board, spawn.piece.shape);
-//     let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
-//
-//     if can_reach4(&reachables, &goals) {
-//         return true;
-//     }
-//
-//     can_reach_with_rotation(rotation_system, spawn, reachables, &free_spaces, &goals)
-// }
-//
+#[inline(always)]
+fn moves_softdrop_no_rotation_lower_only<const MINIMIZE: bool>(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+) -> Moves1 {
+    debug_assert!(board.well_top() <= 11 || spawn.position.cy <= 13);
+
+    let free_space = to_free_space_lower(board, spawn.piece);
+
+    let spawn = if spawn.position.cy < 13 {
+        spawn
+    } else {
+        spawn.piece.with(cc(spawn.position.cx, 13))
+    };
+
+    let reachable = spawn_and_harddrop_reachable(spawn, &free_space);
+    let reachable = search_no_rotation(reachable, &free_space);
+
+    // landed
+    let reachable = reachable.land(&free_space);
+
+    Moves1 {
+        spawn_piece: spawn.piece,
+        reachable: reachable.to_bytes_u32(),
+        minimized: MINIMIZE,
+    }
+}
+
+#[inline(always)]
+fn moves_softdrop_no_rotation_2boards<const MINIMIZE: bool>(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+) -> Moves1 {
+    debug_assert!(13 < spawn.position.cy);
+
+    let free_space_pair = to_free_space_pair(board, spawn);
+
+    let spawn = spawn
+        .piece
+        .with(cc(spawn.position.cx, spawn.position.cy - 12));
+
+    // search upper
+    let reachable_upper = spawn_and_harddrop_reachable(spawn, &free_space_pair.upper);
+    let reachable_upper = search_no_rotation(reachable_upper, &free_space_pair.upper);
+
+    // search lower
+    let reachable_lower = ReachableSimd16::blank().or_shift::<0, 0, 0, 12>(&reachable_upper);
+    let reachable_lower = if !reachable_lower.empty() {
+        search_no_rotation(reachable_lower, &free_space_pair.lower)
+    } else {
+        reachable_lower
+    };
+
+    // landed
+    let reachable_lower = reachable_lower.land(&free_space_pair.lower);
+    let reachable_upper = reachable_upper.clip(0xFFFE).land(&free_space_pair.upper);
+
+    Moves1 {
+        spawn_piece: spawn.piece,
+        reachable: to_bytes_u32(&reachable_lower, &reachable_upper),
+        minimized: MINIMIZE,
+    }
+}
+
+pub(crate) fn can_reach_softdrop_with_rotation(
+    goal: BlPlacement,
+    board: &Board<u64>,
+    spawn: BlPlacement,
+) -> bool {
+    let spawn = spawn.to_cc_placement();
+    let goals = goal
+        .piece
+        .orientations_having_same_form()
+        .iter()
+        .map(|&orientation| goal.piece.shape.with(orientation))
+        .map(|piece| piece.with(goal.position.to_cc_position(piece.to_piece_blocks())))
+        .collect::<Vec<_>>();
+    can_reach_softdrop_with_rotation_2(board, spawn, goals)
+}
+
+pub(crate) fn can_reach_strictly_softdrop_with_rotation(
+    goal: BlPlacement,
+    board: &Board<u64>,
+    spawn: BlPlacement,
+) -> bool {
+    let spawn = spawn.to_cc_placement();
+    let goals = vec![goal.to_cc_placement()];
+    can_reach_softdrop_with_rotation_2(board, spawn, goals)
+}
+
+fn can_reach_softdrop_with_rotation_2(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+    goals: Vec<CcPlacement>,
+) -> bool {
+    // let free_spaces = to_free_spaces(board, spawn.piece.shape);
+    // let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
+    //
+    // if can_reach4(&reachables, &goals) {
+    //     return true;
+    // }
+    //
+    // can_reach_with_rotation(rotation_system, spawn, reachables, &free_spaces, &goals)
+
+    // 地面がy<=11であれば、その上に置くI-East(cy=14)もfree_spaceで集約できるため問題が起きない。
+    // y=12だと、I-Eastが横移動で通れなくなる。
+    if board.well_top() <= 11 {
+        can_reach_softdrop_with_rotation_lower_only(board, spawn, goals)
+    } else {
+        can_reach_softdrop_with_rotation_2boards(board, spawn, goals)
+    }
+}
+
+#[inline(always)]
+fn can_reach_softdrop_with_rotation_lower_only(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+    goals: Vec<CcPlacement>,
+) -> bool {
+    debug_assert!(board.well_top() <= 11);
+
+    let free_spaces = to_free_spaces_lower(board, spawn.piece.shape);
+
+    // スポーン位置を下のボードまでスキップする。
+    // ボードで最も高いブロックの位置がy=10以下であるため、
+    // `I-East (cy=13)` が左右移動しても引っかからない。
+    // そのため、cy=13までは無条件で到達可能。
+    if 13 <= spawn.position.cy {
+        return true
+    }
+
+    let reachables = spawn_and_harddrop_reachables(spawn, &free_spaces);
+
+    if can_reach4(&reachables, &goals) {
+        return true;
+    }
+
+    todo!()
+    // let reachables = search_with_rotation::<false>(spawn.piece, reachables, &free_spaces);
+    //
+    // Moves4 {
+    //     spawn_piece: spawn.piece,
+    //     reachables: reachables.map(|reachable| reachable.to_bytes_u32()),
+    // }
+}
+
+#[inline(always)]
+fn can_reach_softdrop_with_rotation_2boards(
+    board: &Board<u64>,
+    spawn: CcPlacement,
+    goals: Vec<CcPlacement>,
+) -> bool {
+    let free_spaces_pair = to_free_spaces_pair(board, spawn);
+
+    let mut reachables_pair = spawn_and_harddrop_reachables_pair(spawn, &free_spaces_pair);
+
+    if can_reach4_pair(&reachables_pair, &goals) {
+        return true;
+    }
+
+    let mut current_index = 1;
+    let mut needs_update: u8 = 0b11;
+    if *&reachables_pair.lower.iter().all(|r| r.empty()) {
+        needs_update -= 0b01;
+    }
+    if *&reachables_pair.upper.iter().all(|r| r.empty()) {
+        needs_update -= 0b10;
+    }
+
+    while needs_update != 0 {
+        // if the current index is not updated, skip it.
+        if needs_update & (1 << current_index) == 0 {
+            current_index = (current_index + 1) % 2;
+            continue;
+        }
+        needs_update -= 1 << current_index;
+
+        if current_index == 0 {
+            // lower
+            let Pair {
+                lower: reachables_lower,
+                upper: reachables_upper,
+            } = reachables_pair.clone();
+
+            reachables_pair.lower = search_with_rotation::<false>(
+                spawn.piece,
+                reachables_lower,
+                &free_spaces_pair.lower,
+            );
+
+            let reachables_upper = map_indexed4(reachables_upper, |index, reachable| {
+                reachable.or_shift::<0, 0, 12, 0>(&reachables_pair.lower[index])
+            });
+            if reachables_pair.upper != reachables_upper {
+                reachables_pair.upper = reachables_upper;
+                needs_update |= 0b10;
+            }
+        } else {
+            // upper
+            let Pair {
+                lower: reachables_lower,
+                upper: reachables_upper,
+            } = reachables_pair.clone();
+
+            reachables_pair.upper = search_with_rotation::<true>(
+                spawn.piece,
+                reachables_upper,
+                &free_spaces_pair.upper,
+            );
+
+            let reachables_lower = map_indexed4(reachables_lower, |index, reachable| {
+                reachable.or_shift::<0, 0, 0, 12>(&reachables_pair.upper[index])
+            });
+            if reachables_pair.lower != reachables_lower {
+                reachables_pair.lower = reachables_lower;
+                needs_update |= 0b01;
+            }
+        }
+
+        if can_reach4_pair(&reachables_pair, &goals) {
+            return true;
+        }
+
+        current_index = (current_index + 1) % 2;
+    }
+
+    todo!()
+}
+
+
 // pub(crate) fn can_reach_softdrop_no_rotation(
 //     goal: BlPlacement,
 //     board: &Board<u64>,

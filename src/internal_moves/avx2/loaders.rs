@@ -1,22 +1,71 @@
+use crate::array_map::{map_indexed4, ref_zip2_map4};
 use crate::boards::Board;
+use crate::coordinates::cc;
 use crate::internal_moves::avx2::aligned::AlignedU8s;
+use crate::internal_moves::avx2::free;
 use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
 use crate::internal_moves::avx2::reachable::ReachableSimd16;
-use crate::internal_moves::avx2::free;
 use crate::pieces::{Piece, Shape};
 use crate::placements::CcPlacement;
+use crate::With;
 
-// ブロックと空を反転して、下位16bitを読み込み
+#[derive(Clone, Debug)]
+pub struct Pair<T> {
+    pub lower: T,
+    pub upper: T,
+}
+
+impl<T> Pair<T> {
+    pub fn new(lower: T, upper: T) -> Self {
+        Self { lower, upper }
+    }
+}
+
+// 2つの16bitボードに分割して作成する。Overlap=4で[y=0~16, y=12~28]を表す。
+// 生成時にボードの境界は壁と同じような扱いになる。
+// たとえば lowerボード の天井は、本来 upperボード つながっているが、配置できないと判定される。
+// 本来の判定と変わる可能性があるのは、lowerボードの天井 と upperボードの床と天井 で、それぞれ2段分。
+#[inline(always)]
+pub fn to_free_spaces_pair(board: &Board<u64>, spawn: CcPlacement) -> Pair<[FreeSpaceSimd16; 4]> {
+    let mut lower = to_free_spaces_lower(board, spawn.piece.shape);
+    let mut upper = to_free_spaces_upper(board, spawn.piece.shape);
+
+    // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
+    lower = map_indexed4(lower.clone(), |index, reachable| {
+        reachable.or_shift::<0, 0, 0, 12>(&upper[index])
+    });
+    upper = map_indexed4(upper.clone(), |index, reachable| {
+        reachable.or_shift::<0, 0, 12, 0>(&lower[index])
+    });
+
+    Pair::new(lower, upper)
+}
+
+#[inline(always)]
+pub fn to_free_space_pair(board: &Board<u64>, spawn: CcPlacement) -> Pair<FreeSpaceSimd16> {
+    let mut upper = to_free_space_upper(board, spawn.piece);
+    let mut lower = to_free_space_lower(board, spawn.piece);
+
+    // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
+    upper = upper.or_shift::<0, 0, 12, 0>(&lower);
+    lower = lower.or_shift::<0, 0, 0, 12>(&upper);
+
+    Pair::new(lower, upper)
+}
+
+#[inline(always)]
 pub fn to_free_spaces_lower(board: &Board<u64>, shape: Shape) -> [FreeSpaceSimd16; 4] {
     let free_space_block_lower = to_free_space_block_lower(board);
     free::to_free_spaces(free_space_block_lower, shape)
 }
 
+#[inline(always)]
 pub fn to_free_space_lower(board: &Board<u64>, piece: Piece) -> FreeSpaceSimd16 {
     let free_space_block_lower = to_free_space_block_lower(board);
     free::to_free_space(free_space_block_lower, piece)
 }
 
+#[inline(always)]
 fn to_free_space_block_lower(board: &Board<u64>) -> FreeSpaceSimd16 {
     let bytes_u64 = board.cols.map(|col| !col);
 
@@ -55,21 +104,23 @@ fn to_free_space_block_lower(board: &Board<u64>) -> FreeSpaceSimd16 {
         0,
     ];
 
-    let free_space_block = FreeSpaceSimd16::from(AlignedU8s::new(bytes_u8));
-    free_space_block
+    FreeSpaceSimd16::from(AlignedU8s::new(bytes_u8))
 }
 
 // ブロックと空を反転して、下位12bitをスキップして、16bitを読み込み
+#[inline(always)]
 pub fn to_free_spaces_upper(board: &Board<u64>, shape: Shape) -> [FreeSpaceSimd16; 4] {
     let free_space_block = free_space_block_upper(board);
     free::to_free_spaces(free_space_block, shape)
 }
 
+#[inline(always)]
 pub fn to_free_space_upper(board: &Board<u64>, piece: Piece) -> FreeSpaceSimd16 {
     let free_space_block_upper = free_space_block_upper(board);
     free::to_free_space(free_space_block_upper, piece)
 }
 
+#[inline(always)]
 fn free_space_block_upper(board: &Board<u64>) -> FreeSpaceSimd16 {
     let bytes_u64 = board.cols.map(|col| !col);
 
@@ -112,29 +163,21 @@ fn free_space_block_upper(board: &Board<u64>) -> FreeSpaceSimd16 {
     free_space_block
 }
 
-// #[inline(always)]
-// pub fn spawn_reachables(spawn: CcPlacement) -> [ReachableSimd16; 4] {
-//     if spawn.position.cy < 0 || 16 <= spawn.position.cy {
-//         return [
-//             ReachableSimd16::blank(),
-//             ReachableSimd16::blank(),
-//             ReachableSimd16::blank(),
-//             ReachableSimd16::blank(),
-//         ];
-//     }
-//
-//     let mut aligneds = [
-//         AlignedU8s::blank(),
-//         AlignedU8s::blank(),
-//         AlignedU8s::blank(),
-//         AlignedU8s::blank(),
-//     ];
-//
-//     aligneds[spawn.piece.orientation as usize] =
-//         AlignedU8s::blank().set_at(spawn.position.to_location());
-//
-//     aligneds.map(|aligned| ReachableSimd16::from(aligned))
-// }
+#[inline(always)]
+pub fn spawn_and_harddrop_reachables_pair(
+    spawn: CcPlacement,
+    free_spaces_pair: &Pair<[FreeSpaceSimd16; 4]>,
+) -> Pair<[ReachableSimd16; 4]> {
+    Pair::new(
+        spawn_and_harddrop_reachables(spawn, &free_spaces_pair.lower),
+        spawn_and_harddrop_reachables(
+            spawn
+                .piece
+                .with(cc(spawn.position.cx, spawn.position.cy - 12)),
+            &free_spaces_pair.upper,
+        ),
+    )
+}
 
 #[inline(always)]
 pub fn spawn_and_harddrop_reachables(
@@ -212,15 +255,33 @@ pub fn spawn_and_harddrop_aligned(spawn: CcPlacement, free_space: &FreeSpaceSimd
 }
 
 #[inline(always)]
+pub fn land(
+    reachables_pair: &Pair<[ReachableSimd16; 4]>,
+    free_spaces_pair: &Pair<[FreeSpaceSimd16; 4]>,
+) -> Pair<[ReachableSimd16; 4]> {
+    Pair::new(
+        ref_zip2_map4(
+            &reachables_pair.lower,
+            &free_spaces_pair.lower,
+            |&reachable, free_space| reachable.land(free_space),
+        ),
+        ref_zip2_map4(
+            &reachables_pair.upper,
+            &free_spaces_pair.upper,
+            |&reachable, free_space| reachable.clone().clip(0xFFFE).land(free_space),
+        ),
+    )
+}
+
+#[inline(always)]
 pub fn to_bytes_u32x4(
-    reachables_lower: &[ReachableSimd16; 4],
-    reachables_upper: &[ReachableSimd16; 4],
+    reachables_pair: Pair<[ReachableSimd16; 4]>,
 ) -> [[u32; 10]; 4] {
     [
-        to_bytes_u32(&reachables_lower[0], &reachables_upper[0]),
-        to_bytes_u32(&reachables_lower[1], &reachables_upper[1]),
-        to_bytes_u32(&reachables_lower[2], &reachables_upper[2]),
-        to_bytes_u32(&reachables_lower[3], &reachables_upper[3]),
+        to_bytes_u32(&reachables_pair.lower[0], &reachables_pair.upper[0]),
+        to_bytes_u32(&reachables_pair.lower[1], &reachables_pair.upper[1]),
+        to_bytes_u32(&reachables_pair.lower[2], &reachables_pair.upper[2]),
+        to_bytes_u32(&reachables_pair.lower[3], &reachables_pair.upper[3]),
     ]
 }
 
@@ -243,6 +304,15 @@ pub fn to_bytes_u32(
         lower[8] | (upper[8] << 12),
         lower[9] | (upper[9] << 12),
     ]
+}
+
+pub fn can_reach4_pair(reachables_pair: &Pair<[ReachableSimd16; 4]>, goals: &[CcPlacement]) -> bool {
+    todo!()
+    goals.iter().any(|&goal_placement| {
+        let orientation_index = goal_placement.piece.orientation as usize;
+        let location = goal_placement.position.to_location();
+        reachables[orientation_index].is_visited(location)
+    })
 }
 
 pub fn can_reach4(reachables: &[ReachableSimd16; 4], goals: &[CcPlacement]) -> bool {
