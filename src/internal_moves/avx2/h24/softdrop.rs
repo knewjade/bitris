@@ -5,11 +5,11 @@ use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
 use crate::internal_moves::avx2::h24::loaders::*;
 use crate::internal_moves::avx2::h24::minimize::minimize;
 use crate::internal_moves::avx2::h24::reachable::ReachableSimd24;
+use crate::internal_moves::avx2::h24::rotate::{rotate_ccw, rotate_cw};
 use crate::internal_moves::avx2::moves::{Moves1, Moves4};
 use crate::pieces::{Orientation, Piece};
 use crate::placements::CcPlacement;
 use crate::{Rotate, With};
-use crate::internal_moves::avx2::h24::rotate::{rotate_ccw, rotate_cw};
 
 const ORIENTATIONS_ORDER: [Orientation; 4] = [
     Orientation::North,
@@ -23,10 +23,11 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     board: &Board<u64>,
     spawn: CcPlacement,
 ) -> Moves4 {
-    debug_assert!(board.well_top() <= 19);
+    debug_assert!(board.well_top() <= 20);
     // TODO if board.well_top() <= 19 {でfree_spacesの作り方を変えたい
 
-    let free_spaces = to_free_spaces(board, spawn.piece.shape);
+    let free_space_block = to_free_space_block(board);
+    let free_spaces = to_free_spaces(&free_space_block, spawn.piece.shape);
 
     // スポーン位置を下のボードまでスキップする。
     // ボードで最も高いブロックの位置がy=19以下であるため、
@@ -38,7 +39,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
         spawn.piece.with(cc(spawn.position.cx, 21))
     };
 
-    let reachables = spawn_and_harddrop_reachables(spawn, &free_spaces);
+    let reachables = spawn_and_harddrop_reachables(spawn, &free_space_block, &free_spaces);
     let reachables = search_with_rotation(spawn.piece, reachables, &free_spaces);
 
     // landed
@@ -134,10 +135,11 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     board: &Board<u64>,
     spawn: CcPlacement,
 ) -> Moves1 {
-    debug_assert!(board.well_top() <= 19);
+    debug_assert!(board.well_top() <= 20);
     // TODO if board.well_top() <= 19 {でfree_spacesの作り方を変えたい
 
-    let free_space = to_free_space(board, spawn.piece);
+    let free_space_block = to_free_space_block(board);
+    let free_space = to_free_space(&free_space_block, spawn.piece);
 
     let spawn = if spawn.position.cy < 21 {
         spawn
@@ -145,7 +147,7 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
         spawn.piece.with(cc(spawn.position.cx, 21))
     };
 
-    let reachable = spawn_and_harddrop_reachable(spawn, &free_space);
+    let reachable = spawn_and_harddrop_reachable(spawn, &free_space_block, &free_space);
     let reachable = search_no_rotation(reachable, &free_space);
 
     // landed

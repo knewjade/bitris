@@ -1,28 +1,27 @@
 use crate::boards::Board;
 use crate::internal_moves::avx2::h24::aligned::AlignedU24s;
-use crate::internal_moves::avx2::h24::free;
+use crate::internal_moves::avx2::h24::{free, opsimd};
 use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
 use crate::internal_moves::avx2::h24::reachable::ReachableSimd24;
-use crate::pieces::{Piece, Shape};
+use crate::pieces::{Orientation, Piece, Shape};
 use crate::placements::CcPlacement;
 
 #[inline(always)]
-pub fn to_free_spaces(board: &Board<u64>, shape: Shape) -> [FreeSpaceSimd24; 4] {
-    let free_space_block = to_free_space_block(board);
+pub fn to_free_spaces(free_space_block: &FreeSpaceSimd24, shape: Shape) -> [FreeSpaceSimd24; 4] {
     free::to_free_spaces(free_space_block, shape)
 }
 
 #[inline(always)]
-pub fn to_free_space(board: &Board<u64>, piece: Piece) -> FreeSpaceSimd24 {
-    let free_space_block_lower = to_free_space_block(board);
-    free::to_free_space(free_space_block_lower, piece)
+pub fn to_free_space(free_space_block_lower: &FreeSpaceSimd24, piece: Piece) -> FreeSpaceSimd24 {
+    free::to_free_space(&free_space_block_lower, piece)
 }
 
 #[inline(always)]
-fn to_free_space_block(board: &Board<u64>) -> FreeSpaceSimd24 {
+pub fn to_free_space_block(board: &Board<u64>) -> FreeSpaceSimd24 {
     let bytes_u64 = board.cols.map(|col| !col);
 
     let bytes_u8: [u8; 32] = [
+        0,
         bytes_u64[0] as u8,
         (bytes_u64[0] >> 8) as u8,
         (bytes_u64[0] >> 16) as u8,
@@ -54,7 +53,6 @@ fn to_free_space_block(board: &Board<u64>) -> FreeSpaceSimd24 {
         (bytes_u64[9] >> 8) as u8,
         (bytes_u64[9] >> 16) as u8,
         0,
-        0,
     ];
 
     FreeSpaceSimd24::from(AlignedU24s::new(bytes_u8))
@@ -63,6 +61,7 @@ fn to_free_space_block(board: &Board<u64>) -> FreeSpaceSimd24 {
 #[inline(always)]
 pub fn spawn_and_harddrop_reachables(
     spawn: CcPlacement,
+    free_space_block: &FreeSpaceSimd24,
     free_spaces: &[FreeSpaceSimd24; 4],
 ) -> [ReachableSimd24; 4] {
     if spawn.position.cy < 0 || 24 <= spawn.position.cy {
@@ -74,34 +73,58 @@ pub fn spawn_and_harddrop_reachables(
         ];
     }
 
-    let mut aligneds = [
-        AlignedU24s::blank(),
-        AlignedU24s::blank(),
-        AlignedU24s::blank(),
-        AlignedU24s::blank(),
-    ];
-
-    // spawn
-    let mut spawn_aligned =
-        spawn_and_harddrop_aligned(spawn, &free_spaces[spawn.piece.orientation as usize]);
-
-    std::mem::swap(
-        &mut aligneds[spawn.piece.orientation as usize],
-        &mut spawn_aligned,
+    let orientation_index = spawn.piece.orientation as usize;
+    let data = opsimd::spawn(
+        spawn,
+        free_space_block.data,
+        free_spaces[orientation_index].data,
     );
 
-    aligneds.map(|aligned| ReachableSimd24::from(aligned))
+    match spawn.piece.orientation {
+        Orientation::North => [
+            ReachableSimd24::new(data),
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+        ],
+        Orientation::East => [
+            ReachableSimd24::blank(),
+            ReachableSimd24::new(data),
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+        ],
+        Orientation::South => [
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+            ReachableSimd24::new(data),
+            ReachableSimd24::blank(),
+        ],
+        Orientation::West => [
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+            ReachableSimd24::blank(),
+            ReachableSimd24::new(data),
+        ],
+    }
 }
 
 #[inline(always)]
 pub fn spawn_and_harddrop_reachable(
     spawn: CcPlacement,
+    free_space_block: &FreeSpaceSimd24,
     free_space: &FreeSpaceSimd24,
 ) -> ReachableSimd24 {
     if spawn.position.cy < 0 || 24 <= spawn.position.cy {
         return ReachableSimd24::blank();
     }
-    ReachableSimd24::from(spawn_and_harddrop_aligned(spawn, free_space))
+
+    let data = opsimd::spawn(
+        spawn,
+        free_space_block.data,
+        free_space.data,
+    );
+
+    ReachableSimd24::new(data)
 }
 
 #[inline(always)]

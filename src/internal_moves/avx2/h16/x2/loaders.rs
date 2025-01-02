@@ -28,43 +28,46 @@ impl<T> Pair<T> {
 // 本来の判定と変わる可能性があるのは、lowerボードの天井 と upperボードの床と天井 で、それぞれ2段分。
 #[inline(always)]
 pub fn to_free_spaces_pair(board: &Board<u64>, spawn: CcPlacement) -> Pair<[FreeSpaceSimd16; 4]> {
-    let mut lower = to_free_spaces_lower(board, spawn.piece.shape);
-    let mut upper = to_free_spaces_upper(board, spawn.piece.shape);
-
-    // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
-    lower = map_indexed4(lower.clone(), |index, reachable| {
-        reachable.or_shift::<0, 0, 0, 12>(&upper[index])
-    });
-    upper = map_indexed4(upper.clone(), |index, reachable| {
-        reachable.or_shift::<0, 0, 12, 0>(&lower[index])
-    });
-
-    Pair::new(lower, upper)
+    todo!()
+    // let mut lower = to_free_spaces_lower(board, spawn.piece.shape);
+    // let mut upper = to_free_spaces_upper(board, spawn.piece.shape);
+    //
+    // // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
+    // lower = map_indexed4(lower.clone(), |index, reachable| {
+    //     reachable.or_shift::<0, 0, 0, 12>(&upper[index])
+    // });
+    // upper = map_indexed4(upper.clone(), |index, reachable| {
+    //     reachable.or_shift::<0, 0, 12, 0>(&lower[index])
+    // });
+    //
+    // Pair::new(lower, upper)
 }
 
 #[inline(always)]
-pub fn to_free_space_pair(board: &Board<u64>, spawn: CcPlacement) -> Pair<FreeSpaceSimd16> {
-    let mut upper = to_free_space_upper(board, spawn.piece);
-    let mut lower = to_free_space_lower(board, spawn.piece);
-
-    // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
-    upper = upper.or_shift::<0, 0, 12, 0>(&lower);
-    lower = lower.or_shift::<0, 0, 0, 12>(&upper);
-
-    Pair::new(lower, upper)
+pub fn to_free_space_pair(free_space_block: &FreeSpaceSimd16, spawn: CcPlacement) -> Pair<FreeSpaceSimd16> {
+    todo!()
+    // let mut upper = to_free_space_upper(free_space_block, spawn.piece);
+    // let mut lower = to_free_space_lower(free_space_block, spawn.piece);
+    //
+    // // ボードの境界で判定できない箇所は、もう一方のボードでは判定できるため、お互いの境界を反映する
+    // upper = upper.or_shift::<0, 0, 12, 0>(&lower);
+    // lower = lower.or_shift::<0, 0, 0, 12>(&upper);
+    //
+    // Pair::new(lower, upper)
 }
 
 // ブロックと空を反転して、下位12bitをスキップして、16bitを読み込み
 #[inline(always)]
 pub fn to_free_spaces_upper(board: &Board<u64>, shape: Shape) -> [FreeSpaceSimd16; 4] {
     let free_space_block = free_space_block_upper(board);
-    free::to_free_spaces(free_space_block, shape)
+    free::to_free_spaces(&free_space_block, shape)
 }
 
 #[inline(always)]
 pub fn to_free_space_upper(board: &Board<u64>, piece: Piece) -> FreeSpaceSimd16 {
     let free_space_block_upper = free_space_block_upper(board);
-    free::to_free_space(free_space_block_upper, piece)
+    // free::to_free_space(free_space_block_upper, piece)
+    todo!()
 }
 
 #[inline(always)]
@@ -99,15 +102,16 @@ pub fn spawn_and_harddrop_reachables_pair(
     spawn: CcPlacement,
     free_spaces_pair: &Pair<[FreeSpaceSimd16; 4]>,
 ) -> Pair<[ReachableSimd16; 4]> {
-    Pair::new(
-        spawn_and_harddrop_reachables(spawn, &free_spaces_pair.lower),
-        spawn_and_harddrop_reachables(
-            spawn
-                .piece
-                .with(cc(spawn.position.cx, spawn.position.cy - 12)),
-            &free_spaces_pair.upper,
-        ),
-    )
+    todo!()
+    // Pair::new(
+    //     spawn_and_harddrop_reachables(spawn, free_space_block),
+    //     spawn_and_harddrop_reachables(
+    //         spawn
+    //             .piece
+    //             .with(cc(spawn.position.cx, spawn.position.cy - 12)),
+    //         &free_space_block.clone().shift::<0, 0, 12, 0>(),
+    //     ),
+    // )
 }
 
 #[inline(always)]

@@ -1,5 +1,5 @@
 use crate::array_map::zip2_map4;
-use crate::boards::{Board, Board16, BoardOp};
+use crate::boards::{Board, BoardOp};
 use crate::coordinates::cc;
 use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
 use crate::internal_moves::avx2::h16::loaders::*;
@@ -25,8 +25,10 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
 ) -> Moves4 {
     debug_assert!(board.well_top() <= 11);
     // TODO if board.well_top() <= 11 {でfree_spacesの作り方を変えたい
+    // TODO shiftで下方向に移動した時、fで埋める（空間があるため）
 
-    let free_spaces = to_free_spaces_lower(board, spawn.piece.shape);
+    let free_space_block = to_free_space_block_lower(board);
+    let free_spaces = to_free_spaces_lower(&free_space_block, spawn.piece.shape);
 
     // スポーン位置を下のボードまでスキップする。
     // ボードで最も高いブロックの位置がy=11以下であるため、
@@ -38,7 +40,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
         spawn.piece.with(cc(spawn.position.cx, 13))
     };
 
-    let reachables = spawn_and_harddrop_reachables(spawn, &free_spaces);
+    let reachables = spawn_and_harddrop_reachables(spawn, &free_space_block, &free_spaces);
     let reachables = search_with_rotation::<false>(spawn.piece, reachables, &free_spaces);
 
     // landed
@@ -137,7 +139,8 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
 ) -> Moves1 {
     debug_assert!(board.well_top() <= 11 || spawn.position.cy <= 13);
 
-    let free_space = to_free_space_lower(board, spawn.piece);
+    let free_space_block = to_free_space_block_lower(board);
+    let free_space = to_free_space_lower(&free_space_block, spawn.piece);
 
     let spawn = if spawn.position.cy < 13 {
         spawn
@@ -145,7 +148,7 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
         spawn.piece.with(cc(spawn.position.cx, 13))
     };
 
-    let reachable = spawn_and_harddrop_reachable(spawn, &free_space);
+    let reachable = spawn_and_harddrop_reachable(spawn, &free_space_block, &free_space);
     let reachable = search_no_rotation(reachable, &free_space);
 
     // landed

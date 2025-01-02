@@ -1,3 +1,5 @@
+use crate::internal_moves::avx2::h24::aligned::AlignedU24s;
+use crate::placements::CcPlacement;
 use crate::prelude::Location;
 use std::arch::x86_64::*;
 
@@ -18,8 +20,8 @@ pub fn fill_with(value: i32) -> __m256i {
     let a3 = (value >> 16) as i8;
     unsafe {
         _mm256_setr_epi8(
-            a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1,
-            a2, a3, a1, a2, a3, a1, a2, a3, 0, 0,
+            0, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3,
+            a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, a1, a2, a3, 0, 
         )
     }
 }
@@ -32,6 +34,84 @@ pub fn equals_to(left: __m256i, right: __m256i) -> bool {
 #[inline(always)]
 pub fn is_all_zero(data: __m256i) -> bool {
     unsafe { _mm256_testz_si256(data, data) != 0 }
+}
+
+// すべてが1の行を取り出す
+#[inline(always)]
+fn empty_lines(data: __m256i) -> u32 {
+    const FULL: i8 = 0xFFu16 as i8;
+    const CLEAR: i8 = 0xF0u8 as i8;
+
+    unsafe {
+        let empties = data;
+
+        // 下位128bit: x=3にその上のx=4を反映
+        // 上位128bit: x=8にその上のx=9を反映
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    CLEAR, 1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 15, CLEAR, CLEAR, CLEAR,
+                    0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 下位128bit: x=0..1にその上のx=2..3を反映
+        // 上位128bit: x=5..6にその上のx=7..8を反映
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    CLEAR, 7, 8, 9, 10, 11, 12, CLEAR, CLEAR, CLEAR,CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                    6, 7, 8, 9, 10, 11, CLEAR, CLEAR, CLEAR, CLEAR,CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 下位128bit: x=0にその上のx=1を反映
+        // 上位128bit: x=5にその上のx=6を反映
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    CLEAR, 4, 5, 6, CLEAR, CLEAR, CLEAR,CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                    3, 4, 5, CLEAR, CLEAR, CLEAR,CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 2つのレーンの下位16bitを直接反映
+        extract(empties, 0) & extract(empties, 8)
+    }
+}
+
+#[inline(always)]
+pub fn spawn(spawn: CcPlacement, free_space_block: __m256i, free_space: __m256i) -> __m256i {
+    unsafe {
+        // spawn以下の行を取り出すmask
+        let spawn_mask = (1 << (spawn.position.cy as usize + 1)) - 1;
+        let masked_empties = empty_lines(free_space_block) & spawn_mask;
+
+        // 上から連続した1を取り出す (空ではない行までは無条件で移動可能とする)
+        // ビット列を反転して、最も下位にある連続した1を取り出して、再度ビット列を反転
+        let bits = masked_empties.reverse_bits();
+        let lowest_bit_mask = bits & (-(bits as i32) as u32);
+        let removed_lowest_ones = bits.wrapping_add(lowest_bit_mask);
+        let bits = bits & !removed_lowest_ones;
+        let reachable_lines = bits.reverse_bits();
+
+        if 0 < reachable_lines {
+            and(fill_with(reachable_lines as i32), free_space)
+        } else {
+            AlignedU24s::blank()
+                .set_at(spawn.position.to_location())
+                .load()
+        }
+    }
 }
 
 #[inline(always)]
@@ -94,7 +174,7 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
     let data = if 0 < LEFT {
         unsafe {
             // 上位ビットの初期化
-            let data = _mm256_insert_epi16::<15>(data, 0);
+            let data = _mm256_insert_epi8::<31>(data, 0);
 
             // レジスタ上では右シフト
             // data = | A(128bit; x=8~9) B(128bit; x=0~7) | とすると、
@@ -113,6 +193,9 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         }
     } else if 0 < RIGHT {
         unsafe {
+            // 下位ビットの初期化
+            let data = _mm256_insert_epi8::<0>(data, 0);
+
             // レジスタ上では左シフト
             // data = | A(128bit; x=8~9) B(128bit; x=0~7) | とすると、
             // mask = | B(128bit; x=0~7) 0(128bit) |  < 0x08
@@ -161,24 +244,24 @@ fn slli32(data: __m256i) -> __m256i {
 #[inline(always)]
 pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
     // right
-    let data = unsafe {
-        let shift = shift::<0, 1, 0, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+    let candidate = unsafe {
+        shift::<0, 1, 0, 0>(data)
     };
 
     // left
-    let data = unsafe {
+    let candidate = unsafe {
         let shift = shift::<1, 0, 0, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+        _mm256_or_si256(candidate, shift)
     };
 
     // down
-    unsafe {
+    let candidate = unsafe {
         let shift = shift::<0, 0, 1, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+        _mm256_or_si256(candidate, shift)
+    };
+
+    unsafe {
+        _mm256_or_si256(data, _mm256_and_si256(free_space, candidate))
     }
 }
 
@@ -216,19 +299,19 @@ pub fn and_not(left: __m256i, right: __m256i) -> __m256i {
 #[inline(always)]
 pub fn extract(data: __m256i, x: i32) -> u32 {
     unsafe {
-        (match x {
-            0 => _mm256_extract_epi16::<0>(data) as u32 | (_mm256_extract_epi8::<2>(data) << 16) as u32,
-            1 => _mm256_extract_epi8::<3>(data) as u32 | (_mm256_extract_epi16::<2>(data) << 8) as u32,
-            2 => _mm256_extract_epi16::<3>(data) as u32 | (_mm256_extract_epi8::<8>(data) << 16) as u32,
-            3 => _mm256_extract_epi8::<9>(data) as u32 | (_mm256_extract_epi16::<5>(data) << 8) as u32,
-            4 => _mm256_extract_epi16::<6>(data) as u32 | (_mm256_extract_epi8::<14>(data) << 16) as u32,
-            5 => _mm256_extract_epi8::<15>(data) as u32 | (_mm256_extract_epi16::<8>(data) << 8) as u32,
-            6 => _mm256_extract_epi16::<9>(data) as u32 | (_mm256_extract_epi8::<20>(data) << 16) as u32,
-            7 => _mm256_extract_epi8::<21>(data) as u32 | (_mm256_extract_epi16::<11>(data) << 8) as u32,
-            8 => _mm256_extract_epi16::<12>(data) as u32 | (_mm256_extract_epi8::<26>(data) << 16) as u32,
-            9 => _mm256_extract_epi8::<27>(data) as u32 | (_mm256_extract_epi16::<14>(data) << 8) as u32,
+        match x {
+            0 => _mm256_extract_epi8::<1>(data) as u32 | (_mm256_extract_epi16::<1>(data) << 8) as u32,
+            1 => _mm256_extract_epi16::<2>(data) as u32 | (_mm256_extract_epi8::<6>(data) << 16) as u32,
+            2 => _mm256_extract_epi8::<7>(data) as u32 | (_mm256_extract_epi16::<4>(data) << 8) as u32,
+            3 => _mm256_extract_epi16::<5>(data) as u32 | (_mm256_extract_epi8::<12>(data) << 16) as u32,
+            4 => _mm256_extract_epi8::<13>(data) as u32 | (_mm256_extract_epi16::<7>(data) << 8) as u32,
+            5 => _mm256_extract_epi16::<8>(data) as u32 | (_mm256_extract_epi8::<18>(data) << 16) as u32,
+            6 => _mm256_extract_epi8::<19>(data) as u32 | (_mm256_extract_epi16::<10>(data) << 8) as u32,
+            7 => _mm256_extract_epi16::<11>(data) as u32 | (_mm256_extract_epi8::<24>(data) << 16) as u32,
+            8 => _mm256_extract_epi8::<25>(data) as u32 | (_mm256_extract_epi16::<13>(data) << 8) as u32,
+            9 => _mm256_extract_epi16::<14>(data) as u32 | (_mm256_extract_epi8::<30>(data) << 16) as u32,
             _ => panic!("Index out of bounds: {}", x),
-        })
+        }
     }
 }
 
@@ -237,37 +320,37 @@ pub fn is_one_at(data: __m256i, location: Location) -> bool {
     let index = (location.x * 3) + (location.y % 8);
     let value = unsafe {
         (match index {
-            0 => _mm256_extract_epi16::<0>(data),
-            1 => _mm256_extract_epi16::<1>(data),
-            2 => _mm256_extract_epi16::<2>(data),
-            3 => _mm256_extract_epi16::<3>(data),
-            4 => _mm256_extract_epi16::<4>(data),
-            5 => _mm256_extract_epi16::<5>(data),
-            6 => _mm256_extract_epi16::<6>(data),
-            7 => _mm256_extract_epi16::<7>(data),
-            8 => _mm256_extract_epi16::<8>(data),
-            9 => _mm256_extract_epi16::<9>(data),
-            10 => _mm256_extract_epi16::<10>(data),
-            11 => _mm256_extract_epi16::<11>(data),
-            12 => _mm256_extract_epi16::<12>(data),
-            13 => _mm256_extract_epi16::<13>(data),
-            14 => _mm256_extract_epi16::<14>(data),
-            15 => _mm256_extract_epi16::<15>(data),
-            16 => _mm256_extract_epi8::<16>(data),
-            17 => _mm256_extract_epi8::<17>(data),
-            18 => _mm256_extract_epi8::<18>(data),
-            19 => _mm256_extract_epi8::<19>(data),
-            20 => _mm256_extract_epi8::<20>(data),
-            21 => _mm256_extract_epi8::<21>(data),
-            22 => _mm256_extract_epi8::<22>(data),
-            23 => _mm256_extract_epi8::<23>(data),
-            24 => _mm256_extract_epi8::<24>(data),
-            25 => _mm256_extract_epi8::<25>(data),
-            26 => _mm256_extract_epi8::<26>(data),
-            27 => _mm256_extract_epi8::<27>(data),
-            28 => _mm256_extract_epi8::<28>(data),
-            29 => _mm256_extract_epi8::<29>(data),
-            30 => _mm256_extract_epi8::<30>(data),
+            0 => _mm256_extract_epi16::<1>(data),
+            1 => _mm256_extract_epi16::<2>(data),
+            2 => _mm256_extract_epi16::<3>(data),
+            3 => _mm256_extract_epi16::<4>(data),
+            4 => _mm256_extract_epi16::<5>(data),
+            5 => _mm256_extract_epi16::<6>(data),
+            6 => _mm256_extract_epi16::<7>(data),
+            7 => _mm256_extract_epi16::<8>(data),
+            8 => _mm256_extract_epi16::<9>(data),
+            9 => _mm256_extract_epi16::<10>(data),
+            10 => _mm256_extract_epi16::<11>(data),
+            11 => _mm256_extract_epi16::<12>(data),
+            12 => _mm256_extract_epi16::<13>(data),
+            13 => _mm256_extract_epi16::<14>(data),
+            14 => _mm256_extract_epi16::<15>(data),
+            15 => _mm256_extract_epi16::<16>(data),
+            16 => _mm256_extract_epi8::<17>(data),
+            17 => _mm256_extract_epi8::<18>(data),
+            18 => _mm256_extract_epi8::<19>(data),
+            19 => _mm256_extract_epi8::<20>(data),
+            20 => _mm256_extract_epi8::<21>(data),
+            21 => _mm256_extract_epi8::<22>(data),
+            22 => _mm256_extract_epi8::<23>(data),
+            23 => _mm256_extract_epi8::<24>(data),
+            24 => _mm256_extract_epi8::<25>(data),
+            25 => _mm256_extract_epi8::<26>(data),
+            26 => _mm256_extract_epi8::<27>(data),
+            27 => _mm256_extract_epi8::<28>(data),
+            28 => _mm256_extract_epi8::<29>(data),
+            29 => _mm256_extract_epi8::<30>(data),
+            30 => _mm256_extract_epi8::<31>(data),
             _ => panic!("Index out of bounds: {}", index),
         }) as u8
     };
@@ -288,15 +371,15 @@ pub fn data_to_byte(data: __m256i) -> [u8; 32] {
 pub fn to_bytes_u32(data: __m256i) -> [u32; 10] {
     let data = data_to_byte(data);
     [
-        (data[0] as u32) | (data[1] as u32) << 8 | (data[2] as u32) << 16,
-        (data[3] as u32) | (data[4] as u32) << 8 | (data[5] as u32) << 16,
-        (data[6] as u32) | (data[7] as u32) << 8 | (data[8] as u32) << 16,
-        (data[9] as u32) | (data[10] as u32) << 8 | (data[11] as u32) << 16,
-        (data[12] as u32) | (data[13] as u32) << 8 | (data[14] as u32) << 16,
-        (data[15] as u32) | (data[16] as u32) << 8 | (data[17] as u32) << 16,
-        (data[18] as u32) | (data[19] as u32) << 8 | (data[20] as u32) << 16,
-        (data[21] as u32) | (data[22] as u32) << 8 | (data[23] as u32) << 16,
-        (data[24] as u32) | (data[25] as u32) << 8 | (data[26] as u32) << 16,
-        (data[27] as u32) | (data[28] as u32) << 8 | (data[29] as u32) << 16,
+        (data[1] as u32) | (data[2] as u32) << 8 | (data[3] as u32) << 16,
+        (data[4] as u32) | (data[5] as u32) << 8 | (data[6] as u32) << 16,
+        (data[7] as u32) | (data[8] as u32) << 8 | (data[9] as u32) << 16,
+        (data[10] as u32) | (data[11] as u32) << 8 | (data[12] as u32) << 16,
+        (data[13] as u32) | (data[14] as u32) << 8 | (data[15] as u32) << 16,
+        (data[16] as u32) | (data[17] as u32) << 8 | (data[18] as u32) << 16,
+        (data[19] as u32) | (data[20] as u32) << 8 | (data[21] as u32) << 16,
+        (data[22] as u32) | (data[23] as u32) << 8 | (data[24] as u32) << 16,
+        (data[25] as u32) | (data[26] as u32) << 8 | (data[27] as u32) << 16,
+        (data[28] as u32) | (data[29] as u32) << 8 | (data[30] as u32) << 16,
     ]
 }

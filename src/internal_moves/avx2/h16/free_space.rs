@@ -9,7 +9,7 @@ pub struct FreeSpaceSimd16 {
     // フィールド縦方向1列ごとに16ビット(8bit2つ)で表現される。
     // したがって、W10xH16のフィールドが表現されている。
     //
-    // 使用されない末尾96bit(8*12)の状態は未定義とする(0 or 1か確定しない)
+    // 使用されない上位96bit(8*12)の状態は未定義とする(0 or 1か確定しない)
     // * data[0]: x=0 の (0<=y<8) を表現
     // * data[1]: x=0 の (8<=y<y16) を表現
     // * data[2]: x=1 の (0<=y<8) を表現
@@ -30,12 +30,12 @@ impl FreeSpaceSimd16 {
     }
 
     #[inline(always)]
-    pub fn and(self, other: FreeSpaceSimd16) -> Self {
+    pub fn and(self, other: &FreeSpaceSimd16) -> Self {
         Self::new(opsimd::and(self.data, other.data))
     }
 
     #[inline(always)]
-    pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(self) -> Self {
+    pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(&self) -> Self {
         Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
     }
 

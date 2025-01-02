@@ -21,7 +21,7 @@ tasks:
 
   bench-keys:
     cmds:
-      - cargo bench boards -- --baseline base
+      - cargo bench boards/set_at/1 -- --baseline base
       - cargo bench moves_empty -- --baseline base
       - cargo bench moves_pco -- --baseline base
       - cargo bench moves_center_4_wide -- --baseline base
@@ -33,7 +33,7 @@ tasks:
 
   bench-keys-save:
     cmds:
-      - cargo bench boards -- --save-baseline base
+      - cargo bench boards/set_at/1 -- --save-baseline base
       - cargo bench moves_empty -- --save-baseline base
       - cargo bench moves_pco -- --save-baseline base
       - cargo bench moves_center_4_wide -- --save-baseline base

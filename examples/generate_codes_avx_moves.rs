@@ -158,7 +158,7 @@ fn generate_free(package: Package, path: &str) {
         b.println("#[inline(always)]");
         b._pub_fn(
             "to_free_spaces",
-            format!("free_space_block: {}, shape: Shape", free_space(&package)).as_str(),
+            format!("free_space_block: &{}, shape: Shape", free_space(&package)).as_str(),
             format!("[{}; 4]", free_space(&package)).as_str(),
             |b| {
                 b._match("shape", |b| {
@@ -167,13 +167,13 @@ fn generate_free(package: Package, path: &str) {
                         b.deep(|b| {
                             let shape = shape.to_string().to_lowercase();
                             b.println(
-                                format!("{}_north(free_space_block.clone()),", shape).as_str(),
+                                format!("{}_north(free_space_block),", shape).as_str(),
                             );
                             b.println(
-                                format!("{}_east(free_space_block.clone()),", shape).as_str(),
+                                format!("{}_east(free_space_block),", shape).as_str(),
                             );
                             b.println(
-                                format!("{}_south(free_space_block.clone()),", shape).as_str(),
+                                format!("{}_south(free_space_block),", shape).as_str(),
                             );
                             b.println(format!("{}_west(free_space_block),", shape).as_str());
                         });
@@ -187,7 +187,7 @@ fn generate_free(package: Package, path: &str) {
         b.println("#[inline(always)]");
         b._pub_fn(
             "to_free_space",
-            format!("free_space_block: {}, piece: Piece", free_space(&package)).as_str(),
+            format!("free_space_block: &{}, piece: Piece", free_space(&package)).as_str(),
             free_space(&package),
             |b| {
                 b._match("piece.shape", |b| {
@@ -198,7 +198,7 @@ fn generate_free(package: Package, path: &str) {
                                 for orientation in Orientation::all_iter() {
                                     b.println(
                                         format!(
-                                            "Orientation::{} => {}_{}(free_space_block.clone()),",
+                                            "Orientation::{} => {}_{}(free_space_block),",
                                             orientation,
                                             shape.to_string().to_lowercase(),
                                             orientation.to_string().to_lowercase(),
@@ -224,28 +224,35 @@ fn generate_free(package: Package, path: &str) {
                 b.println("#[inline(always)]");
                 b._pub_fn(
                     function_name.to_lowercase().as_str(),
-                    format!("space: {}", free_space(&package)).as_str(),
+                    format!("space: &{}", free_space(&package)).as_str(),
                     free_space(&package),
                     |b| {
-                        fn format_space(offset: Offset, clone: bool) -> String {
+                        fn format_space(offset: Offset, first: bool) -> String {
                             let mut line = String::with_capacity(256);
-                            line.push_str("space");
-                            if clone {
-                                line.push_str(".clone()");
-                            }
-
-                            if offset != Offset::new(0, 0) {
-                                line.push_str(".shift::<");
-                                line.push_str(format_offset(-offset).as_str());
-                                line.push_str(">()");
+                            if first {
+                                if offset == Offset::new(0, 0) {
+                                    line.push_str("space.clone()");
+                                } else {
+                                    line.push_str("space.shift::<");
+                                    line.push_str(format_offset(-offset).as_str());
+                                    line.push_str(">()");
+                                }
+                            } else {
+                                if offset == Offset::new(0, 0) {
+                                    line.push_str("space");
+                                } else {
+                                    line.push_str("&space.shift::<");
+                                    line.push_str(format_offset(-offset).as_str());
+                                    line.push_str(">()");
+                                }
                             }
                             line
                         }
 
                         let spaces = [
                             format_space(piece_blocks.offsets[0], true),
-                            format_space(piece_blocks.offsets[1], true),
-                            format_space(piece_blocks.offsets[2], true),
+                            format_space(piece_blocks.offsets[1], false),
+                            format_space(piece_blocks.offsets[2], false),
                             format_space(piece_blocks.offsets[3], false),
                         ];
                         b.println(format!("{}", spaces[0]).as_str());

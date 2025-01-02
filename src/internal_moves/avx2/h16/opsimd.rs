@@ -1,6 +1,6 @@
-use std::arch::x86_64::*;
-use crate::boards::Board16;
 use crate::internal_moves::avx2::h16::aligned::AlignedU16s;
+use crate::placements::CcPlacement;
+use std::arch::x86_64::*;
 
 #[inline(always)]
 pub fn load_from_unaligned(data: &[u8; 32]) -> __m256i {
@@ -25,6 +25,84 @@ pub fn equals_to(left: __m256i, right: __m256i) -> bool {
 #[inline(always)]
 pub fn is_all_zero(data: __m256i) -> bool {
     unsafe { _mm256_testz_si256(data, data) != 0 }
+}
+
+// すべてが1の行を取り出す
+#[inline(always)]
+fn empty_lines(data: __m256i) -> u16 {
+    const FULL: i16 = 0xFFFFu16 as i16;
+    const CLEAR: i8 = 0xF0u8 as i8;
+
+    unsafe {
+        let empties = data;
+
+        // 下位128bit: 下位64bitにその上の64bitを反映
+        // 上位128bit: 下位16bitにその上の16bitを反映 (完了)
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    8, 9, 10, 11, 12, 13, 14, 15, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                    2, 3, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 下位128bit: 下位32bitにその上の32bitを反映
+        // 上位128bit: 何もしない
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    4, 5, 6, 7, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                    0, 1, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 下位128bit: 下位16bitにその上の16bitを反映
+        // 上位128bit: 何もしない
+        let empties = and(
+            empties,
+            _mm256_shuffle_epi8(
+                empties,
+                _mm256_setr_epi8(
+                    2, 3, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                    0, 1, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR, CLEAR,
+                ),
+            ),
+        );
+
+        // 2つのレーンの下位16bitを直接反映
+        extract(empties, 0) & extract(empties, 8)
+    }
+}
+
+#[inline(always)]
+pub fn spawn(spawn: CcPlacement, free_space_block: __m256i, free_space: __m256i) -> __m256i {
+    unsafe {
+        // spawn以下の行を取り出すmask
+        let spawn_mask = (1 << (spawn.position.cy as usize + 1)) - 1;
+        let masked_empties = empty_lines(free_space_block) & spawn_mask;
+
+        // 上から連続した1を取り出す (空ではない行までは無条件で移動可能とする)
+        // ビット列を反転して、最も下位にある連続した1を取り出して、再度ビット列を反転
+        let bits = masked_empties.reverse_bits();
+        let lowest_bit_mask = bits & (-(bits as i16) as u16);
+        let removed_lowest_ones = bits.wrapping_add(lowest_bit_mask);
+        let bits = bits & !removed_lowest_ones;
+        let reachable_lines = bits.reverse_bits();
+
+        if 0 < reachable_lines {
+            and(fill_with(reachable_lines as i16), free_space)
+        } else {
+            AlignedU16s::blank()
+                .set_at(spawn.position.to_location())
+                .load()
+        }
+    }
 }
 
 #[inline(always)]
@@ -107,24 +185,24 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
 #[inline(always)]
 pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
     // right
-    let data = unsafe {
-        let shift = shift::<0, 1, 0, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+    let candidate = unsafe {
+        shift::<0, 1, 0, 0>(data)
     };
 
     // left
-    let data = unsafe {
+    let candidate = unsafe {
         let shift = shift::<1, 0, 0, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+        _mm256_or_si256(candidate, shift)
     };
 
     // down
-    unsafe {
+    let candidate = unsafe {
         let shift = shift::<0, 0, 1, 0>(data);
-        let candidate = _mm256_and_si256(free_space, shift);
-        _mm256_or_si256(data, candidate)
+        _mm256_or_si256(candidate, shift)
+    };
+
+    unsafe {
+        _mm256_or_si256(data, _mm256_and_si256(free_space, candidate))
     }
 }
 
@@ -191,16 +269,7 @@ pub fn data_to_byte(data: __m256i) -> AlignedU16s {
 pub fn to_bytes_u16(data: __m256i) -> [u16; 10] {
     let data = data_to_byte(data).data;
     [
-        data[0],
-        data[1],
-        data[2],
-        data[3],
-        data[4],
-        data[5],
-        data[6],
-        data[7],
-        data[8],
-        data[9],
+        data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9],
     ]
 }
 

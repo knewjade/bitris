@@ -31,12 +31,12 @@ impl FreeSpaceSimd24 {
     }
 
     #[inline(always)]
-    pub fn and(self, other: FreeSpaceSimd24) -> Self {
+    pub fn and(self, other: &FreeSpaceSimd24) -> Self {
         Self::new(opsimd::and(self.data, other.data))
     }
 
     #[inline(always)]
-    pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(self) -> Self {
+    pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(&self) -> Self {
         Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
     }
 

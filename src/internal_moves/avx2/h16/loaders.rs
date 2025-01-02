@@ -2,24 +2,26 @@ use crate::boards::Board;
 use crate::internal_moves::avx2::h16::aligned::AlignedU16s;
 use crate::internal_moves::avx2::h16::free;
 use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
+use crate::internal_moves::avx2::h16::opsimd;
 use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
-use crate::pieces::{Piece, Shape};
+use crate::pieces::{Orientation, Piece, Shape};
 use crate::placements::CcPlacement;
 
 #[inline(always)]
-pub fn to_free_spaces_lower(board: &Board<u64>, shape: Shape) -> [FreeSpaceSimd16; 4] {
-    let free_space_block_lower = to_free_space_block_lower(board);
+pub fn to_free_spaces_lower(
+    free_space_block_lower: &FreeSpaceSimd16,
+    shape: Shape,
+) -> [FreeSpaceSimd16; 4] {
     free::to_free_spaces(free_space_block_lower, shape)
 }
 
 #[inline(always)]
-pub fn to_free_space_lower(board: &Board<u64>, piece: Piece) -> FreeSpaceSimd16 {
-    let free_space_block_lower = to_free_space_block_lower(board);
+pub fn to_free_space_lower(free_space_block_lower: &FreeSpaceSimd16, piece: Piece) -> FreeSpaceSimd16 {
     free::to_free_space(free_space_block_lower, piece)
 }
 
 #[inline(always)]
-fn to_free_space_block_lower(board: &Board<u64>) -> FreeSpaceSimd16 {
+pub fn to_free_space_block_lower(board: &Board<u64>) -> FreeSpaceSimd16 {
     let bytes_u64 = board.cols.map(|col| !col);
 
     let bytes_16: [u16; 16] = [
@@ -47,6 +49,7 @@ fn to_free_space_block_lower(board: &Board<u64>) -> FreeSpaceSimd16 {
 #[inline(always)]
 pub fn spawn_and_harddrop_reachables(
     spawn: CcPlacement,
+    free_space_block: &FreeSpaceSimd16,
     free_spaces: &[FreeSpaceSimd16; 4],
 ) -> [ReachableSimd16; 4] {
     if spawn.position.cy < 0 || 16 <= spawn.position.cy {
@@ -58,34 +61,58 @@ pub fn spawn_and_harddrop_reachables(
         ];
     }
 
-    let mut aligneds = [
-        AlignedU16s::blank(),
-        AlignedU16s::blank(),
-        AlignedU16s::blank(),
-        AlignedU16s::blank(),
-    ];
-
-    // spawn
-    let mut spawn_aligned =
-        spawn_and_harddrop_aligned(spawn, &free_spaces[spawn.piece.orientation as usize]);
-
-    std::mem::swap(
-        &mut aligneds[spawn.piece.orientation as usize],
-        &mut spawn_aligned,
+    let orientation_index = spawn.piece.orientation as usize;
+    let data = opsimd::spawn(
+        spawn,
+        free_space_block.data,
+        free_spaces[orientation_index].data,
     );
 
-    aligneds.map(|aligned| ReachableSimd16::from(aligned))
+    match spawn.piece.orientation {
+        Orientation::North => [
+            ReachableSimd16::new(data),
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+        ],
+        Orientation::East => [
+            ReachableSimd16::blank(),
+            ReachableSimd16::new(data),
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+        ],
+        Orientation::South => [
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+            ReachableSimd16::new(data),
+            ReachableSimd16::blank(),
+        ],
+        Orientation::West => [
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+            ReachableSimd16::blank(),
+            ReachableSimd16::new(data),
+        ],
+    }
 }
 
 #[inline(always)]
 pub fn spawn_and_harddrop_reachable(
     spawn: CcPlacement,
+    free_space_block: &FreeSpaceSimd16,
     free_space: &FreeSpaceSimd16,
 ) -> ReachableSimd16 {
     if spawn.position.cy < 0 || 16 <= spawn.position.cy {
         return ReachableSimd16::blank();
     }
-    ReachableSimd16::from(spawn_and_harddrop_aligned(spawn, free_space))
+
+    let data = opsimd::spawn(
+        spawn,
+        free_space_block.data,
+        free_space.data,
+    );
+
+    ReachableSimd16::new(data)
 }
 
 #[inline(always)]

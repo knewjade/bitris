@@ -25,10 +25,11 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     if well_top <= 11 {
         h16::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
     // TODO softdrop20側で対応する
-    } else if well_top <= 19 {
+    } else if well_top <= 20 {
         h24::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
     } else {
-        h16::x2::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
+        todo!()
+        // h16::x2::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
     }
 }
 
@@ -46,10 +47,11 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     if board.well_top() <= 11 || spawn.position.cy <= 13 {
         h16::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
     // TODO softdrop20側で対応する. spawnの整理
-    } else if well_top <= 19 {
+    } else if well_top <= 20 {
         h24::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
     } else {
-        h16::x2::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
+        todo!()
+        // h16::x2::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
     }
 }
 
