@@ -51,11 +51,11 @@ impl FreeSpaceSimd24 {
 
     #[inline(always)]
     pub fn is_free_at(&self, location: Location) -> bool {
-        opsimd::extract(self.data, location.x) & (1 << location.y) != 0
+        opsimd::is_one_at(self.data, location)
     }
 
     #[inline(always)]
-    pub fn col(&self, x: usize) -> u16 {
+    pub fn col(&self, x: usize) -> u32 {
         opsimd::extract(self.data, x as i32)
     }
 

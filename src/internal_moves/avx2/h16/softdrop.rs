@@ -1,5 +1,5 @@
 use crate::array_map::zip2_map4;
-use crate::boards::{Board, BoardOp};
+use crate::boards::{Board, Board16, BoardOp};
 use crate::coordinates::cc;
 use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
 use crate::internal_moves::avx2::h16::loaders::*;
@@ -29,7 +29,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     let free_spaces = to_free_spaces_lower(board, spawn.piece.shape);
 
     // スポーン位置を下のボードまでスキップする。
-    // ボードで最も高いブロックの位置がy=10以下であるため、
+    // ボードで最も高いブロックの位置がy=11以下であるため、
     // `I-East (cy=13)` が左右移動しても引っかからない。
     // そのため、cy=13まで無条件でしても、その後の左右移動・ハードドロップに影響しない。
     let spawn = if spawn.position.cy < 13 {
@@ -58,6 +58,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     }
 }
 
+// ボードの下端が開いている（upper board）の場合は `BOTTOM_CUT=true` を指定する
 pub fn search_with_rotation<const BOTTOM_CUT: bool>(
     spawn_piece: Piece,
     mut reachables: [ReachableSimd16; 4],

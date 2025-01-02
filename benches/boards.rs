@@ -32,5 +32,8 @@ fn bench_boards(c: &mut Criterion) {
     group.finish()
 }
 
-criterion_group!(benches, bench_boards);
+criterion_group!(
+    name = benches;
+    config = Criterion::default();
+    targets = bench_boards);
 criterion_main!(benches);

@@ -4,14 +4,12 @@ use crate::boards::{Board, BoardOp};
 // use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
 // use crate::internal_moves::avx2::loaders::{can_reach1, can_reach4, can_reach4_pair, land, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, spawn_and_harddrop_reachables_pair, to_bytes_u32, to_bytes_u32x4, to_free_space_lower, to_free_space_pair, to_free_space_upper, to_free_spaces_lower, to_free_spaces_pair, Pair};
 // use crate::internal_moves::avx2::minimize::minimize;
-use crate::internal_moves::avx2::h16::x2::softdrop;
 // use crate::coordinates::cc;
 // use crate::internal_moves::avx2::free_space::FreeSpaceSimd16;
 // use crate::internal_moves::avx2::loaders::{can_reach1, can_reach4, can_reach4_pair, land, spawn_and_harddrop_reachable, spawn_and_harddrop_reachables, spawn_and_harddrop_reachables_pair, to_bytes_u32, to_bytes_u32x4, to_free_space_lower, to_free_space_pair, to_free_space_upper, to_free_spaces_lower, to_free_spaces_pair, Pair};
 // use crate::internal_moves::avx2::minimize::minimize;
 use crate::internal_moves::avx2::moves::{Moves1, Moves4};
 use crate::internal_moves::avx2::{h16, h24};
-use crate::internal_moves::avx2::h16::x2;
 use crate::placements::BlPlacement;
 
 #[inline(always)]
@@ -20,7 +18,6 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     spawn: BlPlacement,
 ) -> Moves4 {
     let well_top = board.well_top();
-    debug_assert!(well_top <= 20);
 
     let spawn = spawn.to_cc_placement();
 
@@ -31,7 +28,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     } else if well_top <= 19 {
         h24::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
     } else {
-        x2::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
+        h16::x2::softdrop::moves_softdrop_with_rotation::<MINIMIZE>(board, spawn)
     }
 }
 
@@ -41,14 +38,18 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     spawn: BlPlacement,
 ) -> Moves1 {
     let spawn = spawn.canonical_or_self().to_cc_placement();
+    let well_top = board.well_top();
 
     // 11を許容できる理由はwith_rotationと同じ。
     // 加えて、スポーン位置がcy<=13であれば、upperに移動できなくなるのでlowerだけで十分
-    // TODO softdrop16側でwell_top12, cy<15を対応する
+    // TODO softdrop16側でwell_top12, cy<15を対応する. spawnの整理
     if board.well_top() <= 11 || spawn.position.cy <= 13 {
-        softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
+        h16::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
+    // TODO softdrop20側で対応する. spawnの整理
+    } else if well_top <= 19 {
+        h24::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
     } else {
-        softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
+        h16::x2::softdrop::moves_softdrop_no_rotation::<MINIMIZE>(board, spawn)
     }
 }
 

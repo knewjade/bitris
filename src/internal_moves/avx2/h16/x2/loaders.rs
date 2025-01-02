@@ -4,9 +4,7 @@ use crate::coordinates::cc;
 use crate::internal_moves::avx2::h16::aligned::AlignedU16s;
 use crate::internal_moves::avx2::h16::free;
 use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
-use crate::internal_moves::avx2::h16::loaders::{
-    spawn_and_harddrop_reachables, to_bytes_u32, to_free_space_lower, to_free_spaces_lower,
-};
+use crate::internal_moves::avx2::h16::loaders::*;
 use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
 use crate::pieces::{Piece, Shape};
 use crate::placements::CcPlacement;
@@ -138,6 +136,27 @@ pub fn to_bytes_u32x4(reachables_pair: Pair<[ReachableSimd16; 4]>) -> [[u32; 10]
         to_bytes_u32(&reachables_pair.lower[1], &reachables_pair.upper[1]),
         to_bytes_u32(&reachables_pair.lower[2], &reachables_pair.upper[2]),
         to_bytes_u32(&reachables_pair.lower[3], &reachables_pair.upper[3]),
+    ]
+}
+
+#[inline(always)]
+pub fn to_bytes_u32(
+    reachable_lower: &ReachableSimd16,
+    reachable_upper: &ReachableSimd16,
+) -> [u32; 10] {
+    let lower = reachable_lower.to_bytes_u32();
+    let upper = reachable_upper.to_bytes_u32();
+    [
+        lower[0] | (upper[0] << 12),
+        lower[1] | (upper[1] << 12),
+        lower[2] | (upper[2] << 12),
+        lower[3] | (upper[3] << 12),
+        lower[4] | (upper[4] << 12),
+        lower[5] | (upper[5] << 12),
+        lower[6] | (upper[6] << 12),
+        lower[7] | (upper[7] << 12),
+        lower[8] | (upper[8] << 12),
+        lower[9] | (upper[9] << 12),
     ]
 }
 

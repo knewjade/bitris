@@ -783,5 +783,8 @@ fn bench_moves_in_srs(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_moves_in_srs);
+criterion_group!(
+    name = benches;
+    config = Criterion::default();
+    targets = bench_moves_in_srs);
 criterion_main!(benches);

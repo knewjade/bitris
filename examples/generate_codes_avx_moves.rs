@@ -83,7 +83,10 @@ impl Buffer {
     }
 }
 
-fn begin(func: fn(b: &mut Buffer)) -> String {
+fn begin<F>(func: F) -> String
+where
+    F: Fn(&mut Buffer),
+{
     let mut buffer = Buffer {
         indent: 0,
         content: String::with_capacity(1024 * 10),
@@ -112,18 +115,51 @@ fn format_offset(offset: Offset) -> String {
     line
 }
 
-fn generate_free(path: &str) {
+enum Package {
+    H16,
+    H24,
+}
+
+fn free_space(package: &Package) -> &'static str {
+    match package {
+        Package::H16 => "FreeSpaceSimd16",
+        Package::H24 => "FreeSpaceSimd24",
+    }
+}
+
+fn free_space_full(package: &Package) -> &'static str {
+    match package {
+        Package::H16 => "crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16",
+        Package::H24 => "crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24",
+    }
+}
+
+fn reachable(package: &Package) -> &'static str {
+    match package {
+        Package::H16 => "ReachableSimd16",
+        Package::H24 => "ReachableSimd24",
+    }
+}
+
+fn reachable_full(package: &Package) -> &'static str {
+    match package {
+        Package::H16 => "crate::internal_moves::avx2::h16::reachable::ReachableSimd16",
+        Package::H24 => "crate::internal_moves::avx2::h24::reachable::ReachableSimd24",
+    }
+}
+
+fn generate_free(package: Package, path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
-        b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
+        b._use(free_space_full(&package));
         b._use("crate::pieces::{Orientation, Piece, Shape}");
 
         b.newline();
         b.println("#[inline(always)]");
         b._pub_fn(
             "to_free_spaces",
-            "free_space_block: FreeSpaceSimd16, shape: Shape",
-            "[FreeSpaceSimd16; 4]",
+            format!("free_space_block: {}, shape: Shape", free_space(&package)).as_str(),
+            format!("[{}; 4]", free_space(&package)).as_str(),
             |b| {
                 b._match("shape", |b| {
                     for shape in Shape::all_iter() {
@@ -151,8 +187,8 @@ fn generate_free(path: &str) {
         b.println("#[inline(always)]");
         b._pub_fn(
             "to_free_space",
-            "free_space_block: FreeSpaceSimd16, piece: Piece",
-            "FreeSpaceSimd16",
+            format!("free_space_block: {}, piece: Piece", free_space(&package)).as_str(),
+            free_space(&package),
             |b| {
                 b._match("piece.shape", |b| {
                     for shape in Shape::all_iter() {
@@ -188,8 +224,8 @@ fn generate_free(path: &str) {
                 b.println("#[inline(always)]");
                 b._pub_fn(
                     function_name.to_lowercase().as_str(),
-                    "space: FreeSpaceSimd16",
-                    "FreeSpaceSimd16",
+                    format!("space: {}", free_space(&package)).as_str(),
+                    free_space(&package),
                     |b| {
                         fn format_space(offset: Offset, clone: bool) -> String {
                             let mut line = String::with_capacity(256);
@@ -229,12 +265,12 @@ fn generate_free(path: &str) {
         .expect("Unable to write data");
 }
 
-fn generate_rotate(path: &str) {
+fn generate_rotate(package: Package, path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
 
-        b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
-        b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
+        b._use(free_space_full(&package));
+        b._use(reachable_full(&package));
         b._use("crate::pieces::{Orientation, Piece, Shape}");
 
         for rotation in [Rotation::Cw, Rotation::Ccw] {
@@ -243,15 +279,15 @@ fn generate_rotate(path: &str) {
             b.println("#[inline(always)]");
             b._pub_fn(
                 format!("rotate_{}", rotation).as_str(),
-                "from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16",
-                "ReachableSimd16",
+                format!("from_piece: Piece, src_reachable: &{}, dest_free_space: &{}", reachable(&package), free_space(&package)).as_str(),
+                reachable(&package),
                 |b| {
                     b.println("debug_assert!(from_piece.shape != Shape::O);");
                     b.newline();
                     b._match("from_piece.shape", |b| {
                         for shape in Shape::all_iter() {
                             if shape == Shape::O {
-                                b.println(format!("Shape::{} => ReachableSimd16::blank(),", shape).as_str());
+                                b.println(format!("Shape::{} => {}::blank(),", shape, reachable(&package)).as_str());
                                 continue;
                             }
 
@@ -282,8 +318,8 @@ fn generate_rotate(path: &str) {
         for rotation in [Rotation::Cw, Rotation::Ccw] {
             b.newline();
             b._pub_mod(format!("{}", rotation).to_lowercase().as_str(), |b| {
-                b._use("crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16");
-                b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
+                b._use(free_space_full(&package));
+                b._use(reachable_full(&package));
 
                 for shape in Shape::all_iter() {
                     if shape == Shape::O {
@@ -298,8 +334,8 @@ fn generate_rotate(path: &str) {
                         b.println("#[inline(always)]");
                         b._pub_fn(
                             function_name.to_lowercase().as_str(),
-                            "src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16",
-                            "ReachableSimd16",
+                            format!("src_reachable: &{}, dest_free_space: &{}", reachable(&package), free_space(&package)).as_str(),
+                            reachable(&package),
                             |b| {
                                 fn format_kick(kick: Kick, last: bool) -> Vec<String> {
                                     let offset = kick.offset;
@@ -311,18 +347,18 @@ fn generate_rotate(path: &str) {
                                     let backward_offset = format_offset(-offset);
 
                                     lines.push(format!(
-                                        "let shift_forward = src_candidates.clone().jump_and::<{}>(dest_free_space);",
+                                        "let shift_forward = src_candidates.clone().jump::<{}>();",
                                         forward_offset
                                     ));
                                     lines.push("let dest_reachable = dest_reachable.or(&shift_forward);".to_string());
 
                                     if !last {
                                         lines.push(format!(
-                                            "let src_candidates = src_candidates.jump_rev::<{}>(shift_forward);",
+                                            "let src_candidates = src_candidates.jump_rev::<{}>(dest_free_space);",
                                             backward_offset
                                         ));
                                         lines.push("if src_candidates.empty() {".to_string());
-                                        lines.push("    return dest_reachable;".to_string());
+                                        lines.push("    return dest_reachable.and(dest_free_space);".to_string());
                                         lines.push("}".to_string());
                                         lines.push(String::new());
                                     }
@@ -333,7 +369,7 @@ fn generate_rotate(path: &str) {
                                 b.println("debug_assert!(!src_reachable.empty());");
                                 b.newline();
                                 b.println("let src_candidates = src_reachable.clone();");
-                                b.println("let dest_reachable = ReachableSimd16::blank();");
+                                b.println(format!("let dest_reachable = {}::blank();", reachable(&package)).as_str());
                                 b.newline();
 
                                 let kicks = SrsKickTable.iter_kicks(piece, rotation).enumerate().collect::<Vec<_>>();
@@ -344,7 +380,7 @@ fn generate_rotate(path: &str) {
                                     }
                                 }
 
-                                b.println("dest_reachable");
+                                b.println("dest_reachable.and(dest_free_space)");
                             },
                         );
                     }
@@ -358,24 +394,24 @@ fn generate_rotate(path: &str) {
         .expect("Unable to write data");
 }
 
-fn generate_minimize(path: &str) {
+fn generate_minimize(package: Package, path: &str) {
     let content = begin(|b| {
         b._comment_block("It's auto generated.");
-        b._use("crate::internal_moves::avx2::h16::reachable::ReachableSimd16");
+        b._use(reachable_full(&package));
         b._use("crate::pieces::Shape");
 
         b.newline();
         b.println("#[inline(always)]");
         b._pub_fn(
             "minimize",
-            "reachables: [ReachableSimd16; 4], shape: Shape",
-            "[ReachableSimd16; 4]",
+            format!("reachables: [{}; 4], shape: Shape", reachable(&package)).as_str(),
+            format!("[{}; 4]", reachable(&package)).as_str(),
             |b| {
                 b._match("shape", |b| {
                     for shape in Shape::all_iter() {
                         if shape == Shape::T || shape == Shape::L || shape == Shape::J {
                             b.println(format!("Shape::{} => reachables,", shape).as_str());
-                            continue
+                            continue;
                         }
 
                         b.println(format!("Shape::{} => [", shape).as_str());
@@ -383,19 +419,36 @@ fn generate_minimize(path: &str) {
                             for dest_orientation in Orientation::all_iter() {
                                 let piece = Piece::new(shape, dest_orientation);
                                 if piece.canonical().is_some() {
-                                    b.println("ReachableSimd16::blank(),");
+                                    b.println(format!("{}::blank(),", reachable(&package)).as_str());
                                     continue;
                                 }
 
                                 // aggregate
-                                b.println(format!("reachables[{}].clone()", dest_orientation as usize).as_str());
-                                piece.orientations_having_same_form().iter()
+                                b.println(
+                                    format!("reachables[{}].clone()", dest_orientation as usize)
+                                        .as_str(),
+                                );
+                                piece
+                                    .orientations_having_same_form()
+                                    .iter()
                                     .filter(|&src_orientation| *src_orientation != dest_orientation)
                                     .for_each(|src_orientation| {
-                                        let src_bl = shape.with(*src_orientation).to_piece_blocks().bottom_left;
-                                        let dest_bl = shape.with(dest_orientation).to_piece_blocks().bottom_left;
+                                        let src_bl = shape
+                                            .with(*src_orientation)
+                                            .to_piece_blocks()
+                                            .bottom_left;
+                                        let dest_bl = shape
+                                            .with(dest_orientation)
+                                            .to_piece_blocks()
+                                            .bottom_left;
                                         let offset = format_offset(src_bl - dest_bl);
-                                        b.println(format!(".or_shift::<{}>(&reachables[{}])", offset, *src_orientation as usize).as_str());
+                                        b.println(
+                                            format!(
+                                                ".or_shift::<{}>(&reachables[{}])",
+                                                offset, *src_orientation as usize
+                                            )
+                                            .as_str(),
+                                        );
                                     });
                                 b.println(",");
                             }
@@ -413,7 +466,11 @@ fn generate_minimize(path: &str) {
 }
 
 fn main() {
-    generate_free("src/internal_moves/avx2/h16/free.rs");
-    generate_rotate("src/internal_moves/avx2/h16/rotate.rs");
-    generate_minimize("src/internal_moves/avx2/h16/minimize.rs");
+    generate_free(Package::H16, "src/internal_moves/avx2/h16/free.rs");
+    generate_rotate(Package::H16, "src/internal_moves/avx2/h16/rotate.rs");
+    generate_minimize(Package::H16, "src/internal_moves/avx2/h16/minimize.rs");
+
+    generate_free(Package::H24, "src/internal_moves/avx2/h24/free.rs");
+    generate_rotate(Package::H24, "src/internal_moves/avx2/h24/rotate.rs");
+    generate_minimize(Package::H24, "src/internal_moves/avx2/h24/minimize.rs");
 }

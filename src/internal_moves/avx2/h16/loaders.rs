@@ -119,27 +119,6 @@ pub fn spawn_and_harddrop_aligned(spawn: CcPlacement, free_space: &FreeSpaceSimd
     spawn_reachable
 }
 
-#[inline(always)]
-pub fn to_bytes_u32(
-    reachable_lower: &ReachableSimd16,
-    reachable_upper: &ReachableSimd16,
-) -> [u32; 10] {
-    let lower = reachable_lower.to_bytes_u32();
-    let upper = reachable_upper.to_bytes_u32();
-    [
-        lower[0] | (upper[0] << 12),
-        lower[1] | (upper[1] << 12),
-        lower[2] | (upper[2] << 12),
-        lower[3] | (upper[3] << 12),
-        lower[4] | (upper[4] << 12),
-        lower[5] | (upper[5] << 12),
-        lower[6] | (upper[6] << 12),
-        lower[7] | (upper[7] << 12),
-        lower[8] | (upper[8] << 12),
-        lower[9] | (upper[9] << 12),
-    ]
-}
-
 pub fn can_reach4(reachables: &[ReachableSimd16; 4], goals: &[CcPlacement]) -> bool {
     goals.iter().any(|&goal_placement| {
         let orientation_index = goal_placement.piece.orientation as usize;

@@ -1,10 +1,10 @@
 /*! It's auto generated. */
-use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
-use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
+use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
+use crate::internal_moves::avx2::h24::reachable::ReachableSimd24;
 use crate::pieces::{Orientation, Piece, Shape};
 
 #[inline(always)]
-pub fn rotate_cw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+pub fn rotate_cw(from_piece: Piece, src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
     debug_assert!(from_piece.shape != Shape::O);
 
     match from_piece.shape {
@@ -24,7 +24,7 @@ pub fn rotate_cw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_s
                 Orientation::West => cw::from_i_west(src_reachable, dest_free_space),
             }
         }
-        Shape::O => ReachableSimd16::blank(),
+        Shape::O => ReachableSimd24::blank(),
         Shape::L => {
             match from_piece.orientation {
                 Orientation::North => cw::from_l_north(src_reachable, dest_free_space),
@@ -61,7 +61,7 @@ pub fn rotate_cw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_s
 }
 
 #[inline(always)]
-pub fn rotate_ccw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+pub fn rotate_ccw(from_piece: Piece, src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
     debug_assert!(from_piece.shape != Shape::O);
 
     match from_piece.shape {
@@ -81,7 +81,7 @@ pub fn rotate_ccw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_
                 Orientation::West => ccw::from_i_west(src_reachable, dest_free_space),
             }
         }
-        Shape::O => ReachableSimd16::blank(),
+        Shape::O => ReachableSimd24::blank(),
         Shape::L => {
             match from_piece.orientation {
                 Orientation::North => ccw::from_l_north(src_reachable, dest_free_space),
@@ -118,15 +118,15 @@ pub fn rotate_ccw(from_piece: Piece, src_reachable: &ReachableSimd16, dest_free_
 }
 
 pub mod cw {
-    use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
-    use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
+    use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
+    use crate::internal_moves::avx2::h24::reachable::ReachableSimd24;
 
     #[inline(always)]
-    pub fn from_t_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -167,11 +167,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_t_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -212,11 +212,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_t_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -257,11 +257,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_t_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -302,11 +302,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_i_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (1, 0)
         let shift_forward = src_candidates.clone().jump::<0, 1, 0, 0>();
@@ -347,11 +347,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_i_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, -1)
         let shift_forward = src_candidates.clone().jump::<0, 0, 1, 0>();
@@ -392,11 +392,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_i_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (-1, 0)
         let shift_forward = src_candidates.clone().jump::<1, 0, 0, 0>();
@@ -437,11 +437,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_i_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 1)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 1>();
@@ -482,11 +482,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_l_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -527,11 +527,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_l_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -572,11 +572,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_l_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -617,11 +617,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_l_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -662,11 +662,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_j_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -707,11 +707,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_j_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -752,11 +752,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_j_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -797,11 +797,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_j_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -842,11 +842,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_s_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -887,11 +887,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_s_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -932,11 +932,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_s_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -977,11 +977,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_s_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1022,11 +1022,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_z_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1067,11 +1067,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_z_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1112,11 +1112,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_z_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1157,11 +1157,11 @@ pub mod cw {
     }
 
     #[inline(always)]
-    pub fn from_z_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1203,15 +1203,15 @@ pub mod cw {
 }
 
 pub mod ccw {
-    use crate::internal_moves::avx2::h16::free_space::FreeSpaceSimd16;
-    use crate::internal_moves::avx2::h16::reachable::ReachableSimd16;
+    use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
+    use crate::internal_moves::avx2::h24::reachable::ReachableSimd24;
 
     #[inline(always)]
-    pub fn from_t_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1252,11 +1252,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_t_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1297,11 +1297,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_t_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1342,11 +1342,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_t_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_t_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1387,11 +1387,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_i_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, -1)
         let shift_forward = src_candidates.clone().jump::<0, 0, 1, 0>();
@@ -1432,11 +1432,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_i_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (-1, 0)
         let shift_forward = src_candidates.clone().jump::<1, 0, 0, 0>();
@@ -1477,11 +1477,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_i_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 1)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 1>();
@@ -1522,11 +1522,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_i_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_i_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (1, 0)
         let shift_forward = src_candidates.clone().jump::<0, 1, 0, 0>();
@@ -1567,11 +1567,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_l_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1612,11 +1612,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_l_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1657,11 +1657,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_l_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1702,11 +1702,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_l_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_l_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1747,11 +1747,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_j_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1792,11 +1792,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_j_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1837,11 +1837,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_j_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1882,11 +1882,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_j_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_j_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1927,11 +1927,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_s_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -1972,11 +1972,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_s_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2017,11 +2017,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_s_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2062,11 +2062,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_s_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_s_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2107,11 +2107,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_z_north(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_north(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2152,11 +2152,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_z_east(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_east(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2197,11 +2197,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_z_south(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_south(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();
@@ -2242,11 +2242,11 @@ pub mod ccw {
     }
 
     #[inline(always)]
-    pub fn from_z_west(src_reachable: &ReachableSimd16, dest_free_space: &FreeSpaceSimd16) -> ReachableSimd16 {
+    pub fn from_z_west(src_reachable: &ReachableSimd24, dest_free_space: &FreeSpaceSimd24) -> ReachableSimd24 {
         debug_assert!(!src_reachable.empty());
 
         let src_candidates = src_reachable.clone();
-        let dest_reachable = ReachableSimd16::blank();
+        let dest_reachable = ReachableSimd24::blank();
 
         // Kick (0, 0)
         let shift_forward = src_candidates.clone().jump::<0, 0, 0, 0>();

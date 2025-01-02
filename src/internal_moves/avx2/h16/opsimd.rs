@@ -1,4 +1,6 @@
 use std::arch::x86_64::*;
+use crate::boards::Board16;
+use crate::internal_moves::avx2::h16::aligned::AlignedU16s;
 
 #[inline(always)]
 pub fn load_from_unaligned(data: &[u8; 32]) -> __m256i {
@@ -177,44 +179,44 @@ pub fn extract(data: __m256i, x: i32) -> u16 {
 }
 
 #[inline(always)]
-pub fn data_to_byte(data: __m256i) -> [u8; 32] {
-    let mut bytes = [0u8; 32];
+pub fn data_to_byte(data: __m256i) -> AlignedU16s {
+    let mut aligned = AlignedU16s::blank();
     unsafe {
-        _mm256_storeu_si256(bytes.as_mut_ptr() as *mut __m256i, data);
+        _mm256_store_si256(aligned.data.as_mut_ptr() as *mut __m256i, data);
     }
-    bytes
+    aligned
 }
 
 #[inline(always)]
 pub fn to_bytes_u16(data: __m256i) -> [u16; 10] {
-    let data = data_to_byte(data);
+    let data = data_to_byte(data).data;
     [
-        (data[0] as u16) | (data[1] as u16) << 8,
-        (data[2] as u16) | (data[3] as u16) << 8,
-        (data[4] as u16) | (data[5] as u16) << 8,
-        (data[6] as u16) | (data[7] as u16) << 8,
-        (data[8] as u16) | (data[9] as u16) << 8,
-        (data[10] as u16) | (data[11] as u16) << 8,
-        (data[12] as u16) | (data[13] as u16) << 8,
-        (data[14] as u16) | (data[15] as u16) << 8,
-        (data[16] as u16) | (data[17] as u16) << 8,
-        (data[18] as u16) | (data[19] as u16) << 8,
+        data[0],
+        data[1],
+        data[2],
+        data[3],
+        data[4],
+        data[5],
+        data[6],
+        data[7],
+        data[8],
+        data[9],
     ]
 }
 
 #[inline(always)]
 pub fn to_bytes_u32(data: __m256i) -> [u32; 10] {
-    let data = data_to_byte(data);
+    let data = data_to_byte(data).data;
     [
-        (data[0] as u32) | (data[1] as u32) << 8,
-        (data[2] as u32) | (data[3] as u32) << 8,
-        (data[4] as u32) | (data[5] as u32) << 8,
-        (data[6] as u32) | (data[7] as u32) << 8,
-        (data[8] as u32) | (data[9] as u32) << 8,
-        (data[10] as u32) | (data[11] as u32) << 8,
-        (data[12] as u32) | (data[13] as u32) << 8,
-        (data[14] as u32) | (data[15] as u32) << 8,
-        (data[16] as u32) | (data[17] as u32) << 8,
-        (data[18] as u32) | (data[19] as u32) << 8,
+        data[0] as u32,
+        data[1] as u32,
+        data[2] as u32,
+        data[3] as u32,
+        data[4] as u32,
+        data[5] as u32,
+        data[6] as u32,
+        data[7] as u32,
+        data[8] as u32,
+        data[9] as u32,
     ]
 }

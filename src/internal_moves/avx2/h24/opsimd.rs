@@ -1,3 +1,4 @@
+use crate::prelude::Location;
 use std::arch::x86_64::*;
 
 #[inline(always)]
@@ -56,7 +57,7 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         return zeros();
     }
 
-    // down or up // FIXME
+    // down or up
     let data = if 0 < DOWN {
         unsafe {
             // 64bitごとに右シフト
@@ -93,8 +94,7 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
     let data = if 0 < LEFT {
         unsafe {
             // 上位ビットの初期化
-            let data = _mm256_insert_epi64::<3>(data, 0);
-            let data = _mm256_insert_epi32::<7>(data, 0);
+            let data = _mm256_insert_epi16::<15>(data, 0);
 
             // レジスタ上では右シフト
             // data = | A(128bit; x=8~9) B(128bit; x=0~7) | とすると、
@@ -214,22 +214,65 @@ pub fn and_not(left: __m256i, right: __m256i) -> __m256i {
 }
 
 #[inline(always)]
-pub fn extract(data: __m256i, x: i32) -> u16 {
+pub fn extract(data: __m256i, x: i32) -> u32 {
     unsafe {
         (match x {
-            0 => _mm256_extract_epi16::<0>(data) | (_mm256_extract_epi8::<2>(data) << 16),
-            1 => _mm256_extract_epi8::<3>(data) | (_mm256_extract_epi16::<2>(data) << 8),
-            2 => _mm256_extract_epi16::<3>(data) | (_mm256_extract_epi8::<8>(data) << 16),
-            3 => _mm256_extract_epi8::<9>(data) | (_mm256_extract_epi16::<5>(data) << 8),
-            4 => _mm256_extract_epi16::<6>(data) | (_mm256_extract_epi8::<14>(data) << 16),
-            5 => _mm256_extract_epi8::<15>(data) | (_mm256_extract_epi16::<8>(data) << 8),
-            6 => _mm256_extract_epi16::<9>(data) | (_mm256_extract_epi8::<20>(data) << 16),
-            7 => _mm256_extract_epi8::<21>(data) | (_mm256_extract_epi16::<11>(data) << 8),
-            8 => _mm256_extract_epi16::<12>(data) | (_mm256_extract_epi8::<26>(data) << 16),
-            9 => _mm256_extract_epi8::<27>(data) | (_mm256_extract_epi16::<14>(data) << 8),
+            0 => _mm256_extract_epi16::<0>(data) as u32 | (_mm256_extract_epi8::<2>(data) << 16) as u32,
+            1 => _mm256_extract_epi8::<3>(data) as u32 | (_mm256_extract_epi16::<2>(data) << 8) as u32,
+            2 => _mm256_extract_epi16::<3>(data) as u32 | (_mm256_extract_epi8::<8>(data) << 16) as u32,
+            3 => _mm256_extract_epi8::<9>(data) as u32 | (_mm256_extract_epi16::<5>(data) << 8) as u32,
+            4 => _mm256_extract_epi16::<6>(data) as u32 | (_mm256_extract_epi8::<14>(data) << 16) as u32,
+            5 => _mm256_extract_epi8::<15>(data) as u32 | (_mm256_extract_epi16::<8>(data) << 8) as u32,
+            6 => _mm256_extract_epi16::<9>(data) as u32 | (_mm256_extract_epi8::<20>(data) << 16) as u32,
+            7 => _mm256_extract_epi8::<21>(data) as u32 | (_mm256_extract_epi16::<11>(data) << 8) as u32,
+            8 => _mm256_extract_epi16::<12>(data) as u32 | (_mm256_extract_epi8::<26>(data) << 16) as u32,
+            9 => _mm256_extract_epi8::<27>(data) as u32 | (_mm256_extract_epi16::<14>(data) << 8) as u32,
             _ => panic!("Index out of bounds: {}", x),
-        }) as u16
+        })
     }
+}
+
+#[inline(always)]
+pub fn is_one_at(data: __m256i, location: Location) -> bool {
+    let index = (location.x * 3) + (location.y % 8);
+    let value = unsafe {
+        (match index {
+            0 => _mm256_extract_epi16::<0>(data),
+            1 => _mm256_extract_epi16::<1>(data),
+            2 => _mm256_extract_epi16::<2>(data),
+            3 => _mm256_extract_epi16::<3>(data),
+            4 => _mm256_extract_epi16::<4>(data),
+            5 => _mm256_extract_epi16::<5>(data),
+            6 => _mm256_extract_epi16::<6>(data),
+            7 => _mm256_extract_epi16::<7>(data),
+            8 => _mm256_extract_epi16::<8>(data),
+            9 => _mm256_extract_epi16::<9>(data),
+            10 => _mm256_extract_epi16::<10>(data),
+            11 => _mm256_extract_epi16::<11>(data),
+            12 => _mm256_extract_epi16::<12>(data),
+            13 => _mm256_extract_epi16::<13>(data),
+            14 => _mm256_extract_epi16::<14>(data),
+            15 => _mm256_extract_epi16::<15>(data),
+            16 => _mm256_extract_epi8::<16>(data),
+            17 => _mm256_extract_epi8::<17>(data),
+            18 => _mm256_extract_epi8::<18>(data),
+            19 => _mm256_extract_epi8::<19>(data),
+            20 => _mm256_extract_epi8::<20>(data),
+            21 => _mm256_extract_epi8::<21>(data),
+            22 => _mm256_extract_epi8::<22>(data),
+            23 => _mm256_extract_epi8::<23>(data),
+            24 => _mm256_extract_epi8::<24>(data),
+            25 => _mm256_extract_epi8::<25>(data),
+            26 => _mm256_extract_epi8::<26>(data),
+            27 => _mm256_extract_epi8::<27>(data),
+            28 => _mm256_extract_epi8::<28>(data),
+            29 => _mm256_extract_epi8::<29>(data),
+            30 => _mm256_extract_epi8::<30>(data),
+            _ => panic!("Index out of bounds: {}", index),
+        }) as u8
+    };
+    let mask = 1 << (location.y / 8);
+    value & mask != 0
 }
 
 #[inline(always)]
