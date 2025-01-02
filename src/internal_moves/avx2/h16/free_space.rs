@@ -36,17 +36,17 @@ impl FreeSpaceSimd16 {
 
     #[inline(always)]
     pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(&self) -> Self {
-        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
+        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP, true>(self.data))
     }
 
-    #[inline(always)]
-    pub fn or_shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
-        self,
-        target: &FreeSpaceSimd16,
-    ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
-        Self::new(opsimd::or(self.data, shift))
-    }
+    // #[inline(always)]
+    // pub fn or_shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
+    //     self,
+    //     target: &FreeSpaceSimd16,
+    // ) -> Self {
+    //     let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
+    //     Self::new(opsimd::or(self.data, shift))
+    // }
 
     #[inline(always)]
     pub fn is_free_at(&self, location: Location) -> bool {

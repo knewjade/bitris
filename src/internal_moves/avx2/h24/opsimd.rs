@@ -14,6 +14,11 @@ pub fn zeros() -> __m256i {
 }
 
 #[inline(always)]
+pub fn ones() -> __m256i {
+    unsafe { _mm256_set1_epi8(0xFFu8 as i8) }
+}
+
+#[inline(always)]
 pub fn fill_with(value: i32) -> __m256i {
     let a1 = value as i8;
     let a2 = (value >> 8) as i8;
@@ -114,9 +119,10 @@ pub fn spawn(spawn: CcPlacement, free_space_block: __m256i, free_space: __m256i)
     }
 }
 
+// 上端が空いている場合は `Opened=true` を指定する。シフト時にfreeが挿入される
 #[inline(always)]
 #[allow(clippy::nonminimal_bool)]
-pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
+pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32, const Opened: bool>(
     data: __m256i,
 ) -> __m256i {
     debug_assert!(0 <= LEFT && LEFT <= 4);
@@ -133,8 +139,16 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         return data;
     }
 
-    if DOWN == 24 || UP == 24 {
+    if UP == 24 {
         return zeros();
+    }
+
+    if DOWN == 24 {
+        return if Opened {
+            ones()
+        } else {
+            zeros()
+        }
     }
 
     // down or up
@@ -150,7 +164,14 @@ pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
             let shifted = or(shifted1, shifted2);
 
             // 24bitごとの上位ビットをMASK
-            clip(shifted, u32::MAX >> (DOWN + 8))
+            let clipped = clip(shifted, u32::MAX >> (DOWN + 8));
+
+            if Opened {
+                let adding = (0xFFFFFFu32 >> (24 - DOWN)) << (24 - DOWN);
+                or(clipped, fill_with(adding as i32))
+            } else {
+                clipped
+            }
         }
     } else if 0 < UP {
         unsafe {
@@ -245,18 +266,18 @@ fn slli32(data: __m256i) -> __m256i {
 pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
     // right
     let candidate = unsafe {
-        shift::<0, 1, 0, 0>(data)
+        shift::<0, 1, 0, 0, false>(data)
     };
 
     // left
     let candidate = unsafe {
-        let shift = shift::<1, 0, 0, 0>(data);
+        let shift = shift::<1, 0, 0, 0, false>(data);
         _mm256_or_si256(candidate, shift)
     };
 
     // down
     let candidate = unsafe {
-        let shift = shift::<0, 0, 1, 0>(data);
+        let shift = shift::<0, 0, 1, 0, false>(data);
         _mm256_or_si256(candidate, shift)
     };
 
@@ -268,7 +289,7 @@ pub fn move1(data: __m256i, free_space: __m256i) -> __m256i {
 #[inline(always)]
 pub fn land(data: __m256i, free_space: __m256i) -> __m256i {
     unsafe {
-        let shifted_free_space = shift::<0, 0, 0, 1>(free_space);
+        let shifted_free_space = shift::<0, 0, 0, 1, false>(free_space);
         _mm256_andnot_si256(shifted_free_space, data)
     }
 }

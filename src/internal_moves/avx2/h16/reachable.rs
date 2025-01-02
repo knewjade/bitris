@@ -76,7 +76,7 @@ impl ReachableSimd16 {
     pub fn jump<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         self,
     ) -> Self {
-        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
+        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(self.data))
     }
 
     #[inline(always)]
@@ -84,7 +84,7 @@ impl ReachableSimd16 {
         self,
         dest_free_space: &FreeSpaceSimd16,
     ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(dest_free_space.data);
+        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(dest_free_space.data);
         let filtered = opsimd::and_not(shift, self.data);
         Self::new(filtered)
     }
@@ -94,7 +94,7 @@ impl ReachableSimd16 {
         self,
         target: &ReachableSimd16,
     ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
+        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(target.data);
         Self::new(opsimd::or(self.data, shift))
     }
 

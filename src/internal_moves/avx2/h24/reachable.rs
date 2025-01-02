@@ -10,18 +10,18 @@ pub struct ReachableSimd24 {
     // フィールド縦方向1列ごとに24ビット(8bit3つ)で表現される。
     // したがって、W10xH24のフィールドが表現されている。
     //
-    // 使用されない末尾16bit(8*2)の状態は未定義とする(0 or 1か確定しない)
-    // * data[0]: x=0 の (0<=y<8) を表現
-    // * data[1]: x=0 の (8<=y<y16) を表現
-    // * data[2]: x=0 の (y16<=y<24) を表現
+    // 使用されない先頭8bit・末尾8bitの状態は未定義とする(0 or 1か確定しない)
+    // * data[0]: (未使用)
+    // * data[1]: x=0 の (0<=y<8) を表現
+    // * data[2]: x=0 の (8<=y<y16) を表現
+    // * data[3]: x=0 の (y16<=y<24) を表現
     // * ...
+    // * data[31]: (未使用)
     //
     // 8bitの中は下位ビットほどyが小さい
-    // * (x=0, y=2 )は data[0] = 0b00000100
-    // * (x=0, y=10)は data[1] = 0b00000010
-    // * (x=0, y=y16)は data[2] = 0b00000001
-    //
-    // レジスタ上ではymm[0] = data[0..3]に対応しているので注意
+    // * (x=0, y=2 )は data[1] = 0b00000100
+    // * (x=0, y=10)は data[2] = 0b00000010
+    // * (x=0, y=y16)は data[3] = 0b00000001
     pub data: __m256i,
 }
 
@@ -77,7 +77,7 @@ impl ReachableSimd24 {
     pub fn jump<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
         self,
     ) -> Self {
-        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
+        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(self.data))
     }
 
     #[inline(always)]
@@ -85,7 +85,7 @@ impl ReachableSimd24 {
         self,
         dest_free_space: &FreeSpaceSimd24,
     ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(dest_free_space.data);
+        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(dest_free_space.data);
         let filtered = opsimd::and_not(shift, self.data);
         Self::new(filtered)
     }
@@ -95,7 +95,7 @@ impl ReachableSimd24 {
         self,
         target: &ReachableSimd24,
     ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
+        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP, false>(target.data);
         Self::new(opsimd::or(self.data, shift))
     }
 

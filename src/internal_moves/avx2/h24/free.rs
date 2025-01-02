@@ -3,7 +3,7 @@ use crate::internal_moves::avx2::h24::free_space::FreeSpaceSimd24;
 use crate::pieces::{Orientation, Piece, Shape};
 
 #[inline(always)]
-pub fn  to_free_spaces(free_space_block: &FreeSpaceSimd24, shape: Shape) -> [FreeSpaceSimd24; 4] {
+pub fn to_free_spaces(free_space_block: &FreeSpaceSimd24, shape: Shape) -> [FreeSpaceSimd24; 4] {
     match shape {
         Shape::T => [
             t_north(free_space_block),

@@ -9,18 +9,18 @@ pub struct FreeSpaceSimd24 {
     // フィールド縦方向1列ごとに24ビット(8bit3つ)で表現される。
     // したがって、W10xH24のフィールドが表現されている。
     //
-    // 使用されない末尾16bit(8*2)の状態は未定義とする(0 or 1か確定しない)
-    // * data[0]: x=0 の (0<=y<8) を表現
-    // * data[1]: x=0 の (8<=y<y16) を表現
-    // * data[2]: x=0 の (y16<=y<24) を表現
+    // 使用されない先頭8bit・末尾8bitの状態は未定義とする(0 or 1か確定しない)
+    // * data[0]: (未使用)
+    // * data[1]: x=0 の (0<=y<8) を表現
+    // * data[2]: x=0 の (8<=y<y16) を表現
+    // * data[3]: x=0 の (y16<=y<24) を表現
     // * ...
+    // * data[31]: (未使用)
     //
     // 8bitの中は下位ビットほどyが小さい
-    // * (x=0, y=2 )は data[0] = 0b00000100
-    // * (x=0, y=10)は data[1] = 0b00000010
-    // * (x=0, y=y16)は data[2] = 0b00000001
-    //
-    // レジスタ上ではymm[0] = data[0..3]に対応しているので注意
+    // * (x=0, y=2 )は data[1] = 0b00000100
+    // * (x=0, y=10)は data[2] = 0b00000010
+    // * (x=0, y=y16)は data[3] = 0b00000001
     pub data: __m256i,
 }
 
@@ -37,17 +37,17 @@ impl FreeSpaceSimd24 {
 
     #[inline(always)]
     pub fn shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(&self) -> Self {
-        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP>(self.data))
+        Self::new(opsimd::shift::<LEFT, RIGHT, DOWN, UP, true>(self.data))
     }
 
-    #[inline(always)]
-    pub fn or_shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
-        self,
-        target: &FreeSpaceSimd24,
-    ) -> Self {
-        let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
-        Self::new(opsimd::or(self.data, shift))
-    }
+    // #[inline(always)]
+    // pub fn or_shift<const LEFT: i32, const RIGHT: i32, const DOWN: i32, const UP: i32>(
+    //     self,
+    //     target: &FreeSpaceSimd24,
+    // ) -> Self {
+    //     let shift = opsimd::shift::<LEFT, RIGHT, DOWN, UP>(target.data);
+    //     Self::new(opsimd::or(self.data, shift))
+    // }
 
     #[inline(always)]
     pub fn is_free_at(&self, location: Location) -> bool {
