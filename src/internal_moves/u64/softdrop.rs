@@ -21,14 +21,14 @@ const ORIENTATIONS_ORDER: [Orientation; 4] = [
 
 pub(crate) fn search_with_rotation(
     rotation_system: &impl RotationSystem,
-    spawn: CcPlacement,
+    spawn_piece: Piece,
     mut reachables: [Reachable64; 4],
     free_spaces: &[FreeSpace64; 4],
 ) -> [Reachable64; 4] {
     let mut needs_update: u8 = 0b1111;
 
     let mut left = [true; 4];
-    let mut current_index: usize = spawn.orientation() as usize;
+    let mut current_index: usize = spawn_piece.orientation as usize;
     while needs_update != 0 {
         // if the current index is not updated, skip it.
         if needs_update & (1 << current_index) == 0 {
@@ -38,7 +38,7 @@ pub(crate) fn search_with_rotation(
         needs_update -= 1 << current_index;
 
         // initialize
-        let src_piece = Piece::new(spawn.piece.shape, ORIENTATIONS_ORDER[current_index]);
+        let src_piece = Piece::new(spawn_piece.shape, ORIENTATIONS_ORDER[current_index]);
         let src_index = current_index;
 
         // move
@@ -103,7 +103,7 @@ pub(crate) fn search_with_rotation(
 
 pub(crate) fn can_reach_with_rotation(
     rotation_system: &impl RotationSystem,
-    spawn: CcPlacement,
+    spawn_piece: Piece,
     mut reachables: [Reachable64; 4],
     free_spaces: &[FreeSpace64; 4],
     goals: &[CcPlacement],
@@ -111,7 +111,7 @@ pub(crate) fn can_reach_with_rotation(
     let mut needs_update: u8 = 0b1111;
 
     let mut left = [true; 4];
-    let mut current_index: usize = spawn.orientation() as usize;
+    let mut current_index: usize = spawn_piece.orientation as usize;
     while needs_update != 0 {
         // if the current index is not updated, skip it.
         if needs_update & (1 << current_index) == 0 {
@@ -121,7 +121,7 @@ pub(crate) fn can_reach_with_rotation(
         needs_update -= 1 << current_index;
 
         // initialize
-        let src_piece = Piece::new(spawn.piece.shape, ORIENTATIONS_ORDER[current_index]);
+        let src_piece = Piece::new(spawn_piece.shape, ORIENTATIONS_ORDER[current_index]);
         let src_index = current_index;
 
         // move
@@ -242,7 +242,7 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
     let spawn = spawn.to_cc_placement();
     let free_spaces = to_free_spaces(board, spawn.piece.shape);
     let reachables = spawn_and_harddrop_reachables(rotation_system, spawn, &free_spaces);
-    let reachables = search_with_rotation(rotation_system, spawn, reachables, &free_spaces);
+    let reachables = search_with_rotation(rotation_system, spawn.piece, reachables, &free_spaces);
 
     // landed
     let reachables = zip2_map4(reachables, free_spaces, |reachable, free_space| {
@@ -255,7 +255,10 @@ pub fn moves_softdrop_with_rotation<const MINIMIZE: bool>(
         reachables
     };
 
-    Moves4 { spawn, reachables }
+    Moves4 {
+        spawn_piece: spawn.piece,
+        reachables,
+    }
 }
 
 pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
@@ -270,7 +273,7 @@ pub fn moves_softdrop_no_rotation<const MINIMIZE: bool>(
     let reachable = reachable.land(&free_space);
 
     Moves1 {
-        spawn,
+        spawn_piece: spawn.piece,
         reachable,
         minimized: MINIMIZE,
     }
@@ -298,7 +301,13 @@ pub(crate) fn can_reach_softdrop_with_rotation(
         return true;
     }
 
-    can_reach_with_rotation(rotation_system, spawn, reachables, &free_spaces, &goals)
+    can_reach_with_rotation(
+        rotation_system,
+        spawn.piece,
+        reachables,
+        &free_spaces,
+        &goals,
+    )
 }
 
 pub(crate) fn can_reach_strictly_softdrop_with_rotation(
@@ -317,7 +326,13 @@ pub(crate) fn can_reach_strictly_softdrop_with_rotation(
         return true;
     }
 
-    can_reach_with_rotation(rotation_system, spawn, reachables, &free_spaces, &goals)
+    can_reach_with_rotation(
+        rotation_system,
+        spawn.piece,
+        reachables,
+        &free_spaces,
+        &goals,
+    )
 }
 
 pub(crate) fn can_reach_softdrop_no_rotation(
