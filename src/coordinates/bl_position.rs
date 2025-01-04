@@ -37,7 +37,10 @@ impl ops::Add<Offset> for BlPosition {
     type Output = BlPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        BlPosition { lx: self.lx + rhs.dx, by: self.by + rhs.dy }
+        BlPosition {
+            lx: self.lx + rhs.dx,
+            by: self.by + rhs.dy,
+        }
     }
 }
 
@@ -61,16 +64,22 @@ forward_ref_from!(BlPosition, from BlPlacement);
 
 add_member_for_from!(Location, to_location, to BlPosition);
 
-/// An shortcut for `BLPosition { lx, by }`.
+/// A shortcut for `BLPosition { lx, by }`.
 #[inline(always)]
 pub const fn bl(lx: i32, by: i32) -> BlPosition {
     BlPosition { lx, by }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn bl_placement_to_position() {
+        let placement = BlPlacement::new(piece!(TN), BlPosition::new(2, 3));
+        assert_eq!(BlPosition::from(placement), bl(2, 3));
+    }
 
     #[test]
     fn bl_position_operators() {

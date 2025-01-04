@@ -1,4 +1,4 @@
-/** This file is for internal */
+/*! This file is for internal */
 
 macro_rules! forward_ref_op {
     (- $t:ty) => {
@@ -121,7 +121,7 @@ macro_rules! add_member_for_from {
     };
 }
 
-pub(crate) use forward_ref_op;
+pub(crate) use add_member_for_from;
 pub(crate) use enum_display;
 pub(crate) use forward_ref_from;
-pub(crate) use add_member_for_from;
+pub(crate) use forward_ref_op;

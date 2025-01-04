@@ -1,5 +1,5 @@
-use crate::{Rotate, Rotation};
 use crate::internal_macros::enum_display;
+use crate::{Rotate, Rotation};
 
 /// A collection of the direction that piece is facing.
 /// ```
@@ -12,14 +12,20 @@ use crate::internal_macros::enum_display;
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum Orientation {
-    #[default] North = 0,
+    #[default]
+    North = 0,
     East = 1,
     South = 2,
     West = 3,
 }
 
 impl Orientation {
-    const VALUES: [Orientation; 4] = [Orientation::North, Orientation::East, Orientation::South, Orientation::West];
+    const VALUES: [Orientation; 4] = [
+        Orientation::North,
+        Orientation::East,
+        Orientation::South,
+        Orientation::West,
+    ];
 
     /// ```
     /// use bitris::prelude::*;
@@ -32,7 +38,7 @@ impl Orientation {
     /// assert_eq!(None, iter.next());
     /// ```
     #[inline]
-    pub fn all_iter() -> impl Iterator<Item=Orientation> {
+    pub fn all_iter() -> impl Iterator<Item = Orientation> {
         Self::VALUES.into_iter()
     }
 }
@@ -115,7 +121,6 @@ impl Rotate for Orientation {
 }
 
 enum_display! { Orientation, has North,East,South,West }
-
 
 #[cfg(test)]
 mod tests {

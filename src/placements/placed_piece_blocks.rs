@@ -4,12 +4,44 @@ use crate::internal_macros::forward_ref_from;
 use crate::placements::{BlPlacement, PlacedPiece};
 use crate::With;
 
+#[inline]
+pub(crate) fn place_according_to<T: BoardOp + Clone>(
+    mut board: T,
+    placed_piece: PlacedPiece,
+    using_rows: Lines,
+    intercepted_rows: Lines,
+) -> Option<BlPlacement> {
+    let lines_cleared = board.clear_lines();
+
+    // Whether cleared rows and the piece overlap or not.
+    if using_rows.overlaps(&lines_cleared) {
+        return None;
+    }
+
+    // Whether all required rows have been cleared.
+    if !lines_cleared.contains_all(&intercepted_rows) {
+        return None;
+    }
+
+    let piece_by = placed_piece.min_y();
+    let lines_cleared_below_piece = lines_cleared & Lines::filled_up_to(piece_by);
+    let by = piece_by as i32 - lines_cleared_below_piece.count() as i32;
+    let lx = placed_piece.lx as i32;
+
+    let placement = placed_piece.piece.with(bl(lx, by));
+    if placement.can_place_on(&board) {
+        Some(placement)
+    } else {
+        None
+    }
+}
+
 /// The offsets of blocks that make up a placed piece.
 ///
 /// This caches the results of the placed piece calculation.
 /// It prioritizes speed and records what can be calculated in advance.
 /// Therefore, this struct is relatively large and slower when copied, so it's recommended to do less make/clone.
-#[derive(Clone, Hash, Debug)]
+#[derive(Clone, PartialEq, PartialOrd, Hash, Debug)]
 pub struct PlacedPieceBlocks {
     pub placed_piece: PlacedPiece,
     pub locations: [Location; 4],
@@ -84,30 +116,12 @@ impl PlacedPieceBlocks {
     /// ```
     #[inline]
     pub fn place_according_to<T: BoardOp + Clone>(&self, board: T) -> Option<BlPlacement> {
-        let mut board = board.clone();
-        let lines_cleared = board.clear_lines();
-
-        // Whether cleared rows and the piece overlap or not.
-        if !(self.using_rows & lines_cleared).is_blank() {
-            return None;
-        }
-
-        // Whether all required rows have been cleared.
-        if (self.intercepted_rows & lines_cleared) != self.intercepted_rows {
-            return None;
-        }
-
-        let piece_by = self.placed_piece.min_y() as u32;
-        let lines_cleared_below_piece = lines_cleared & Lines::filled_up_to(piece_by);
-        let by = piece_by as i32 - lines_cleared_below_piece.count() as i32;
-        let lx = self.placed_piece.lx as i32;
-
-        let placement = self.placed_piece.piece.with(bl(lx, by));
-        if placement.can_place_on(&board) {
-            Some(placement)
-        } else {
-            None
-        }
+        place_according_to(
+            board,
+            self.placed_piece,
+            self.using_rows,
+            self.intercepted_rows,
+        )
     }
 }
 

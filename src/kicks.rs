@@ -1,11 +1,11 @@
 use std::fmt;
 use std::slice::Iter;
 
-use crate::{Rotate, Rotation};
 use crate::boards::BoardOp;
 use crate::coordinates::Offset;
 use crate::pieces::{Piece, Shape};
 use crate::placements::CcPlacement;
+use crate::{Rotate, Rotation};
 
 /// The amount of movement based on the center of the piece when rotating.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -47,12 +47,16 @@ pub trait RotationSystem {
     ///
     /// Returns the final kick and placement if the test passes.
     /// Returns None if the rotation is not possible.
-    fn test_kick(&self, board: &impl BoardOp, placement: impl Into<CcPlacement>, rotation: Rotation) -> Option<TestKickResult> {
+    fn test_kick(
+        &self,
+        board: &impl BoardOp,
+        placement: impl Into<CcPlacement>,
+        rotation: Rotation,
+    ) -> Option<TestKickResult> {
         let from: CcPlacement = placement.into();
         let to = from.rotate(rotation);
 
-        let mut test_index = 0;
-        for kick in self.iter_kicks(from.piece, rotation) {
+        for (test_index, kick) in self.iter_kicks(from.piece, rotation).enumerate() {
             let destination = to + kick.offset;
             if destination.is_in_free_space(board) {
                 return Some(TestKickResult {
@@ -61,7 +65,6 @@ pub trait RotationSystem {
                     destination,
                 });
             }
-            test_index += 1;
         }
 
         None

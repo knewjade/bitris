@@ -33,7 +33,10 @@ impl ops::Add<Offset> for Location {
     type Output = Location;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        Location { x: self.x + rhs.dx, y: self.y + rhs.dy }
+        Location {
+            x: self.x + rhs.dx,
+            y: self.y + rhs.dy,
+        }
     }
 }
 
@@ -77,7 +80,6 @@ pub const fn xy(x: i32, y: i32) -> Location {
     Location { x, y }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
@@ -97,18 +99,18 @@ mod tests {
         assert_eq!(Location::from(position), xy(5, 5));
         assert_eq!(Location::from(&position), xy(5, 5));
         assert_eq!(position.to_location(), xy(5, 5));
-        assert_eq!((&position).to_location(), xy(5, 5));
+        assert_eq!(position.to_location(), xy(5, 5));
 
         let position = bl(5, 5);
         assert_eq!(Location::from(position), xy(5, 5));
         assert_eq!(Location::from(&position), xy(5, 5));
         assert_eq!(position.to_location(), xy(5, 5));
-        assert_eq!((&position).to_location(), xy(5, 5));
+        assert_eq!(position.to_location(), xy(5, 5));
 
         let position = tr(5, 5);
         assert_eq!(Location::from(position), xy(5, 5));
         assert_eq!(Location::from(&position), xy(5, 5));
         assert_eq!(position.to_location(), xy(5, 5));
-        assert_eq!((&position).to_location(), xy(5, 5));
+        assert_eq!(position.to_location(), xy(5, 5));
     }
 }

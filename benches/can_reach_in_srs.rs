@@ -4,12 +4,6 @@ use bitris::prelude::*;
 use criterion::*;
 use std::hint::black_box;
 
-fn mirror(board: &Board64) -> Board64 {
-    let mut freeze = *board;
-    freeze.mirror();
-    freeze
-}
-
 #[derive(Debug)]
 struct CanReachBenchmarkData {
     name: String,
@@ -168,7 +162,7 @@ fn bench_can_reach_in_srs(c: &mut Criterion) {
                 #.........\
                 ",
             )
-                .unwrap(),
+            .unwrap(),
             spawn: O.with(Orientation::North).with(cc(4, 20)),
             cases: vec![
                 CanReachCase {
@@ -252,5 +246,8 @@ fn bench_can_reach_in_srs(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, bench_can_reach_in_srs);
+criterion_group!(
+    name = benches;
+    config = Criterion::default();
+    targets = bench_can_reach_in_srs);
 criterion_main!(benches);

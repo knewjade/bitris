@@ -37,7 +37,10 @@ impl ops::Add<Offset> for TrPosition {
     type Output = TrPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        TrPosition { rx: self.rx + rhs.dx, ty: self.ty + rhs.dy }
+        TrPosition {
+            rx: self.rx + rhs.dx,
+            ty: self.ty + rhs.dy,
+        }
     }
 }
 
@@ -67,10 +70,16 @@ pub const fn tr(rx: i32, ty: i32) -> TrPosition {
     TrPosition { rx, ty }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn tr_placement_to_position() {
+        let placement = TrPlacement::new(piece!(TN), TrPosition::new(2, 3));
+        assert_eq!(TrPosition::from(placement), tr(2, 3));
+    }
 
     #[test]
     fn tr_position_operators() {

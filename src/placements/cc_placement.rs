@@ -1,11 +1,13 @@
 use std::{fmt, ops};
 
-use crate::{Rotate, Rotation};
+use tinyvec::ArrayVec;
+
 use crate::boards::{BoardOp, Lines};
-use crate::coordinates::{CcPosition, dd, Location, Offset};
+use crate::coordinates::{dd, CcPosition, Location, Offset};
 use crate::internal_macros::{add_member_for_from, forward_ref_from, forward_ref_op};
 use crate::pieces::{Orientation, Piece, PieceBlocks, PieceBlocksFactory, Shape};
 use crate::placements::{BlPlacement, PlacedPiece, TrPlacement};
+use crate::{Rotate, Rotation};
 
 /// The position to be placed, based on the center of the piece.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
@@ -42,6 +44,31 @@ impl CcPlacement {
         self.to_piece_blocks().offsets.map(|offset| cc + offset)
     }
 
+    /// Returns block locations of possible touch with the ground.
+    /// Finds the y-coordinate of the lowest block in each x-coordinate.
+    /// ```
+    /// use tinyvec::ArrayVec;
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    /// assert_eq!(
+    ///     piece!(JS).with(cc(3, 4)).touching_locations().as_slice(),
+    ///     ArrayVec::from([Location::new(2, 4), Location::new(3, 4), Location::new(4, 3)]).as_slice(),
+    /// );
+    /// assert_eq!(
+    ///     piece!(SN).with(cc(5, 0)).touching_locations().as_slice(),
+    ///     ArrayVec::from([Location::new(4, 0), Location::new(5, 0), Location::new(6, 1)]).as_slice(),
+    /// );
+    /// ```
+    #[inline]
+    pub fn touching_locations(&self) -> ArrayVec<[Location; 4]> {
+        let cc = self.position.to_location();
+        self.to_piece_blocks()
+            .touching_offsets()
+            .into_iter()
+            .map(|offset| cc + offset)
+            .collect()
+    }
+
     /// Set all blocks at the location on the board. No apply line clear.
     /// If the block already exists, it's nothing happens.
     #[inline]
@@ -64,7 +91,8 @@ impl CcPlacement {
     /// ```
     #[inline]
     pub fn using_rows(&self) -> Lines {
-        self.locations().iter()
+        self.locations()
+            .iter()
             .fold(Lines::blank(), |lines, location| {
                 lines | Lines::new_at(location.y as u8)
             })
@@ -161,7 +189,8 @@ impl CcPlacement {
     #[inline]
     pub fn is_landing(&self, board: &impl BoardOp) -> bool {
         let below = self.position + dd(0, -1);
-        self.to_piece_blocks().to_locations(below)
+        self.to_piece_blocks()
+            .to_locations(below)
             .into_iter()
             .any(|location| !board.test_access(location) || board.is_occupied_at(location))
     }
@@ -170,7 +199,8 @@ impl CcPlacement {
     /// Whether the placement is landing or not is independent of the result.
     #[inline]
     pub fn is_in_free_space(&self, board: &impl BoardOp) -> bool {
-        self.to_piece_blocks().to_locations(self.position)
+        self.to_piece_blocks()
+            .to_locations(self.position)
             .into_iter()
             .all(|location| board.test_access(location) && board.is_free_at(location))
     }
@@ -185,6 +215,15 @@ impl fmt::Display for CcPlacement {
 impl Rotate for CcPlacement {
     type Item = CcPlacement;
 
+    /// It rotates around the center of the piece Therefore, the position may change.
+    ///
+    /// Note that no kick occurs.
+    /// ```
+    /// use bitris::macros::piece;
+    /// use bitris::prelude::*;
+    /// let placement = piece!(IN).with(cc(5, 5));
+    /// assert_eq!(placement.rotate(Rotation::Cw), piece!(IE).with(cc(5, 5)));
+    /// ```
     #[inline]
     fn rotate(&self, rotation: Rotation) -> Self {
         Self::new(self.piece.rotate(rotation), self.position)
@@ -244,7 +283,6 @@ forward_ref_from!(CcPlacement, from TrPlacement);
 add_member_for_from!(BlPlacement, to_bl_placement, to CcPlacement);
 add_member_for_from!(TrPlacement, to_tr_placement, to CcPlacement);
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -269,19 +307,19 @@ mod tests {
         let piece = Piece::new(Shape::T, Orientation::North);
 
         let placement = piece.with(cc(4, 3));
-        assert_eq!(CcPlacement::from(placement), piece.with(cc(4, 3)));
+        assert_eq!(placement, piece.with(cc(4, 3)));
 
         let placement = piece.with(bl(4, 3));
         assert_eq!(CcPlacement::from(placement), piece.with(cc(5, 3)));
         assert_eq!(CcPlacement::from(&placement), piece.with(cc(5, 3)));
         assert_eq!(placement.to_cc_placement(), piece.with(cc(5, 3)));
-        assert_eq!((&placement).to_cc_placement(), piece.with(cc(5, 3)));
+        assert_eq!(placement.to_cc_placement(), piece.with(cc(5, 3)));
 
         let placement = piece.with(tr(4, 3));
         assert_eq!(CcPlacement::from(placement), piece.with(cc(3, 2)));
         assert_eq!(CcPlacement::from(&placement), piece.with(cc(3, 2)));
         assert_eq!(placement.to_cc_placement(), piece.with(cc(3, 2)));
-        assert_eq!((&placement).to_cc_placement(), piece.with(cc(3, 2)));
+        assert_eq!(placement.to_cc_placement(), piece.with(cc(3, 2)));
     }
 
     #[test]
@@ -314,16 +352,24 @@ mod tests {
     }
 
     #[fixture]
-    pub fn board8() -> Board8 { Board8::blank() }
+    pub fn board8() -> Board8 {
+        Board8::blank()
+    }
 
     #[fixture]
-    pub fn board16() -> Board16 { Board16::blank() }
+    pub fn board16() -> Board16 {
+        Board16::blank()
+    }
 
     #[fixture]
-    pub fn board32() -> Board32 { Board32::blank() }
+    pub fn board32() -> Board32 {
+        Board32::blank()
+    }
 
     #[fixture]
-    pub fn board64() -> Board64 { Board64::blank() }
+    pub fn board64() -> Board64 {
+        Board64::blank()
+    }
 
     #[template]
     #[rstest]
@@ -403,18 +449,45 @@ mod tests {
 
     #[apply(all_boards)]
     fn cc_place_on_and_clear_lines(mut board: impl BoardOp) {
-        assert_eq!(piece!(ON).with(cc(0, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(2, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(4, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(6, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0)));
-        assert_eq!(piece!(ON).with(cc(8, 0)).place_on_and_clear_lines(&mut board), Some(Lines::new(0b11)));
+        assert_eq!(
+            piece!(ON)
+                .with(cc(0, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(2, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(4, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(6, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0))
+        );
+        assert_eq!(
+            piece!(ON)
+                .with(cc(8, 0))
+                .place_on_and_clear_lines(&mut board),
+            Some(Lines::new(0b11))
+        );
         assert_eq!(board.count_blocks(), 0);
     }
 
     #[test]
     fn to_placed_piece() {
         assert_eq!(
-            piece!(IE).with(cc(5, 4)).with_interception(Lines::new(0b01010000)),
+            piece!(IE)
+                .with(cc(5, 4))
+                .with_interception(Lines::new(0b01010000)),
             PlacedPiece::new(piece!(IE), 5, array_vec![2, 3, 5, 7]),
         );
     }

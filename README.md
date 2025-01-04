@@ -10,7 +10,7 @@ We plan to integrate some components created in the process.
 
 # Usage/Documents
 
-Now you can refer to the `cargo doc` and [some examples](examples).
+Now you can refer to the `cargo doc` and some examples.
 
 The examples are like a startup guide and exhaustive.
 Then, when more detail is needed, we recommend generating crate documentation.

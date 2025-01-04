@@ -76,7 +76,6 @@ pub mod tr_ops {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -86,16 +85,24 @@ mod tests {
     use crate::prelude::*;
 
     #[fixture]
-    pub fn board8() -> Board8 { Board8::blank() }
+    pub fn board8() -> Board8 {
+        Board8::blank()
+    }
 
     #[fixture]
-    pub fn board16() -> Board16 { Board16::blank() }
+    pub fn board16() -> Board16 {
+        Board16::blank()
+    }
 
     #[fixture]
-    pub fn board32() -> Board32 { Board32::blank() }
+    pub fn board32() -> Board32 {
+        Board32::blank()
+    }
 
     #[fixture]
-    pub fn board64() -> Board64 { Board64::blank() }
+    pub fn board64() -> Board64 {
+        Board64::blank()
+    }
 
     #[template]
     #[rstest]

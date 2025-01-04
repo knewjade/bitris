@@ -1,11 +1,33 @@
 use thiserror::Error;
 use tinyvec::ArrayVec;
 
-use crate::{MoveRules, RotationSystem, With};
 use crate::boards::{Board64, BoardOp, Lines};
 use crate::pieces::Piece;
 use crate::placements::{BlPlacement, CcPlacement, PlacedPiece};
 use crate::prelude::{BlPosition, PlacedPieceBlocks, PlacedPieceBlocksFlow};
+use crate::{MoveRules, RotationSystem, SearchResult, With};
+
+/// Returns true if all placements have been successful from the initial board according to the Rotation System.
+///
+/// `validator` receives (board after clearing, subsequent placement) and returns whether to continue searching the board.
+///
+fn satisfies_dyn(
+    board: Board64,
+    placements: &Vec<CcPlacement>,
+    validator: impl Fn(&Board64, &CcPlacement) -> SearchResult,
+) -> bool {
+    let mut board = board.after_clearing();
+    for placement in placements {
+        if validator(&board, placement) == SearchResult::Pruned {
+            return false;
+        }
+
+        if placement.place_on_and_clear_lines(&mut board).is_none() {
+            return false;
+        }
+    }
+    true
+}
 
 /// This holds the initial board and the subsequent placements.
 /// They are placed in order from the head.
@@ -20,16 +42,28 @@ pub struct PlacementFlow {
 impl PlacementFlow {
     #[inline]
     pub fn new<P: Into<CcPlacement>>(initial_board: Board64, placements: Vec<P>) -> Self {
-        Self::from_iter(initial_board, placements.into_iter())
+        Self::from_iter(initial_board, placements)
     }
 
     #[inline]
-    pub fn from_iter<P: Into<CcPlacement>>(initial_board: Board64, placements: impl IntoIterator<Item=P>) -> Self {
-        Self { initial_board, placements: placements.into_iter().map(Into::<CcPlacement>::into).collect() }
+    pub fn from_iter<P: Into<CcPlacement>>(
+        initial_board: Board64,
+        placements: impl IntoIterator<Item = P>,
+    ) -> Self {
+        Self {
+            initial_board,
+            placements: placements
+                .into_iter()
+                .map(Into::<CcPlacement>::into)
+                .collect(),
+        }
     }
 
     #[inline]
-    pub fn from_slice<'a, P>(initial_board: Board64, placements: &'a [P]) -> Self where &'a P: Into<CcPlacement> {
+    pub fn from_slice<'a, P>(initial_board: Board64, placements: &'a [P]) -> Self
+    where
+        &'a P: Into<CcPlacement>,
+    {
         Self::from_iter(initial_board, placements)
     }
 
@@ -38,13 +72,16 @@ impl PlacementFlow {
         self.placements.len()
     }
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.placements.is_empty()
+    }
+
     /// Returns the board after all have been placed.
     pub fn board_all_placed(&self) -> Option<Board64> {
         let mut board = self.initial_board.after_clearing();
         for placement in &self.placements {
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return None;
-            }
+            placement.place_on_and_clear_lines(&mut board)?;
         }
         Some(board)
     }
@@ -112,9 +149,9 @@ impl PlacementFlow {
     ///         S.with(South).with(cc(3, 1)),
     ///     ],
     ///  );
-    ///  assert!(flow.can_stack_all(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///  assert!(flow.can_stack_all_strictly(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///  assert!(!flow.can_stack_all(MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
+    ///  assert!(flow.can_stack_all(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///  assert!(flow.can_stack_all_strictly(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///  assert!(!flow.can_stack_all(&MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
     ///
     /// let flow = PlacementFlow::new(
     ///     board,
@@ -124,61 +161,69 @@ impl PlacementFlow {
     ///         S.with(North).with(cc(3, 0)),
     ///     ],
     ///  );
-    ///  assert!(flow.can_stack_all(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///  assert!(!flow.can_stack_all_strictly(MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
-    ///  assert!(!flow.can_stack_all(MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
+    ///  assert!(flow.can_stack_all(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///  assert!(!flow.can_stack_all_strictly(&MoveRules::srs(AllowMove::Softdrop), bl(3, 20)));
+    ///  assert!(!flow.can_stack_all(&MoveRules::srs(AllowMove::Harddrop), bl(3, 20)));
     /// ```
     #[inline]
-    pub fn can_stack_all<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn: BlPosition) -> bool {
+    pub fn can_stack_all<T: RotationSystem>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn: BlPosition,
+    ) -> bool {
         self.can_stack_all_dyn(move_rules, move |_, _| Some(spawn))
     }
 
     /// It's similar to `can_stack_all()` except that spawn can be set dynamically.
     #[inline]
-    pub fn can_stack_all_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        let mut board = self.initial_board.after_clearing();
-        for placement in &self.placements {
-            match spawn_func(placement.piece, &board) {
-                Some(spawn) => {
-                    if !move_rules.can_reach(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        return false;
-                    }
+    pub fn can_stack_all_dyn<T: RotationSystem>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+    ) -> bool {
+        satisfies_dyn(self.initial_board, &self.placements, |&board, placement| {
+            if let Some(spawn) = spawn_func(placement.piece, &board) {
+                if move_rules.can_reach(
+                    placement.to_bl_placement(),
+                    board,
+                    placement.piece.with(spawn),
+                ) {
+                    return SearchResult::Success;
                 }
-                None => return false,
             }
-
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return false;
-            }
-        }
-        true
+            SearchResult::Pruned
+        })
     }
 
     /// It's similar to `can_stack_all()` except that the orientation is strictly checked.
     #[inline]
-    pub fn can_stack_all_strictly<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn: BlPosition) -> bool {
+    pub fn can_stack_all_strictly<T: RotationSystem>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn: BlPosition,
+    ) -> bool {
         self.can_stack_all_strictly_dyn(move_rules, move |_, _| Some(spawn))
     }
 
     /// It's similar to `can_stack_all_strictly()` except that spawn can be set dynamically.
     #[inline]
-    pub fn can_stack_all_strictly_dyn<T: RotationSystem>(&self, move_rules: MoveRules<T>, spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>) -> bool {
-        let mut board = self.initial_board.after_clearing();
-        for placement in &self.placements {
-            match spawn_func(placement.piece, &board) {
-                Some(spawn) => {
-                    if !move_rules.can_reach_strictly(placement.to_bl_placement(), board, placement.piece.with(spawn)) {
-                        return false;
-                    }
+    pub fn can_stack_all_strictly_dyn<T: RotationSystem>(
+        &self,
+        move_rules: &MoveRules<T>,
+        spawn_func: impl Fn(Piece, &Board64) -> Option<BlPosition>,
+    ) -> bool {
+        satisfies_dyn(self.initial_board, &self.placements, |&board, placement| {
+            if let Some(spawn) = spawn_func(placement.piece, &board) {
+                if move_rules.can_reach_strictly(
+                    placement.to_bl_placement(),
+                    board,
+                    placement.piece.with(spawn),
+                ) {
+                    return SearchResult::Success;
                 }
-                None => return false,
             }
-
-            if let None = placement.place_on_and_clear_lines(&mut board) {
-                return false;
-            }
-        }
-        true
+            SearchResult::Pruned
+        })
     }
 
     /// Returns the flow bound with placed piece blocks.
@@ -236,9 +281,15 @@ impl PlacementFlow {
     /// }
     /// ```
     #[inline]
-    pub fn bind_blocks<'a>(&self, binder: impl Fn(PlacedPiece) -> &'a PlacedPieceBlocks) -> Option<PlacedPieceBlocksFlow<'a>> {
+    pub fn bind_blocks<'a>(
+        &self,
+        binder: impl Fn(PlacedPiece) -> &'a PlacedPieceBlocks,
+    ) -> Option<PlacedPieceBlocksFlow<'a>> {
         self.to_placed_pieces().map(|placed_pieces| {
-            PlacedPieceBlocksFlow::new(self.initial_board, placed_pieces.into_iter().map(binder).collect())
+            PlacedPieceBlocksFlow::new(
+                self.initial_board,
+                placed_pieces.into_iter().map(binder).collect(),
+            )
         })
     }
 
@@ -254,7 +305,9 @@ impl PlacementFlow {
         for placement in &self.placements {
             match placement.place_on_and_clear_lines(&mut board) {
                 Some(lines_cleared) => {
-                    let ys: ArrayVec<[u8; 4]> = placement.using_rows().intercept(interception)
+                    let ys: ArrayVec<[u8; 4]> = placement
+                        .using_rows()
+                        .intercept(interception)
                         .ys_iter()
                         .collect();
 
@@ -263,14 +316,13 @@ impl PlacementFlow {
 
                     interception |= lines_cleared.intercept(interception);
                 }
-                None => return None
+                None => return None,
             }
         }
 
         Some(placed_pieces)
     }
 }
-
 
 /// A collection of errors that occur when making the placement flow.
 #[derive(Error, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -298,7 +350,6 @@ impl TryFrom<PlacedPieceBlocksFlow<'_>> for PlacementFlow {
         Ok(PlacementFlow::new(flow.initial_board, placements))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -344,12 +395,15 @@ mod tests {
     #[test]
     fn board_all_placed() {
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 ##########
                 ##########
                 ##########
                 ##########
-            ").unwrap(),
+            ",
+            )
+            .unwrap(),
             &[
                 piece!(LN).with(cc(1, 0)),
                 piece!(ON).with(cc(0, 1)),
@@ -361,12 +415,15 @@ mod tests {
         assert_eq!(board_placed.count_blocks(), 12);
 
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 ...#######
                 ...#######
                 ...#######
                 ...#######
-            ").unwrap(),
+            ",
+            )
+            .unwrap(),
             &[
                 piece!(LN).with(cc(1, 0)),
                 piece!(ON).with(cc(0, 0)),
@@ -381,30 +438,30 @@ mod tests {
     #[test]
     fn can_place_all() {
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 ##########
                 ##########
                 ##########
                 ##########
-            ").unwrap(),
-            &[
-                piece!(LN).with(cc(1, 0)),
-                piece!(ON).with(cc(0, 1)),
-            ],
+            ",
+            )
+            .unwrap(),
+            &[piece!(LN).with(cc(1, 0)), piece!(ON).with(cc(0, 1))],
         );
         assert!(flow.can_place_all());
 
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 ...#######
                 ...#######
                 ...#######
                 ...#######
-            ").unwrap(),
-            &[
-                piece!(LN).with(cc(1, 0)),
-                piece!(ON).with(cc(0, 1)),
-            ],
+            ",
+            )
+            .unwrap(),
+            &[piece!(LN).with(cc(1, 0)), piece!(ON).with(cc(0, 1))],
         );
         assert!(!flow.can_place_all());
     }
@@ -412,53 +469,59 @@ mod tests {
     #[test]
     fn can_stack_all() {
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 ##########
                 ##########
                 ##########
                 ##########
-            ").unwrap(),
-            &[
-                piece!(LE).with(cc(0, 1)),
-            ],
+            ",
+            )
+            .unwrap(),
+            &[piece!(LE).with(cc(0, 1))],
         );
-        assert!(flow.can_stack_all(MoveRules::default(), bl(4, 20)));
+        assert!(flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
 
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 .#########
                 .#########
                 ..########
-            ").unwrap(),
-            &[
-                piece!(LE).with(cc(0, 1)),
-            ],
+            ",
+            )
+            .unwrap(),
+            &[piece!(LE).with(cc(0, 1))],
         );
         assert!(flow.can_place_all());
-        assert!(!flow.can_stack_all(MoveRules::default(), bl(4, 20)));
+        assert!(!flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
 
         let flow = PlacementFlow::from_slice(
-            Board64::from_str("
+            Board64::from_str(
+                "
                 #..#######
                 ..########
-            ").unwrap(),
-            &[
-                piece!(SN).with(cc(1, 0)),
-            ],
+            ",
+            )
+            .unwrap(),
+            &[piece!(SN).with(cc(1, 0))],
         );
         assert!(flow.can_place_all());
-        assert!(flow.can_stack_all(MoveRules::srs(AllowMove::Softdrop), bl(4, 20)));
-        assert!(!flow.can_stack_all(MoveRules::srs(AllowMove::Harddrop), bl(4, 20)));
+        assert!(flow.can_stack_all(&MoveRules::srs(AllowMove::Softdrop), bl(4, 20)));
+        assert!(!flow.can_stack_all(&MoveRules::srs(AllowMove::Harddrop), bl(4, 20)));
     }
 
     #[test]
     fn from_placed_piece_flow() {
-        let board = Board64::from_str("
+        let board = Board64::from_str(
+            "
             ####....##
             ####...###
             ####..####
             ####...###
-        ").unwrap();
+        ",
+        )
+        .unwrap();
 
         {
             let placed_pieces: Vec<PlacedPieceBlocks> = vec![
@@ -468,14 +531,17 @@ mod tests {
             ];
             let flow = PlacedPieceBlocksFlow::new(board, placed_pieces.iter().collect());
 
-            assert_eq!(PlacementFlow::try_from(flow), Ok(PlacementFlow::from_slice(
-                board,
-                &[
-                    piece!(TE).with(cc(4, 1)),
-                    piece!(LW).with(cc(5, 1)),
-                    piece!(JE).with(cc(6, 1)),
-                ],
-            )));
+            assert_eq!(
+                PlacementFlow::try_from(flow),
+                Ok(PlacementFlow::from_slice(
+                    board,
+                    &[
+                        piece!(TE).with(cc(4, 1)),
+                        piece!(LW).with(cc(5, 1)),
+                        piece!(JE).with(cc(6, 1)),
+                    ],
+                ))
+            );
         }
 
         {
@@ -486,7 +552,10 @@ mod tests {
             ];
             let flow = PlacedPieceBlocksFlow::new(board, placed_pieces.iter().collect());
 
-            assert_eq!(PlacementFlow::try_from(flow), Err(PlacementFlowTryFromError::NoPlaceable));
+            assert_eq!(
+                PlacementFlow::try_from(flow),
+                Err(PlacementFlowTryFromError::NoPlaceable)
+            );
         }
     }
 
@@ -495,7 +564,7 @@ mod tests {
         let placement_flow = PlacementFlow::new(Board64::blank(), Vec::<CcPlacement>::new());
         assert_eq!(placement_flow.len(), 0);
         assert!(placement_flow.can_place_all());
-        assert!(placement_flow.can_stack_all(MoveRules::default(), bl(4, 20)));
-        assert!(placement_flow.can_stack_all_strictly(MoveRules::default(), bl(4, 20)));
+        assert!(placement_flow.can_stack_all(&MoveRules::default(), bl(4, 20)));
+        assert!(placement_flow.can_stack_all_strictly(&MoveRules::default(), bl(4, 20)));
     }
 }

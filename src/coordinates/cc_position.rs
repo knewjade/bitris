@@ -34,7 +34,10 @@ impl ops::Add<Offset> for CcPosition {
     type Output = CcPosition;
 
     fn add(self, rhs: Offset) -> Self::Output {
-        CcPosition { cx: self.cx + rhs.dx, cy: self.cy + rhs.dy }
+        CcPosition {
+            cx: self.cx + rhs.dx,
+            cy: self.cy + rhs.dy,
+        }
     }
 }
 
@@ -64,10 +67,16 @@ pub const fn cc(cx: i32, cy: i32) -> CcPosition {
     CcPosition { cx, cy }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::piece;
     use crate::prelude::*;
+
+    #[test]
+    fn cc_placement_to_position() {
+        let placement = CcPlacement::new(piece!(TN), CcPosition::new(2, 3));
+        assert_eq!(CcPosition::from(placement), cc(2, 3));
+    }
 
     #[test]
     fn cc_position_operators() {

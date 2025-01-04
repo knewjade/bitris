@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::boards::Lines;
-use crate::coordinates::{Location, xy};
+use crate::coordinates::{xy, Location};
 
 /// Ceiling of the board.
 pub trait Ceiling: Sized {
@@ -15,7 +15,9 @@ pub trait Ceiling: Sized {
 pub trait BoardOp: Ceiling {
     /// Returns the board height.
     #[inline(always)]
-    fn ceiling(&self) -> u32 { <Self as Ceiling>::ceiling() }
+    fn ceiling(&self) -> u32 {
+        <Self as Ceiling>::ceiling()
+    }
 
     /// Returns the height to the highest block. If the board is empty, returns 0.
     fn well_top(&self) -> u32;
@@ -45,6 +47,9 @@ pub trait BoardOp: Ceiling {
 
     /// Returns as key the rows that are all filled with blocks.
     fn filled_rows(&self) -> Lines;
+
+    /// Remove specified rows only.
+    fn clear_lines_partially(&mut self, lines: Lines);
 
     /// Remove rows that are all filled with blocks.
     fn clear_lines(&mut self) -> Lines;
@@ -91,7 +96,6 @@ pub trait ShrinkFrom<T>: Sized {
     fn shrink_from(value: T) -> Self;
 }
 
-
 /// It represents the position of the blocks.
 ///
 /// Therefore, it must be ensured that the caller does not access outside the board. (Example: MUST NOT call `set_at(xy(-1, -1)`)
@@ -118,10 +122,24 @@ impl Board<u8> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board8::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board8::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board8::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self {
+            cols: [(1 << height) - 1; 10],
+        }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
     pub fn after_clearing(&self) -> Self {
-        let mut board = self.clone();
+        let mut board = *self;
         board.clear_lines();
         board
     }
@@ -138,10 +156,24 @@ impl Board<u16> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board16::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board16::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board16::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self {
+            cols: [(1 << height) - 1; 10],
+        }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
     pub fn after_clearing(&self) -> Self {
-        let mut board = self.clone();
+        let mut board = *self;
         board.clear_lines();
         board
     }
@@ -158,10 +190,24 @@ impl Board<u32> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board32::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board32::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board32::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self {
+            cols: [(1 << height) - 1; 10],
+        }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
     pub fn after_clearing(&self) -> Self {
-        let mut board = self.clone();
+        let mut board = *self;
         board.clear_lines();
         board
     }
@@ -178,17 +224,34 @@ impl Board<u64> {
         Self { cols: [0; 10] }
     }
 
+    /// Returns a board filled up to a specified height.
+    /// ```
+    /// use bitris::prelude::*;
+    /// assert_eq!(Board64::filled_up_to(0).count_blocks(), 0);
+    /// assert_eq!(Board64::filled_up_to(1).count_blocks(), 10);
+    /// assert_eq!(Board64::filled_up_to(5).count_blocks(), 50);
+    /// ```
+    #[inline]
+    pub const fn filled_up_to(height: u8) -> Self {
+        Self {
+            cols: [(1 << height) - 1; 10],
+        }
+    }
+
     /// Returns a new board after clearing lines.
     #[inline]
+    #[must_use]
     pub fn after_clearing(&self) -> Self {
-        let mut board = self.clone();
+        let mut board = *self;
         board.clear_lines();
         board
     }
 }
 
-
-impl<T> fmt::Display for Board<T> where Board<T>: BoardOp {
+impl<T> fmt::Display for Board<T>
+where
+    Board<T>: BoardOp,
+{
     /// ```
     /// use bitris::prelude::*;
     /// let mut board = Board64::default();
@@ -202,22 +265,25 @@ impl<T> fmt::Display for Board<T> where Board<T>: BoardOp {
     /// assert_eq!(format!("{}", board), expected);
     /// `````
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let height = cmp::min(self.well_top() + 1, self.ceiling()) as u32;
+        let height = cmp::min(self.well_top() + 1, self.ceiling());
         let mut str = String::with_capacity((height * 11) as usize);
         for y in (0..height).rev() {
             let y = y as i32;
             for x in 0..10 {
-                let ch = if self.is_occupied_at(xy(x, y)) { '#' } else { '.' };
+                let ch = if self.is_occupied_at(xy(x, y)) {
+                    '#'
+                } else {
+                    '.'
+                };
                 str.push(ch)
             }
             if 0 < y {
                 str.push('\n')
             }
         }
-        write!(f, "(Board{}):\n{}", self.ceiling(), str.to_string())
+        write!(f, "(Board{}):\n{}", self.ceiling(), str)
     }
 }
-
 
 /// A collection of errors that occur during board creation.
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -241,7 +307,10 @@ impl fmt::Display for BoardFromStrError {
     }
 }
 
-impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
+impl<T> FromStr for Board<T>
+where
+    Board<T>: BoardOp + Default,
+{
     type Err = BoardFromStrError;
 
     /// ```
@@ -267,9 +336,7 @@ impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
                     board.set_at(xy(9 - index % 10, index / 10));
                     index += 1;
                 }
-                '.' | '_' => {
-                    index += 1
-                }
+                '.' | '_' => index += 1,
                 ' ' | '\n' | '\r' => {
                     continue;
                 }
@@ -278,7 +345,7 @@ impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
                 }
             }
 
-            if 10 * ceiling <= index as u32 {
+            if 10 * ceiling < index as u32 {
                 return Err(ExceedBoardCeiling(ceiling));
             }
         }
@@ -291,20 +358,23 @@ impl<T> FromStr for Board<T> where Board<T>: BoardOp + Default {
     }
 }
 
-
 macro_rules! board_from {
     ($t:ty, into $u:ty) => {
         impl From<Board<$t>> for Board<$u> {
             #[inline]
             fn from(board: Board<$t>) -> Self {
-                Self { cols: board.cols.map(Into::into) }
+                Self {
+                    cols: board.cols.map(Into::into),
+                }
             }
         }
 
         impl From<&Board<$t>> for Board<$u> {
             #[inline]
             fn from(board: &Board<$t>) -> Self {
-                Self { cols: board.cols.map(Into::into) }
+                Self {
+                    cols: board.cols.map(Into::into),
+                }
             }
         }
     };
@@ -315,14 +385,18 @@ macro_rules! board_shrink_from {
         impl ShrinkFrom<Board<$t>> for Board<$u> {
             #[inline]
             fn shrink_from(board: Board<$t>) -> Self {
-                Self { cols: board.cols.map(|it| it as $u) }
+                Self {
+                    cols: board.cols.map(|it| it as $u),
+                }
             }
         }
 
         impl ShrinkFrom<&Board<$t>> for Board<$u> {
             #[inline]
             fn shrink_from(board: &Board<$t>) -> Self {
-                Self { cols: board.cols.map(|it| it as $u) }
+                Self {
+                    cols: board.cols.map(|it| it as $u),
+                }
             }
         }
     };
@@ -341,7 +415,6 @@ board_shrink_from!(u64, into u8 );
 board_shrink_from!(u32, into u16);
 board_shrink_from!(u32, into u8 );
 board_shrink_from!(u16, into u8 );
-
 
 macro_rules! set_at {
     ($cols:expr, $loc:expr) => {
@@ -375,7 +448,10 @@ macro_rules! is_empty {
 
 macro_rules! count_blocks {
     ($cols:expr) => {
-        $cols.iter().map(|col| col.count_ones()).fold(0, |sum, it| sum + it)
+        $cols
+            .iter()
+            .map(|col| col.count_ones())
+            .fold(0, |sum, it| sum + it)
     };
 }
 
@@ -392,7 +468,7 @@ macro_rules! filled_row_key {
 }
 
 macro_rules! clear_lines {
-    ($cols:expr, $key:expr) => ({
+    ($cols:expr, $key:expr) => {{
         let mut key = $key;
         while 0 < key {
             let mask = (key - 1) & !key;
@@ -404,15 +480,15 @@ macro_rules! clear_lines {
             }
             key = (key >> 1) & inverted_mask;
         }
-    });
+    }};
 }
 
 macro_rules! invert {
-    ($cols:expr) => ({
+    ($cols:expr) => {{
         for col in &mut $cols {
             *col = !(*col);
         }
-    });
+    }};
 }
 
 macro_rules! mirror {
@@ -422,14 +498,14 @@ macro_rules! mirror {
 }
 
 macro_rules! overlaps {
-    ($cols1:expr, $cols2:expr) => ({
+    ($cols1:expr, $cols2:expr) => {{
         for x in 0..10 {
             if 0 < ($cols1[x] & $cols2[x]) {
                 return true;
             }
         }
         false
-    });
+    }};
 }
 
 macro_rules! merge {
@@ -523,6 +599,11 @@ impl BoardOp for Board<u8> {
     }
 
     #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u8)
+    }
+
+    #[inline]
     fn clear_lines(&mut self) -> Lines {
         let key = filled_row_key!(self.cols);
         clear_lines!(self.cols, key);
@@ -599,6 +680,11 @@ impl BoardOp for Board<u16> {
     #[inline]
     fn filled_rows(&self) -> Lines {
         Lines::new(filled_row_key!(self.cols) as u64)
+    }
+
+    #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u16)
     }
 
     #[inline]
@@ -681,6 +767,11 @@ impl BoardOp for Board<u32> {
     }
 
     #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key as u32)
+    }
+
+    #[inline]
     fn clear_lines(&mut self) -> Lines {
         let key = filled_row_key!(self.cols);
         clear_lines!(self.cols, key);
@@ -759,6 +850,11 @@ impl BoardOp for Board<u64> {
     }
 
     #[inline]
+    fn clear_lines_partially(&mut self, lines: Lines) {
+        clear_lines!(self.cols, lines.key)
+    }
+
+    #[inline]
     fn clear_lines(&mut self) -> Lines {
         let key = filled_row_key!(self.cols);
         clear_lines!(self.cols, key);
@@ -803,7 +899,6 @@ pub type Board32 = Board<u32>;
 /// An alias for `BoardT<u64>`
 pub type Board64 = Board<u64>;
 
-
 #[cfg(test)]
 mod tests {
     use std::fmt;
@@ -816,16 +911,24 @@ mod tests {
     use crate::prelude::*;
 
     #[fixture]
-    pub fn board8() -> Board8 { Board8::blank() }
+    pub fn board8() -> Board8 {
+        Board8::blank()
+    }
 
     #[fixture]
-    pub fn board16() -> Board16 { Board16::blank() }
+    pub fn board16() -> Board16 {
+        Board16::blank()
+    }
 
     #[fixture]
-    pub fn board32() -> Board32 { Board32::blank() }
+    pub fn board32() -> Board32 {
+        Board32::blank()
+    }
 
     #[fixture]
-    pub fn board64() -> Board64 { Board64::blank() }
+    pub fn board64() -> Board64 {
+        Board64::blank()
+    }
 
     #[test]
     fn size_of_boards() {
@@ -966,5 +1069,18 @@ mod tests {
         assert_eq!(left.count_blocks(), 2);
         assert!(left.is_occupied_at(xy(0, 0)));
         assert!(left.is_occupied_at(xy(9, 0)));
+    }
+
+    #[apply(all_boards)]
+    fn clear_lines_partially(mut board: impl BoardOp + Clone + PartialEq + fmt::Debug) {
+        for y in 4..board.ceiling() as i32 {
+            board.set_at(xy(0, y));
+        }
+        assert_eq!(board.well_top(), board.ceiling());
+        assert_eq!(board.count_blocks(), board.ceiling() - 4);
+
+        board.clear_lines_partially(Lines::new(0b11110));
+        assert_eq!(board.well_top(), board.ceiling() - 4);
+        assert_eq!(board.count_blocks(), board.ceiling() - 5);
     }
 }

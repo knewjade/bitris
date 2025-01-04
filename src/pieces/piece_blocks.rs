@@ -1,7 +1,11 @@
-use crate::{Rotate, Rotation};
-use crate::coordinates::{CcPosition, dd, Location, Offset};
+use std::cmp;
+
+use tinyvec::ArrayVec;
+
+use crate::coordinates::{bl, cc, dd, tr, BlPosition, CcPosition, Location, Offset, TrPosition};
 use crate::internal_macros::add_member_for_from;
 use crate::pieces::{Orientation, Piece, Shape};
+use crate::{Rotate, Rotation};
 
 /// The offsets of blocks that make up a piece. Usually, you should obtain it from `PieceBlocksFactory`.
 ///
@@ -10,7 +14,7 @@ use crate::pieces::{Orientation, Piece, Shape};
 ///
 /// It prioritizes speed and records what can be calculated in advance.
 /// Therefore, this struct is relatively large and slower when copied, so it's recommended that clone be avoided.
-#[derive(Clone, Hash, Debug)]
+#[derive(Clone, PartialEq, PartialOrd, Hash, Debug)]
 pub struct PieceBlocks {
     pub piece: Piece,
     pub offsets: [Offset; 4],
@@ -30,7 +34,7 @@ impl Rotate for PieceBlocks {
 }
 
 impl PieceBlocks {
-    pub const fn new(piece: Piece) -> Self {
+    const fn new(piece: Piece) -> Self {
         const fn offsets(piece: Piece) -> [Offset; 4] {
             let mut os = north_offsets(piece.shape);
             let mut index = 0;
@@ -95,8 +99,8 @@ impl PieceBlocks {
         let (min_dx, max_dx) = min_max_dx(&offsets);
         let (min_dy, max_dy) = min_max_dy(&offsets);
         PieceBlocks {
-            offsets,
             piece,
+            offsets,
             width: (max_dx - min_dx + 1) as u32,
             height: (max_dy - min_dy + 1) as u32,
             bottom_left: dd(min_dx, min_dy),
@@ -119,10 +123,149 @@ impl PieceBlocks {
         let cc = cc.to_location();
         self.offsets.map(|offset| cc + offset)
     }
+
+    /// Returns block locations of possible touch with the ground.
+    /// Finds the y-coordinate of the lowest block in each x-coordinate.
+    /// ```
+    /// use tinyvec::{array_vec, ArrayVec};
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    /// assert_eq!(
+    ///     piece!(JS).to_piece_blocks().touching_offsets().as_slice(),
+    ///     ArrayVec::from([dd(-1, 0), dd(0, 0), dd(1, -1)]).as_slice(),
+    /// );
+    /// assert_eq!(
+    ///     piece!(SN).to_piece_blocks().touching_offsets().as_slice(),
+    ///     ArrayVec::from([dd(-1, 0), dd(0, 0), dd(1, 1)]).as_slice(),
+    /// );
+    /// ```
+    #[inline]
+    pub fn touching_offsets(&self) -> ArrayVec<[Offset; 4]> {
+        let lx = self.bottom_left.dx;
+        let min_dys = self
+            .offsets
+            .iter()
+            .fold([i32::MAX; 4], |mut min_dys, offset| {
+                let index = (offset.dx - lx) as usize;
+                min_dys[index] = cmp::min(offset.dy, min_dys[index]);
+                min_dys
+            });
+
+        let mut vec = ArrayVec::<[Offset; 4]>::new();
+        for (index, dy) in min_dys.iter().enumerate().take(self.width as usize) {
+            let dx = lx + index as i32;
+            vec.push(Offset::new(dx, *dy));
+        }
+        vec
+    }
 }
 
 add_member_for_from!(Piece, piece, to PieceBlocks);
 
+// Converts another Position into a CcPosition according to the PieceBlocks provided
+pub trait ToCcPosition<T = PieceBlocks>: Sized {
+    fn to_cc_position(&self, piece_blocks: &T) -> CcPosition;
+}
+
+impl ToCcPosition<PieceBlocks> for BlPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(bl(1, 2).to_cc_position(&piece_blocks), cc(2, 2));
+    /// ```
+    #[inline]
+    fn to_cc_position(&self, piece_blocks: &PieceBlocks) -> CcPosition {
+        let bottom_left = piece_blocks.bottom_left;
+        cc(self.lx - bottom_left.dx, self.by - bottom_left.dy)
+    }
+}
+
+impl ToCcPosition<PieceBlocks> for TrPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(tr(3, 3).to_cc_position(&piece_blocks), cc(2, 2));
+    /// ```
+    #[inline]
+    fn to_cc_position(&self, piece_blocks: &PieceBlocks) -> CcPosition {
+        let top_right = piece_blocks.top_right;
+        cc(self.rx - top_right.dx, self.ty - top_right.dy)
+    }
+}
+
+// Converts another Position into a BlPosition according to the PieceBlocks provided
+pub trait ToBlPosition<T>: Sized {
+    fn to_bl_position(&self, piece_blocks: &T) -> BlPosition;
+}
+
+impl ToBlPosition<PieceBlocks> for CcPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(cc(2, 2).to_bl_position(&piece_blocks), bl(1, 2));
+    /// ```
+    #[inline]
+    fn to_bl_position(&self, piece_blocks: &PieceBlocks) -> BlPosition {
+        let bottom_left = piece_blocks.bottom_left;
+        bl(self.cx + bottom_left.dx, self.cy + bottom_left.dy)
+    }
+}
+
+impl ToBlPosition<PieceBlocks> for TrPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(tr(3, 3).to_bl_position(&piece_blocks), bl(1, 2));
+    /// ```
+    #[inline]
+    fn to_bl_position(&self, piece_blocks: &PieceBlocks) -> BlPosition {
+        self.to_cc_position(piece_blocks)
+            .to_bl_position(piece_blocks)
+    }
+}
+
+// Converts another Position into a TrPosition according to the PieceBlocks provided
+pub trait ToTrPosition<T>: Sized {
+    fn to_tr_position(&self, piece_blocks: &T) -> TrPosition;
+}
+
+impl ToTrPosition<PieceBlocks> for CcPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(cc(2, 2).to_tr_position(&piece_blocks), tr(3, 3));
+    /// ```
+    #[inline]
+    fn to_tr_position(&self, piece_blocks: &PieceBlocks) -> TrPosition {
+        let top_right = piece_blocks.top_right;
+        tr(self.cx + top_right.dx, self.cy + top_right.dy)
+    }
+}
+
+impl ToTrPosition<PieceBlocks> for BlPosition {
+    /// ```
+    /// use bitris::piece;
+    /// use bitris::prelude::*;
+    ///
+    /// let piece_blocks = piece!(TN).to_piece_blocks();
+    /// assert_eq!(bl(1, 2).to_tr_position(&piece_blocks), tr(3, 3));
+    /// ```
+    #[inline]
+    fn to_tr_position(&self, piece_blocks: &PieceBlocks) -> TrPosition {
+        self.to_cc_position(piece_blocks)
+            .to_tr_position(piece_blocks)
+    }
+}
 
 /// Default piece blocks factory to generate Tetrominoes.
 #[derive(Copy, Clone, Hash, Debug, Default)]
@@ -172,7 +315,6 @@ impl From<Piece> for PieceBlocks {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
@@ -184,16 +326,24 @@ mod tests {
     use crate::prelude::*;
 
     #[fixture]
-    pub fn board8() -> Board8 { Board8::blank() }
+    pub fn board8() -> Board8 {
+        Board8::blank()
+    }
 
     #[fixture]
-    pub fn board16() -> Board16 { Board16::blank() }
+    pub fn board16() -> Board16 {
+        Board16::blank()
+    }
 
     #[fixture]
-    pub fn board32() -> Board32 { Board32::blank() }
+    pub fn board32() -> Board32 {
+        Board32::blank()
+    }
 
     #[fixture]
-    pub fn board64() -> Board64 { Board64::blank() }
+    pub fn board64() -> Board64 {
+        Board64::blank()
+    }
 
     #[test]
     fn piece_blocks_works() {
