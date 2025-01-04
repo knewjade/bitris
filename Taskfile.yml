@@ -21,21 +21,21 @@ tasks:
 
   bench-keys:
     cmds:
-#      - cargo bench boards/set_at/1 -- --baseline base
+      - cargo bench boards/set_at/1 -- --baseline base
       - cargo bench moves_empty -- --baseline base
       - cargo bench moves_pco -- --baseline base
       - cargo bench moves_center_4_wide -- --baseline base
       - cargo bench moves_randomize -- --baseline base
-#      - cargo bench can_reach -- --baseline base
+      - cargo bench can_reach -- --baseline base
 
   bench-save:
     cmd: cargo bench -- --save-baseline base
 
   bench-keys-save:
     cmds:
-#      - cargo bench boards/set_at/1 -- --save-baseline base
+      - cargo bench boards/set_at/1 -- --save-baseline base
       - cargo bench moves_empty -- --save-baseline base
       - cargo bench moves_pco -- --save-baseline base
-      - cargoK bench moves_center_4_wide -- --save-baseline base
+      - cargo bench moves_center_4_wide -- --save-baseline base
       - cargo bench moves_randomize -- --save-baseline base
-#      - cargo bench can_reach -- --save-baseline base
+      - cargo bench can_reach -- --save-baseline base
