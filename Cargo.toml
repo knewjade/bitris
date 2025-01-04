@@ -4,17 +4,26 @@ version = "0.3.0"
 edition = "2021"
 authors = ["knewjade"]
 license = "MIT"
+build = "build.rs"
+
+[features]
+default = []
+japanese = []
 
 [dependencies]
 itertools = "0.14.0"
 tinyvec = "1.6.0"
 fxhash = "0.2.1"
 thiserror = "2.0.9"
+libc = "0.2.169"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
 rstest = "0.24.0"
 rstest_reuse = "0.7.0"
+
+[build-dependencies]
+cc = { version = "1.2.7", features = ["parallel"] }
 
 [lib]
 bench = false
