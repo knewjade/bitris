@@ -1,10 +1,8 @@
-extern crate libc;
+#[cxx::bridge]
+pub mod ffi {
+    unsafe extern "C++" {
+        include!("hello.hpp");
 
-#[link(name = "bitris_cpp", kind = "static")]
-extern "C" {
-    fn set_at(v: i32) -> i32;
-}
-
-pub fn set_at2(dy: i32) -> i32 {
-    unsafe { set_at(dy) }
+        fn set_at(v: i32) -> i32;
+    }
 }

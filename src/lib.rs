@@ -34,7 +34,7 @@ mod myffi;
 
 pub fn set_at2(dy: i32) -> i32 {
     if cfg!(feature="japanese") {
-        myffi::set_at2(dy)
+        myffi::ffi::set_at(dy)
     } else {
         -999
     }

@@ -1,13 +1,7 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "rust/cxx.h"
 
-  int hello(int v);
+int hello(int v);
 
-  int set_at(int y);
-#ifdef __cplusplus
-
-}
-#endif
+int set_at(int y);
