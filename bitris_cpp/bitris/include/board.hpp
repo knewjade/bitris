@@ -4,11 +4,11 @@
 #include <array>
 #include <bitset>
 #include <string>
-// #include <simdpp/simd.h>
+#include <simdpp/simd.h>
 
 #include "templates.hpp"
 
-// using namespace simdpp;
+using namespace simdpp;
 
 class Location {
 public:

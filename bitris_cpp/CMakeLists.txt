@@ -11,6 +11,9 @@ project(bitris_cpp)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# C++からのビルドか、Rustからのビルドかを判別できるように
+add_definitions(-DBUILDING_WITH_CMAKE)
+
 # サブディレクトリの登録
 #add_subdirectory(googletest)
 add_subdirectory(bitris)
