@@ -4,6 +4,8 @@ pub use moves::*;
 pub use order::*;
 pub use rotation::*;
 pub use traits::*;
+use crate::boards::Board64;
+use crate::coordinates::xy;
 
 #[doc(hidden)]
 pub mod prelude {
@@ -28,3 +30,12 @@ mod order;
 mod rotation;
 mod traits;
 mod array_map;
+mod myffi;
+
+pub fn set_at2(dy: i32) -> i32 {
+    if cfg!(feature="japanese") {
+        myffi::set_at2(dy)
+    } else {
+        -999
+    }
+}

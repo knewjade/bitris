@@ -19,16 +19,28 @@ fn main() {
             .flag("-Wall")
             .flag("-Wextra")
             .flag("-v")
-            .flag("-O2")
+            .flag("-O3")
             .flag("-flto")
             .flag("-march=native")
             .flag("-g")
             .flag("-pipe")
             .flag("-MMD")
             .flag("-MP")
-            .file("bitris_cpp/bitris/src/hello.cpp")
+            .files(
+                std::fs::read_dir("bitris_cpp/bitris/src")
+                    .unwrap()
+                    .flat_map(|entry| {
+                        let entry = entry.unwrap();
+                        let path = entry.path();
+                        if path.extension().map_or(false, |ext| ext == "cpp") {
+                            Some(path)
+                        } else {
+                            None
+                        }
+                    })
+            )
             .include("bitris_cpp/bitris/include")
             .cpp_link_stdlib("stdc++")
-            .compile("libbitriscpp.a");
+            .compile("libbitris_cpp.a");
     }
 }
