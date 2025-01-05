@@ -11,5 +11,6 @@ Cargo.lock
 
 .DS_STORE
 /.idea/
+.vscode/
 
 flamegraph.svg
