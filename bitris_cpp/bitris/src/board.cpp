@@ -45,8 +45,12 @@
 //}
 
 std::string Board64::to_string() const {
+    return to_string(HEIGHT);
+}
+
+std::string Board64::to_string(const int height) const {
     std::string str;
-    for (int y = HEIGHT - 1; y >= 0; --y) {
+    for (int y = height - 1; y >= 0; --y) {
         for (int x = 0; x < WIDTH; ++x) {
             str += (is_occupied_at(Location(x, y)) ? '#' : '.');
         }

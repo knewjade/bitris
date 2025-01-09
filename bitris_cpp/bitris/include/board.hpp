@@ -1,25 +1,13 @@
-#ifndef BOARD_HPP
-#define BOARD_HPP
+#pragma once
 
 #include <array>
 #include <bitset>
 #include <string>
-#include <simdpp/simd.h>
 
+#include "pieces.hpp"
 #include "templates.hpp"
 
-using namespace simdpp;
-
-class Location {
-public:
-    int32_t x, y;
-
-    Location(const int x, const int y) : x(x), y(y) {
-    }
-};
-
-class Board64 {
-public:
+struct Board64 {
     static constexpr int WIDTH = 10;
     static constexpr int HEIGHT = 64;
 
@@ -27,6 +15,9 @@ public:
     std::array<under_t, WIDTH> cols = std::array<under_t, WIDTH>{};
 
     constexpr Board64(): cols({}) {
+    }
+
+    constexpr explicit Board64(const std::array<under_t, WIDTH> &cols): cols(cols) {
     }
 
     // using under_t = uint64_t;
@@ -127,6 +118,5 @@ public:
     // void remove_all(const Board64 &other);
 
     [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] std::string to_string(int height) const;
 };
-
-#endif // BOARD_HPP

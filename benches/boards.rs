@@ -2,7 +2,8 @@ use criterion::*;
 use std::hint::black_box;
 
 use bitris::prelude::*;
-use bitris::set_at2;
+use bitris::{search, search3, set_at2};
+use bitris::myffi::MultiBuf;
 
 fn call_set_at(dy: i32) {
     let mut board = Board64::default();
@@ -22,8 +23,23 @@ fn call_set_at2(dy: i32) {
     assert_eq!(set_at2(dy), 0);
 }
 
+fn call_search(buf: &mut MultiBuf) {
+    assert_eq!(search(), 0);
+    // assert_eq!(search3(buf), 0);
+    // assert_eq!(search_rust(), 0);
+}
+
 fn bench_boards(c: &mut Criterion) {
     let mut group = c.benchmark_group("boards");
+
+    let mut buf = MultiBuf::new();
+
+    group.bench_function("search", |b| {
+        b.iter(|| {
+            call_search(&mut buf);
+            black_box(())
+        })
+    });
 
     for dy in [1, 2] {
         group.bench_function(BenchmarkId::new("set_at", dy), |b| {

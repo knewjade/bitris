@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 
 # コンパイラー
-set(CMAKE_C_COMPILER gcc)
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_COMPILER gcc-14)
+set(CMAKE_CXX_COMPILER g++-14)
 
 # プロジェクト名
 project(bitris_cpp)

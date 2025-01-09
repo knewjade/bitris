@@ -14,7 +14,7 @@ fn main() {
 
         cxx_build::bridge("src/myffi.rs")
             .cpp(true)
-            // .warnings(true)
+            .warnings(true)
             .flag_if_supported("-std=c++2b")
             .flag_if_supported("-Wall")
             .flag_if_supported("-Wextra")
@@ -40,7 +40,7 @@ fn main() {
                     })
             )
             .include("bitris_cpp/bitris/include")
-            // .cpp_link_stdlib("stdc++")
+            .cpp_link_stdlib("stdc++")
             .compile("bitris_cpp");
     }
 }

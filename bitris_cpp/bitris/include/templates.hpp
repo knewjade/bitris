@@ -1,5 +1,4 @@
-#ifndef TEMPLATES_HPP
-#define TEMPLATES_HPP
+#pragma once
 
 #include <utility>
 
@@ -114,5 +113,3 @@ constexpr std::array<T, N> static_zip2(F &&function, const std::array<T, N> &arr
     f(std::forward<F>(function), buffer, arr1, arr2, std::make_index_sequence<N>());
     return buffer;
 }
-
-#endif //TEMPLATES_HPP
