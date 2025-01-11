@@ -45,82 +45,6 @@ namespace s {
         }
     }
 
-    // using namespace simdpp;
-    //
-    // template<uint16_t Value>
-    // constexpr uint16x16 make_square2() {
-    //     if (Value == 0) {
-    //         return make_zero();
-    //     }
-    //     return make_uint(
-    //         Value, Value, Value, Value, Value,
-    //         Value, Value, Value, Value, Value,
-    //         0, 0, 0, 0, 0, 0
-    //     );
-    // }
-    //
-    // constexpr uint16x16 make_square2(const uint16_t value) {
-    //     if (value == 0) {
-    //         return make_zero();
-    //     }
-    //     return make_uint(
-    //         value, value, value, value, value,
-    //         value, value, value, value, value,
-    //         0, 0, 0, 0, 0, 0
-    //     );
-    // }
-    //
-    // template<size_t Down, bool CeilOpen = false>
-    // constexpr uint16x16 shift_down(const uint16x16 &data) {
-    //     if constexpr (Down == 0) {
-    //         return data;
-    //     }
-    //     if constexpr (16 <= Down) {
-    //         make_square2<CeilOpen ? u16::full() : 0>();
-    //     }
-    //     return shift_r<Down>(data);
-    // }
-    //
-    // template<size_t Up>
-    // constexpr uint16x16 shift_up(const uint16x16 &data) {
-    //     if constexpr (Up == 0) {
-    //         return data;
-    //     }
-    //     if constexpr (16 <= Up) {
-    //         return make_zero();
-    //     }
-    //     return shift_l<Up>(data);
-    // }
-    //
-    // template<size_t Right>
-    // constexpr uint16x16 shift_right(const uint16x16 &data) {
-    //     if constexpr (Right == 0) {
-    //         return data;
-    //     }
-    //     if constexpr (10 <= Right) {
-    //         return make_zero();
-    //     }
-    //
-    //     uint16x16 shifted = move8_l<1>(data);
-    //     uint16x16 a = insert<8>(shifted, extract<7>(shifted));
-    //     return a;
-    // }
-    //
-    // template<size_t Left>
-    // constexpr uint16x16 shift_left(const uint16x16 &data) {
-    //     if constexpr (Left == 0) {
-    //         return data;
-    //     }
-    //
-    //     if constexpr (10 <= Left) {
-    //         return make_zero();
-    //     }
-    //
-    //     uint16x16 shifted = move8_r<1>(data);
-    //     uint16x16 a = insert<7>(shifted, extract<8>(shifted));
-    //     return a;
-    // }
-
     constexpr uint32_t getMostSignificantBitUsingBuiltin(const uint32_t v) {
         if (v == 0) {
             return 0;
@@ -149,81 +73,24 @@ namespace s {
         return reachable_rows;
     }
 
-    // void show(const uint16x16 goal) {
-    //     for_each(goal, [](auto x) {
-    //         std::cout << x << std::endl;
-    //     });
-    // }
-    //
-    // constexpr uint16x16 search(
-    //     const std::array<uint16_t, 10> &board_bytes,
-    //     const uint16x16 &board,
-    //     uint8_t spawn_piece,
-    //     uint8_t spawn_orientation,
-    //     uint8_t spawn_cx,
-    //     uint8_t spawn_cy
-    // ) {
-    //     const uint16x16 free_space_block = bit_not(board);
-    //
-    //     const uint16x16 a = shift_left<1>(free_space_block);
-    //     const uint16x16 b = bit_and(a, shift_down<1>(free_space_block));
-    //     const uint16x16 c = bit_and(free_space_block, shift_down<1>(a));
-    //     const uint16x16 free_space = bit_and(b, c);
-    //
-    //     // const uint16_t value = spawn_bits(board_bytes, spawn_cy);
-    //     // uint16x16 reachable;
-    //     // if (0 < value) {
-    //     //     reachable = make_square(value);
-    //     // } else {
-    //     //     alignas(32) std::array<uint16_t, 10> b{};
-    //     //     b[spawn_cx] = 1 << spawn_cy;
-    //     //     reachable = load(b.data());
-    //     // }
-    //     //
-    //     // while (true) {
-    //     //     const uint16x16 right = shift_right<1>(reachable);
-    //     //     const uint16x16 left = shift_left<1>(reachable);
-    //     //     const uint16x16 down = shift_down<1>(reachable);
-    //     //
-    //     //     const uint16x16 next = bit_or(
-    //     //         bit_or(reachable, right),
-    //     //         bit_or(left, down)
-    //     //     );
-    //     //
-    //     //     if (const int memcmp1 = memcmp(&next, &next, 10); memcmp1 == 0) {
-    //     //         break;
-    //     //     }
-    //     //
-    //     //     reachable = next;
-    //     // };
-    //     //
-    //     // const uint16x16 goal = bit_andnot(
-    //     //     reachable,
-    //     //     shift_up<1>(free_space)
-    //     // );
-    //
-    //     // std::array<uint16_t, 10> result{};
-    //     // store_first(&result, goal, 10);
-    //
-    //     return free_space;
-    // }
-
     static constexpr int W = 10;
     static constexpr int width = W;
     static constexpr int height = 16;
 
     using under_t = std::uint16_t;
-    template<std::size_t N>
-    using simd_of = stdx::simd<under_t, stdx::simd_abi::fixed_size<N> >;
-    using data_t = simd_of<W>;
+
+    template<typename T>
+    using data_t = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
+
     // alignas(std::experimental::memory_alignment_v<data_t>) data_t data = 0;
 
-    template<uint16_t Value>
-    constexpr data_t make_square() {
+    template<typename T, T Value>
+    constexpr data_t<T> make_square() {
         return data_t{Value};
     }
 
-    constexpr data_t make_square(const uint16_t value) {
+    template<typename T>
+    constexpr T make_square(const T value) {
         return data_t{value};
     }
 
