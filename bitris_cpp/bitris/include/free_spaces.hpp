@@ -7,9 +7,9 @@ template<typename, Shape>
 struct free_spaces {
 };
 
-template<typename D>
-struct free_spaces<D, Shape::O> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::O> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 1;
 
@@ -23,9 +23,9 @@ struct free_spaces<D, Shape::O> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::T> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::T> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
@@ -33,7 +33,7 @@ struct free_spaces<D, Shape::T> {
         return {
             north(free_space_block),
             east(free_space_block),
-            sourth(free_space_block),
+            south(free_space_block),
             west(free_space_block),
         };
     }
@@ -52,7 +52,7 @@ struct free_spaces<D, Shape::T> {
         return l1 & d1 & u1 & free_space_block;
     }
 
-    static constexpr type sourth(const type &free_space_block) {
+    static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto u1 = data_t::template shift_up<1>(free_space_block);
@@ -67,9 +67,9 @@ struct free_spaces<D, Shape::T> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::L> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::L> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
@@ -77,7 +77,7 @@ struct free_spaces<D, Shape::L> {
         return {
             north(free_space_block),
             east(free_space_block),
-            sourth(free_space_block),
+            south(free_space_block),
             west(free_space_block),
         };
     }
@@ -96,7 +96,7 @@ struct free_spaces<D, Shape::L> {
         return l1a & d1 & l1au1;
     }
 
-    static constexpr type sourth(const type &free_space_block) {
+    static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto r1u1 = data_t::template shift_up<1, true>(r1);
@@ -111,9 +111,9 @@ struct free_spaces<D, Shape::L> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::J> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::J> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
@@ -121,7 +121,7 @@ struct free_spaces<D, Shape::J> {
         return {
             north(free_space_block),
             east(free_space_block),
-            sourth(free_space_block),
+            south(free_space_block),
             west(free_space_block),
         };
     }
@@ -140,7 +140,7 @@ struct free_spaces<D, Shape::J> {
         return l1a & l1ad1 & u1;
     }
 
-    static constexpr type sourth(const type &free_space_block) {
+    static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto l1u1 = data_t::template shift_up<1, true>(l1);
@@ -155,9 +155,9 @@ struct free_spaces<D, Shape::J> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::I> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::I> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
@@ -182,9 +182,9 @@ struct free_spaces<D, Shape::I> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::S> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::S> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
@@ -209,9 +209,9 @@ struct free_spaces<D, Shape::S> {
     }
 };
 
-template<typename D>
-struct free_spaces<D, Shape::Z> {
-    using data_t = data<D>;
+template<typename Data>
+struct free_spaces<Data, Shape::Z> {
+    using data_t = data<Data>;
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 

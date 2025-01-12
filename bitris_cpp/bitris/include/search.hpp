@@ -109,9 +109,7 @@ namespace s {
             const uint8_t spawn_cy,
             const T reachable_rows
         ) {
-            if constexpr (N == 4) {
-                return {board, board, board, board};
-            }
+            static_assert(N == 1 || N == 4);
 
             const auto free_space_block = ~board;
             const auto all_free_space = free_spaces<T, shape>::get(free_space_block);
@@ -120,14 +118,48 @@ namespace s {
                 all_free_space, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
             );
 
-            while (true) {
-                constexpr size_t index = 0;
-                const auto &reachable = all_reachable[index];
-                const auto next = move(reachable, all_free_space[index]);
-                if (all_of(next == reachable)) {
-                    break;
+            if constexpr (N == 4) {
+                auto needs_update = std::bitset<N>((1U << N) - 1);
+                auto current_index = static_cast<size_t>(spawn_orientation);
+
+                while (needs_update.any()) {
+                    static_for<N>([&][[gnu::always_inline]](auto _) {
+                        // check
+                        if (!needs_update[current_index]) {
+                            current_index = (current_index + 1) % N;
+                            return;
+                        }
+                        needs_update[current_index] = false;
+
+                        // move
+                        while (true) {
+                            const auto &reachable = all_reachable[current_index];
+                            const auto next = move(reachable, all_free_space[current_index]);
+                            if (all_of(next == reachable)) {
+                                break;
+                            }
+                            // TODO 変数に入れる？
+                            all_reachable[current_index] = next;
+                        }
+
+                        // TODO 回転
+                        // needs_update[current_index] = true;
+
+                        current_index = (current_index + 1) % N;
+                    });
                 }
-                all_reachable[index] = next;
+            } else {
+                constexpr size_t index = 0;
+
+                // move
+                while (true) {
+                    const auto &reachable = all_reachable[index];
+                    const auto next = move(reachable, all_free_space[index]);
+                    if (all_of(next == reachable)) {
+                        break;
+                    }
+                    all_reachable[index] = next;
+                }
             }
 
             return lock(all_free_space, all_reachable);
