@@ -11,28 +11,28 @@
 namespace stdx = std::experimental;
 
 namespace s {
-    template<typename T, Shape shape>
+    template<typename Data, Shape shape>
     struct searcher {
-        using data_t = data<T>;
+        using data_t = data<Data>;
         using type = typename data_t::type;
-        static constexpr auto N = free_spaces<T, shape>::N;
+        static constexpr auto N = free_spaces<Data, shape>::N;
 
         template<typename U>
-        static constexpr std::array<T, N * 10> to(const std::array<typename data<U>::type, N> &boards) {
-            alignas(32) std::array<T, N * 10> array{};
+        static constexpr std::array<Data, N * 10> to(const std::array<typename data<U>::type, N> &boards) {
+            alignas(32) std::array<Data, N * 10> array{};
             static_for<N>([&][[gnu::always_inline]](auto index) {
-                data<U>::template to<T>(boards[index]).copy_to(&array[index * 10], stdx::vector_aligned);
+                data<U>::template to<Data>(boards[index]).copy_to(&array[index * 10], stdx::vector_aligned);
             });
             return array;
         }
 
         template<typename U>
-        static constexpr std::array<T, N * 10> search2(
-            const std::array<T, 10> &board,
+        static constexpr std::array<Data, N * 10> search2(
+            const std::array<Data, 10> &board,
             const uint8_t spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
-            const T reachable_rows
+            const Data reachable_rows
         ) {
             const auto board_data = data_t::template load<U>(board);
             const auto goals = searcher<U, shape>::begin(
@@ -41,13 +41,13 @@ namespace s {
             return to<U>(goals);
         }
 
-        static constexpr std::array<T, N * 10> search(
-            const std::array<T, 10> &board,
+        static constexpr std::array<Data, N * 10> search(
+            const std::array<Data, 10> &board,
             const uint8_t spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy
         ) {
-            const auto used_rows = bits<T>::used_rows(board);
+            const auto used_rows = bits<Data>::used_rows(board);
             const auto [top_y, reachable_rows] = rows::spawn_bits(used_rows, spawn_cy);
 
             if (top_y < 14) {
@@ -77,7 +77,7 @@ namespace s {
             const uint8_t spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
-            const T reachable_rows
+            const Data reachable_rows
         ) {
             auto all_reachable = std::array<type, N>{};
             static_for<N>([&][[gnu::always_inline]](auto index) {
@@ -107,12 +107,12 @@ namespace s {
             const uint8_t spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
-            const T reachable_rows
+            const Data reachable_rows
         ) {
             static_assert(N == 1 || N == 4);
 
             const auto free_space_block = ~board;
-            const auto all_free_space = free_spaces<T, shape>::get(free_space_block);
+            const auto all_free_space = free_spaces<Data, shape>::get(free_space_block);
 
             auto all_reachable = reach(
                 all_free_space, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
