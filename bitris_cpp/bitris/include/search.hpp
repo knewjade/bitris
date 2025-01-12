@@ -61,6 +61,47 @@ namespace s {
             return search2<uint64_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
         }
 
+        static constexpr std::array<type, N> lock(
+            const std::array<type, N> &all_free_space,
+            const std::array<type, N> &all_reachable
+        ) {
+            std::array<type, N> all_goal{};
+            static_for<N>([&][[gnu::always_inline]](auto index) {
+                all_goal[index] = ~data_t::template shift_up<1>(all_free_space[index]) & all_reachable[index];
+            });
+            return all_goal;
+        }
+
+        static constexpr std::array<type, N> reach(
+            const std::array<type, N> &all_free_space,
+            const uint8_t spawn_orientation,
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy,
+            const T reachable_rows
+        ) {
+            auto all_reachable = std::array<type, N>{};
+            static_for<N>([&][[gnu::always_inline]](auto index) {
+                if (index == spawn_orientation) {
+                    all_reachable[index] = data_t::make_spawn(
+                        reachable_rows,
+                        all_free_space[index],
+                        spawn_cx,
+                        spawn_cy
+                    );
+                } else {
+                    all_reachable[index] = data_t::template make_square<0>();
+                }
+            });
+            return all_reachable;
+        }
+
+        static constexpr type move(const auto &reachable, const auto &free_space) {
+            const auto right = data_t::template shift_right<1>(reachable);
+            const auto left = data_t::template shift_left<1>(reachable);
+            const auto down = data_t::template shift_down<1>(reachable);
+            return (reachable | right | left | down) & free_space;
+        }
+
         static constexpr std::array<type, N> begin(
             const type &board,
             const uint8_t spawn_orientation,
@@ -73,33 +114,23 @@ namespace s {
             }
 
             const auto free_space_block = ~board;
+            const auto all_free_space = free_spaces<T, shape>::get(free_space_block);
 
-            const auto free_space = free_spaces<T, shape>::north(free_space_block);
-
-            auto reachable = data_t::make_spawn(
-                reachable_rows,
-                free_space,
-                spawn_cx,
-                spawn_cy
+            auto all_reachable = reach(
+                all_free_space, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
             );
 
             while (true) {
-                const auto right = data_t::template shift_right<1>(reachable);
-                const auto left = data_t::template shift_left<1>(reachable);
-                const auto down = data_t::template shift_down<1>(reachable);
-
-                const auto next = (reachable | right | left | down) & free_space;
-
+                constexpr size_t index = 0;
+                const auto &reachable = all_reachable[index];
+                const auto next = move(reachable, all_free_space[index]);
                 if (all_of(next == reachable)) {
                     break;
                 }
-
-                reachable = next;
+                all_reachable[index] = next;
             }
 
-            const auto goal = ~data_t::template shift_up<1>(free_space) & reachable;
-
-            return {goal};
+            return lock(all_free_space, all_reachable);
         }
     };
 }
