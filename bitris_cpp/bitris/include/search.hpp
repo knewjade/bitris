@@ -11,120 +11,70 @@
 namespace stdx = std::experimental;
 
 namespace s {
-    template<typename T>
+    template<typename T, Shape shape>
     struct searcher {
+        using data_t = data<T>;
+        using type = typename data_t::type;
+        static constexpr auto N = free_spaces<T, shape>::N;
+
         template<typename U>
-        static constexpr std::array<U, 10> to(const typename data<T>::type &board) {
-            alignas(32) std::array<U, 10> array{};
-            data<T>::template to<U>(board).copy_to(&array[0], stdx::vector_aligned);
+        static constexpr std::array<T, N * 10> to(const std::array<typename data<U>::type, N> &boards) {
+            alignas(32) std::array<T, N * 10> array{};
+            static_for<N>([&][[gnu::always_inline]](auto index) {
+                data<U>::template to<T>(boards[index]).copy_to(&array[index * 10], stdx::vector_aligned);
+            });
             return array;
         }
 
-        static constexpr std::array<T, 10> search3(
+        template<typename U>
+        static constexpr std::array<T, N * 10> search2(
             const std::array<T, 10> &board,
-            const uint8_t spawn_shape,
             const uint8_t spawn_orientation,
-            const uint8_t spawn_bx,
-            const uint8_t spawn_by
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy,
+            const T reachable_rows
         ) {
-            switch (static_cast<Shape>(spawn_shape)) {
-                case Shape::T:
-                    return search<Shape::T>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::S:
-                    return search<Shape::S>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::Z:
-                    return search<Shape::Z>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::L:
-                    return search<Shape::L>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::J:
-                    return search<Shape::J>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::I:
-                    return search<Shape::I>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-                case Shape::O:
-                    return search<Shape::O>(
-                        board, spawn_orientation, spawn_bx, spawn_by
-                    );
-            }
-            std::unreachable();
+            const auto board_data = data_t::template load<U>(board);
+            const auto goals = searcher<U, shape>::begin(
+                board_data, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
+            );
+            return to<U>(goals);
         }
 
-        template<Shape shape>
-        static constexpr std::array<T, 10> search(
+        static constexpr std::array<T, N * 10> search(
             const std::array<T, 10> &board,
             const uint8_t spawn_orientation,
-            const uint8_t spawn_bx,
-            const uint8_t spawn_by
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy
         ) {
             const auto used_rows = bits<T>::used_rows(board);
-            const auto [top_y, reachable_rows] = rows::spawn_bits(used_rows, spawn_by);
+            const auto [top_y, reachable_rows] = rows::spawn_bits(used_rows, spawn_cy);
 
             if (top_y < 14) {
-                using U = uint16_t;
-                const data<U>::type board_data = data<T>::template load<U>(board);
-                const data<U>::type goal = searcher<U>::begin<shape>(
-                    board_data, spawn_orientation,
-                    spawn_bx, spawn_by, reachable_rows
-                );
-                return searcher<U>::to<T>(goal);
+                return search2<uint16_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
             }
 
-            assert(top_y < 31); {
-                using U = uint32_t;
-                const data<U>::type board_data = data<T>::template load<U>(board);
-                const data<U>::type goal = searcher<U>::begin<shape>(
-                    board_data, spawn_orientation,
-                    spawn_bx, spawn_by, reachable_rows
-                );
-
-                return searcher<U>::to<T>(goal);
+            if (top_y < 31) {
+                return search2<uint32_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
             }
+
+            return search2<uint64_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
         }
 
-        using data_t = data<T>;
-        using type = typename data_t::type;
-
-        static constexpr type free_space(
-            const type &free_space_block,
-            const uint8_t spawn_piece,
-            const uint8_t spawn_orientation
-        ) {
-
-        }
-
-        struct Constants {
-            size_t orientation_length;
-        };
-
-        static consteval Constants constants(const Shape shape) {
-            if (shape == Shape::O) {
-                return {1};
-            }
-            return {4};
-        }
-
-        template<Shape shape, size_t N = constants(shape).orientation_length>
-        static constexpr type begin(
+        static constexpr std::array<type, N> begin(
             const type &board,
             const uint8_t spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
             const T reachable_rows
         ) {
+            if constexpr (N == 4) {
+                return {board, board, board, board};
+            }
+
             const auto free_space_block = ~board;
 
-            const auto free_space = free_spaces<T, Shape::O>::north(free_space_block);
+            const auto free_space = free_spaces<T, shape>::north(free_space_block);
 
             auto reachable = data_t::make_spawn(
                 reachable_rows,
@@ -149,45 +99,7 @@ namespace s {
 
             const auto goal = ~data_t::template shift_up<1>(free_space) & reachable;
 
-            return goal;
-        }
-
-        static constexpr type begin2(
-            const type &board,
-            const uint8_t spawn_piece,
-            const uint8_t spawn_orientation,
-            const uint8_t spawn_cx,
-            const uint8_t spawn_cy,
-            const T reachable_rows
-        ) {
-            const auto free_space_block = ~board;
-
-            const auto free_space = free_spaces<T, Shape::O>::north(free_space_block);
-
-            auto reachable = data_t::make_spawn(
-                reachable_rows,
-                free_space,
-                spawn_cx,
-                spawn_cy
-            );
-
-            while (true) {
-                const auto right = data_t::template shift_right<1>(reachable);
-                const auto left = data_t::template shift_left<1>(reachable);
-                const auto down = data_t::template shift_down<1>(reachable);
-
-                const auto next = (reachable | right | left | down) & free_space;
-
-                if (all_of(next == reachable)) {
-                    break;
-                }
-
-                reachable = next;
-            }
-
-            const auto goal = ~data_t::template shift_up<1>(free_space) & reachable;
-
-            return goal;
+            return {goal};
         }
     };
 }

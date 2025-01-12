@@ -33,12 +33,12 @@ struct data {
     }
 
     template<typename U>
-    static constexpr typename data<U>::type to(const type &b) {
+    static constexpr typename data<U>::type to(const type &board) {
         return typename data<U>::type([=][[gnu::always_inline]](auto i) {
             if constexpr (constexpr size_t index = i; index < 0) {
                 return 0;
             } else {
-                return b[index];
+                return static_cast<U>(board[index]);
             }
         });
     }

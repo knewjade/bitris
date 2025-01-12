@@ -1,12 +1,9 @@
 #pragma once
 
-#include <cassert>
-
 #include "pieces.hpp"
 #include "data.hpp"
-#include "templates.hpp"
 
-template<typename D, Shape Shape>
+template<typename, Shape>
 struct free_spaces {
 };
 
@@ -14,6 +11,11 @@ template<typename D>
 struct free_spaces<D, Shape::O> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 1;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        return {north(free_space_block)};
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto l1a = free_space_block & data_t::template shift_left<1>(free_space_block);
@@ -25,6 +27,16 @@ template<typename D>
 struct free_spaces<D, Shape::T> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        return {
+            north(free_space_block),
+            east(free_space_block),
+            sourth(free_space_block),
+            west(free_space_block),
+        };
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -59,6 +71,16 @@ template<typename D>
 struct free_spaces<D, Shape::L> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        return {
+            north(free_space_block),
+            east(free_space_block),
+            sourth(free_space_block),
+            west(free_space_block),
+        };
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -93,6 +115,16 @@ template<typename D>
 struct free_spaces<D, Shape::J> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        return {
+            north(free_space_block),
+            east(free_space_block),
+            sourth(free_space_block),
+            west(free_space_block),
+        };
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -127,6 +159,13 @@ template<typename D>
 struct free_spaces<D, Shape::I> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        const auto n = north(free_space_block);
+        const auto e = east(free_space_block);
+        return {n, e, n, e};
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -147,6 +186,13 @@ template<typename D>
 struct free_spaces<D, Shape::S> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        const auto n = north(free_space_block);
+        const auto e = east(free_space_block);
+        return {n, e, n, e};
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -167,6 +213,13 @@ template<typename D>
 struct free_spaces<D, Shape::Z> {
     using data_t = data<D>;
     using type = typename data_t::type;
+    static constexpr size_t N = 4;
+
+    static constexpr std::array<type, N> get(const type &free_space_block) {
+        const auto n = north(free_space_block);
+        const auto e = east(free_space_block);
+        return {n, e, n, e};
+    }
 
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
