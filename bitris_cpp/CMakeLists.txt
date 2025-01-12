@@ -15,11 +15,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_definitions(-DBUILDING_WITH_CMAKE)
 
 # サブディレクトリの登録
-#add_subdirectory(googletest)
+add_subdirectory(googletest)
 add_subdirectory(bitris)
+add_subdirectory(test)
 add_subdirectory(main)
 
 # ターゲットの設定
 set_target_properties(bitris PROPERTIES FOLDER library)
-#set_target_properties(test PROPERTIES FOLDER executable)
+set_target_properties(test PROPERTIES FOLDER executable)
 set_target_properties(main PROPERTIES FOLDER executable)

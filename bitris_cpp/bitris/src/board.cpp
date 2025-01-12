@@ -1,4 +1,4 @@
-#include "board.hpp"
+// #include "board.hpp"
 
 //void Board64::unset_at(const Location& location) {
 //    cols[location.x] &= ~(1ULL << location.y);
@@ -43,18 +43,18 @@
 //        cols[x] &= ~other.cols[x];
 //    }
 //}
-
-std::string Board64::to_string() const {
-    return to_string(HEIGHT);
-}
-
-std::string Board64::to_string(const int height) const {
-    std::string str;
-    for (int y = height - 1; y >= 0; --y) {
-        for (int x = 0; x < WIDTH; ++x) {
-            str += (is_occupied_at(Location(x, y)) ? '#' : '.');
-        }
-        str += '\n';
-    }
-    return str;
-}
+//
+// std::string Board64::to_string() const {
+//     return to_string(HEIGHT);
+// }
+//
+// std::string Board64::to_string(const int height) const {
+//     std::string str;
+//     for (int y = height - 1; y >= 0; --y) {
+//         for (int x = 0; x < WIDTH; ++x) {
+//             str += (is_occupied_at(Location(x, y)) ? '#' : '.');
+//         }
+//         str += '\n';
+//     }
+//     return str;
+// }

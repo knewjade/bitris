@@ -1,218 +1,193 @@
 #pragma once
 
-#include <assert.h>
-#include <iostream>
-// #include <simdpp/simd.h>
 #include <experimental/simd>
+
+#include "rows.hpp"
+#include "pieces.hpp"
+#include "bits.hpp"
+#include "data.hpp"
+#include "free_spaces.hpp"
 
 namespace stdx = std::experimental;
 
-#include "pieces.hpp"
-#include "board.hpp"
-
 namespace s {
-    constexpr int set_at_constexpr(const int dy) {
-        auto board = Board64{};
-
-        for (uint32_t index = 0; index < (Board64::ceiling() / dy); ++index) {
-            const auto y = dy * index;
-            static_for<10>([&](auto x) {
-                board.set_at(x, y);
-            });
-        }
-
-        board.clear_lines();
-
-        return static_cast<int>(board.count_blocks());
-    }
-
-    using CallbackType = void(*)(const CcPlacement &);
-
-    template<typename Callback>
-    constexpr void search_v1(const Callback callback) {
-        callback(CcPlacement{0, 1});
-        callback(CcPlacement{1, 2});
-        callback(CcPlacement{2, 3});
-    }
-
-    namespace u16 {
-        consteval size_t ceiling() {
-            return 16;
-        }
-
-        consteval uint16_t full() {
-            return std::numeric_limits<uint16_t>::max();
-        }
-    }
-
-    constexpr uint32_t getMostSignificantBitUsingBuiltin(const uint32_t v) {
-        if (v == 0) {
-            return 0;
-        }
-        return 31 - __builtin_clz(v);
-    }
-
-    constexpr uint16_t spawn_bits(
-        const std::array<uint16_t, 10> &board_bytes,
-        const size_t cy
-    ) {
-        const uint16_t used_rows = static_packing_fold(
-            []<typename... T>(T... s) {
-                return (s | ...);
-            },
-            board_bytes
-        );
-
-        const uint16_t spawn_mask = 16 <= cy ? (1 << (cy + 1)) - 1 : 0xFFFF;
-        const uint16_t masked_used_rows = used_rows & spawn_mask;
-
-        const uint16_t builtin_clz = (1U << (getMostSignificantBitUsingBuiltin(masked_used_rows))) - 1;
-        assert(builtin_clz <= spawn_mask);
-        const uint16_t reachable_rows = spawn_mask - builtin_clz;
-
-        return reachable_rows;
-    }
-
-    static constexpr int W = 10;
-    static constexpr int width = W;
-    static constexpr int height = 16;
-
-    using under_t = std::uint16_t;
-
     template<typename T>
-    using data_t = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
-
-    // alignas(std::experimental::memory_alignment_v<data_t>) data_t data = 0;
-
-    template<typename T, T Value>
-    constexpr data_t<T> make_square() {
-        return data_t{Value};
-    }
-
-    template<typename T>
-    constexpr T make_square(const T value) {
-        return data_t{value};
-    }
-
-    template<size_t Down, bool CeilOpen = false>
-    constexpr data_t shift_down(const data_t &data) {
-        if constexpr (Down == 0) {
-            return data;
-        }
-        if constexpr (16 <= Down) {
-            make_square<CeilOpen ? u16::full() : 0>();
-        }
-        return CeilOpen ? ~(~data >> Down) : data >> Down;
-    }
-
-    template<size_t Up>
-    constexpr data_t shift_up(const data_t &data) {
-        if constexpr (Up == 0) {
-            return data;
-        }
-        if constexpr (16 <= Up) {
-            return make_square<0>();
-        }
-        return data << Up;
-    }
-
-    template<size_t Right>
-    constexpr data_t shift_right(const data_t &data) {
-        if constexpr (Right == 0) {
-            return data;
-        }
-        if constexpr (10 <= Right) {
-            return make_square<0>();
+    struct searcher {
+        template<typename U>
+        static constexpr std::array<U, 10> to(const typename data<T>::type &board) {
+            alignas(32) std::array<U, 10> array{};
+            data<T>::template to<U>(board).copy_to(&array[0], stdx::vector_aligned);
+            return array;
         }
 
-        return data_t([=][[gnu::always_inline]](auto i) {
-            if constexpr (constexpr int32_t index = (int32_t)(i) - (int32_t)(Right); index < 0) {
-                return 0;
-            } else {
-                return data[index];
+        static constexpr std::array<T, 10> search3(
+            const std::array<T, 10> &board,
+            const uint8_t spawn_shape,
+            const uint8_t spawn_orientation,
+            const uint8_t spawn_bx,
+            const uint8_t spawn_by
+        ) {
+            switch (static_cast<Shape>(spawn_shape)) {
+                case Shape::T:
+                    return search<Shape::T>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::S:
+                    return search<Shape::S>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::Z:
+                    return search<Shape::Z>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::L:
+                    return search<Shape::L>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::J:
+                    return search<Shape::J>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::I:
+                    return search<Shape::I>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
+                case Shape::O:
+                    return search<Shape::O>(
+                        board, spawn_orientation, spawn_bx, spawn_by
+                    );
             }
-        });
-
-        // alignas(32) std::array<uint16_t, 10 + Right> mem{};
-        // data.copy_to(&mem[Right], stdx::vector_aligned);
-        // return data_t{mem.data(), stdx::vector_aligned};
-    }
-
-    template<size_t Left>
-    constexpr data_t shift_left(const data_t &data) {
-        if constexpr (Left == 0) {
-            return data;
+            std::unreachable();
         }
 
-        if constexpr (10 <= Left) {
-            return make_square<0>();
-        }
+        template<Shape shape>
+        static constexpr std::array<T, 10> search(
+            const std::array<T, 10> &board,
+            const uint8_t spawn_orientation,
+            const uint8_t spawn_bx,
+            const uint8_t spawn_by
+        ) {
+            const auto used_rows = bits<T>::used_rows(board);
+            const auto [top_y, reachable_rows] = rows::spawn_bits(used_rows, spawn_by);
 
-        return data_t([=][[gnu::always_inline]](auto i) {
-            if constexpr (constexpr size_t index = i + Left; index >= 10) {
-                return 0;
-            } else {
-                return data[index];
-            }
-        });
-        // alignas(32) std::array<uint16_t, 10 + Left> mem{};
-        // data.copy_to(&mem[0], stdx::vector_aligned);
-        // return data_t{mem.data() + Left, stdx::vector_aligned};
-    }
-
-    constexpr void show(const data_t &data) {
-        std::array<uint64_t, 10> g2{};
-        for (int i = 0; i < 10; ++i) {
-            g2[i] = data[i];
-        }
-        const auto board2 = Board64{g2};
-        std::cout << board2.to_string(16) << std::endl;
-    }
-
-    constexpr data_t search2(
-        const std::array<uint16_t, 10> &board_bytes,
-        const data_t &board,
-        uint8_t spawn_piece,
-        uint8_t spawn_orientation,
-        uint8_t spawn_cx,
-        uint8_t spawn_cy
-    ) {
-        const auto free_space_block = ~board;
-
-        const auto a = shift_left<1>(free_space_block);
-        const auto free_space = free_space_block & shift_down<1, true>(a) & a & shift_down<1, true>(free_space_block);
-
-        const uint16_t value = spawn_bits(board_bytes, spawn_cy);
-        data_t reachable;
-        if (0 < value) {
-            reachable = make_square(value) & free_space;
-        } else if (16 <= spawn_cy) {
-            reachable = make_square<1 << 15>() & free_space;
-        } else {
-            alignas(32) std::array<uint16_t, 10> b{};
-            b[spawn_cx] = 1 << spawn_cy;
-            reachable = data_t{b.data(), stdx::vector_aligned};
-        }
-
-        while (true) {
-            const auto right = shift_right<1>(reachable);
-            const auto left = shift_left<1>(reachable);
-            const auto down = shift_down<1>(reachable);
-
-            const auto next = (reachable | right | left | down) & free_space;
-
-            if (all_of(next == reachable)) {
-                break;
+            if (top_y < 14) {
+                using U = uint16_t;
+                const data<U>::type board_data = data<T>::template load<U>(board);
+                const data<U>::type goal = searcher<U>::begin<shape>(
+                    board_data, spawn_orientation,
+                    spawn_bx, spawn_by, reachable_rows
+                );
+                return searcher<U>::to<T>(goal);
             }
 
-            reachable = next;
+            assert(top_y < 31); {
+                using U = uint32_t;
+                const data<U>::type board_data = data<T>::template load<U>(board);
+                const data<U>::type goal = searcher<U>::begin<shape>(
+                    board_data, spawn_orientation,
+                    spawn_bx, spawn_by, reachable_rows
+                );
+
+                return searcher<U>::to<T>(goal);
+            }
+        }
+
+        using data_t = data<T>;
+        using type = typename data_t::type;
+
+        static constexpr type free_space(
+            const type &free_space_block,
+            const uint8_t spawn_piece,
+            const uint8_t spawn_orientation
+        ) {
+
+        }
+
+        struct Constants {
+            size_t orientation_length;
         };
 
-        const auto goal = ~shift_up<1>(free_space) & reachable;
+        static consteval Constants constants(const Shape shape) {
+            if (shape == Shape::O) {
+                return {1};
+            }
+            return {4};
+        }
 
-        // std::array<uint16_t, 10> result{};
-        // store_first(&result, goal, 10);
+        template<Shape shape, size_t N = constants(shape).orientation_length>
+        static constexpr type begin(
+            const type &board,
+            const uint8_t spawn_orientation,
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy,
+            const T reachable_rows
+        ) {
+            const auto free_space_block = ~board;
 
-        return goal;
-    }
+            const auto free_space = free_spaces<T, Shape::O>::north(free_space_block);
+
+            auto reachable = data_t::make_spawn(
+                reachable_rows,
+                free_space,
+                spawn_cx,
+                spawn_cy
+            );
+
+            while (true) {
+                const auto right = data_t::template shift_right<1>(reachable);
+                const auto left = data_t::template shift_left<1>(reachable);
+                const auto down = data_t::template shift_down<1>(reachable);
+
+                const auto next = (reachable | right | left | down) & free_space;
+
+                if (all_of(next == reachable)) {
+                    break;
+                }
+
+                reachable = next;
+            }
+
+            const auto goal = ~data_t::template shift_up<1>(free_space) & reachable;
+
+            return goal;
+        }
+
+        static constexpr type begin2(
+            const type &board,
+            const uint8_t spawn_piece,
+            const uint8_t spawn_orientation,
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy,
+            const T reachable_rows
+        ) {
+            const auto free_space_block = ~board;
+
+            const auto free_space = free_spaces<T, Shape::O>::north(free_space_block);
+
+            auto reachable = data_t::make_spawn(
+                reachable_rows,
+                free_space,
+                spawn_cx,
+                spawn_cy
+            );
+
+            while (true) {
+                const auto right = data_t::template shift_right<1>(reachable);
+                const auto left = data_t::template shift_left<1>(reachable);
+                const auto down = data_t::template shift_down<1>(reachable);
+
+                const auto next = (reachable | right | left | down) & free_space;
+
+                if (all_of(next == reachable)) {
+                    break;
+                }
+
+                reachable = next;
+            }
+
+            const auto goal = ~data_t::template shift_up<1>(free_space) & reachable;
+
+            return goal;
+        }
+    };
 }

@@ -4,8 +4,8 @@
 // #include <simdpp/simd.h>
 
 #include "search.hpp"
-#include "search2.hpp"
-#include "board.hpp"
+// #include "search2.hpp"
+// #include "board.hpp"
 
 // #ifdef _MSC_VER
 // #include <intrin.h>
@@ -25,7 +25,7 @@ inline void DoNotOptimize(const Tp &value) {
     asm volatile("" : : "m"(value) : "memory");
 }
 
-template <int count = 50000>
+template <int count = 1000000>
 auto bench(auto f, auto &&...args) {
     int i = 0;
     auto start = std::chrono::steady_clock::now();
@@ -62,8 +62,10 @@ int main() {
     //
     // std::cout << "---" << std::endl;
 
-    alignas(32) constexpr auto board_bytes = std::array<uint16_t, 10>{};
-    auto board = s::data_t{board_bytes.data(), stdx::vector_aligned};
+    using T = uint16_t;
+
+    alignas(32) constexpr auto board_bytes = std::array<T, 10>{};
+    // auto board = s::data_t<T>{board_bytes.data(), stdx::vector_aligned};
 
     // auto g = s::search2(board_bytes, board, 0, 0, 4, 20);
     //
@@ -75,7 +77,7 @@ int main() {
     // const auto board2 = Board64{g2};
     // std::cout << board2.to_string() << std::endl;
     //
-    const auto t = bench(s::search2, board_bytes, board, 0, 0, 4, 20);
+    const auto t = bench(s::searcher<uint16_t>::search3, board_bytes, 0, 0, 4, 20);
     std::cout << "Elapsed time3: " << t << " ns" << std::endl;
 
     // __m256i board = _mm256_setzero_si256();

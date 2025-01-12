@@ -71,19 +71,19 @@ constexpr auto static_packing_fold(F &&function, const std::array<T, N> &value) 
     return f(std::forward<F>(function), value, std::make_index_sequence<N>());;
 }
 
-template<typename T, typename F, std::size_t... S>
+template<typename U, typename T, typename F, std::size_t... S>
 [[gnu::always_inline]]
-constexpr T static_transform(F &&function, T value, std::index_sequence<S...>) {
+constexpr U static_transform(F &&function, T value, std::index_sequence<S...>) {
     ((value[S] = function(value[S])), ...);
     return value;
 }
 
-template<typename T, typename F, std::size_t N>
+template<typename U, typename T, typename F, std::size_t N>
 [[gnu::always_inline]]
-constexpr std::array<T, N> static_transform(F &&function, const std::array<T, N> &value) {
-    auto buffer = std::array<T, N>{};
+constexpr std::array<U, N> static_transform(F &&function, const std::array<T, N> &value) {
+    auto buffer = std::array<U, N>{};
     constexpr auto f = []<std::size_t... S>(
-        F &&callable, std::array<T, N> &bs, const std::array<T, N> &vs, std::index_sequence<S...>) {
+        F &&callable, std::array<U, N> &bs, const std::array<T, N> &vs, std::index_sequence<S...>) {
         ((bs[S] = callable(vs[S])), ...);
     };
     f(std::forward<F>(function), buffer, value, std::make_index_sequence<N>());

@@ -1,0 +1,3 @@
+[submodule "bitris_cpp/googletest"]
+	path = bitris_cpp/googletest
+	url = https://github.com/google/googletest.git
