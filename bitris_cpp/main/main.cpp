@@ -84,16 +84,5 @@ int main() {
     const auto t = bench(s::searcher<uint16_t, Shape::T>::search, board_bytes, 0, 4, 20);
     std::cout << "Elapsed time (T): " << t << " ns" << std::endl;
 
-    // __m256i board = _mm256_setzero_si256();
-    // s2::search(board_bytes, board, 0, 0, 4, 20);
-
-    std::cout << get_offsets<{Shape::T, Orientation::North}, Rotation::Cw>()[0].x << std::endl;
-
-    std::cout << "---" << std::endl;
-    static_for_until<std::array{0, 1, 2, 3, 4}>([&]<int v>() {
-        std::cout << v << std::endl;
-        return v < 2;
-    });
-
     return 0;
 }

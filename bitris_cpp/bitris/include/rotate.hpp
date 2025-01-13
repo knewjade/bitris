@@ -5,8 +5,7 @@ enum class Rotation {
     Ccw = 1,
 };
 
-// TODO constevalか
-constexpr Orientation rotate(const Orientation from, const Rotation rotation) {
+consteval Orientation rotate(const Orientation from, const Rotation rotation) {
     const auto index = static_cast<size_t>(from);
     switch (rotation) {
         case Rotation::Cw:

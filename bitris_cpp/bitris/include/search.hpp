@@ -76,14 +76,15 @@ namespace s {
 
         static constexpr std::array<type, N> reach(
             const std::array<type, N> &all_free_space,
-            const uint8_t spawn_orientation,
+            const Orientation spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
             const Data reachable_rows
         ) {
+            const auto spawn_orientation_index = static_cast<size_t>(spawn_orientation);
             auto all_reachable = std::array<type, N>{};
             static_for<N>([&][[gnu::always_inline]](auto index) {
-                if (index == spawn_orientation) {
+                if (index == spawn_orientation_index) {
                     all_reachable[index] = data_t::make_spawn(
                         reachable_rows,
                         all_free_space[index],
@@ -102,33 +103,6 @@ namespace s {
             const auto left = data_t::template shift_left<1>(reachable);
             const auto down = data_t::template shift_down<1>(reachable);
             return (reachable | right | left | down) & free_space;
-        }
-
-        template<Rotation Rotation>
-        static constexpr type rotate2(
-            const Orientation src_orientation,
-            const type &src_reachable,
-            const type &dest_free_space
-        ) {
-            switch (src_orientation) {
-                case Orientation::North: {
-                    constexpr auto piece = Piece{Shape, Orientation::North};
-                    return rotate3<piece, Rotation>(src_reachable, dest_free_space);
-                }
-                case Orientation::East: {
-                    constexpr auto piece = Piece{Shape, Orientation::East};
-                    return rotate3<piece, Rotation>(src_reachable, dest_free_space);
-                }
-                case Orientation::South: {
-                    constexpr auto piece = Piece{Shape, Orientation::South};
-                    return rotate3<piece, Rotation>(src_reachable, dest_free_space);
-                }
-                case Orientation::West: {
-                    constexpr auto piece = Piece{Shape, Orientation::West};
-                    return rotate3<piece, Rotation>(src_reachable, dest_free_space);
-                }
-            }
-            std::unreachable();
         }
 
         template<Piece FromPiece, Rotation Rotation>
@@ -158,27 +132,78 @@ namespace s {
             const uint8_t spawn_cy,
             const Data reachable_rows
         ) {
+            switch (static_cast<Orientation>(spawn_orientation)) {
+                case Orientation::North: {
+                    constexpr auto orientation = Orientation::North;
+                    return begin2<orientation>(
+                        board, spawn_cx, spawn_cy, reachable_rows
+                    );
+                }
+                case Orientation::East: {
+                    constexpr auto orientation = Orientation::East;
+                    return begin2<orientation>(
+                        board, spawn_cx, spawn_cy, reachable_rows
+                    );
+                }
+                case Orientation::South: {
+                    constexpr auto orientation = Orientation::South;
+                    return begin2<orientation>(
+                        board, spawn_cx, spawn_cy, reachable_rows
+                    );
+                }
+                case Orientation::West: {
+                    constexpr auto orientation = Orientation::West;
+                    return begin2<orientation>(
+                        board, spawn_cx, spawn_cy, reachable_rows
+                    );
+                }
+            }
+            std::unreachable();
+        }
+
+        static consteval std::array<Orientation, N> orientation_order(const Orientation orientation) {
+            static_assert(N == 4);
+
+            switch (orientation) {
+                case Orientation::North:
+                    return {Orientation::North, Orientation::East, Orientation::South, Orientation::West};
+                case Orientation::East:
+                    return {Orientation::East, Orientation::South, Orientation::West, Orientation::North};
+                case Orientation::South:
+                    return {Orientation::South, Orientation::West, Orientation::North, Orientation::East};
+                case Orientation::West:
+                    return {Orientation::West, Orientation::North, Orientation::East, Orientation::South};
+            }
+
+            std::unreachable();
+        }
+
+        template<Orientation SpawnOrientation>
+        static constexpr std::array<type, N> begin2(
+            const type &board,
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy,
+            const Data reachable_rows
+        ) {
             static_assert(N == 1 || N == 4);
 
             const auto free_space_block = ~board;
             const auto all_free_space = free_spaces<Data, Shape>::get(free_space_block);
 
             auto all_reachable = reach(
-                all_free_space, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
+                all_free_space, SpawnOrientation, spawn_cx, spawn_cy, reachable_rows
             );
 
             if constexpr (N == 4) {
-                auto needs_update = std::bitset<N>((1U << N) - 1);
-                auto current_index = static_cast<size_t>(spawn_orientation);
-
+                auto needs_update = std::bitset<N>().flip();
                 while (needs_update.any()) {
-                    static_for<N>([&][[gnu::always_inline]](auto _) {
+                    static_for<orientation_order(SpawnOrientation)>([&]<Orientation Orientation>[[gnu::always_inline]]() {
                         // check
+                        auto current_index = static_cast<size_t>(Orientation);
                         if (!needs_update[current_index]) {
-                            current_index = (current_index + 1) % N;
                             return;
                         }
-                        needs_update[current_index] = false;
+                        needs_update.reset(current_index);
 
                         // move
                         while (true) {
@@ -191,30 +216,24 @@ namespace s {
                         }
 
                         // rotate
-                        const auto from_orientation = static_cast<Orientation>(current_index);
-
                         constexpr auto rotations = std::array{Rotation::Cw, Rotation::Ccw};
                         static_for<rotations>([&]<Rotation rotation>[[gnu::always_inline]]() {
-                            // TODO orientaion テンプレートか
-                            const auto to_orientation = rotate(from_orientation, rotation);
+                            constexpr auto to_orientation = rotate(Orientation, rotation);
                             const auto dest_orientation_index = static_cast<size_t>(to_orientation);
 
                             const auto &reachable = all_reachable[dest_orientation_index];
-                            const auto &free_spaces = all_free_space[dest_orientation_index];
 
-                            const auto found_dest_reachable = rotate2<rotation>(
-                                to_orientation, reachable, free_spaces
+                            const auto found_dest_reachable = rotate3<{Shape, to_orientation}, rotation>(
+                                reachable, all_free_space[dest_orientation_index]
                             );
 
                             const auto dest_reachable = reachable | found_dest_reachable;
 
                             if (any_of(reachable != dest_reachable)) {
                                 all_reachable[dest_orientation_index] = dest_reachable;
-                                needs_update[dest_orientation_index] = true;
+                                needs_update.set(dest_orientation_index);
                             }
                         });
-
-                        current_index = (current_index + 1) % N;
                     });
                 }
             } else {
