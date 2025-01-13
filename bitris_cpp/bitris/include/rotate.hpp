@@ -1,9 +1,21 @@
 #pragma once
 
-#include "pieces.hpp"
-#include "data.hpp"
+enum class Rotation {
+    Cw = 0,
+    Ccw = 1,
+};
 
-
+// TODO constevalか
+constexpr Orientation rotate(const Orientation from, const Rotation rotation) {
+    const auto index = static_cast<size_t>(from);
+    switch (rotation) {
+        case Rotation::Cw:
+            return static_cast<Orientation>((index + 1) % 4);
+        case Rotation::Ccw:
+            return static_cast<Orientation>((index + 3) % 4);
+    }
+    std::unreachable();
+}
 
 //
 //template<typename, Shape>

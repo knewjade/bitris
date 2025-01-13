@@ -17,6 +17,7 @@ struct free_spaces<Data, Shape::O> {
         return {north(free_space_block)};
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto l1a = free_space_block & data_t::template shift_left<1>(free_space_block);
         return l1a & data_t::template shift_down<1, true>(l1a);
@@ -38,6 +39,7 @@ struct free_spaces<Data, Shape::T> {
         };
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -82,6 +84,7 @@ struct free_spaces<Data, Shape::L> {
         };
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -126,6 +129,7 @@ struct free_spaces<Data, Shape::J> {
         };
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -167,6 +171,7 @@ struct free_spaces<Data, Shape::I> {
         return {n, e, n, e};
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -194,6 +199,7 @@ struct free_spaces<Data, Shape::S> {
         return {n, e, n, e};
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto l1d1a = free_space_block & data_t::template shift_down<1, true>(l1);
@@ -221,6 +227,7 @@ struct free_spaces<Data, Shape::Z> {
         return {n, e, n, e};
     }
 
+private:
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto r1d1a = free_space_block & data_t::template shift_down<1, true>(r1);

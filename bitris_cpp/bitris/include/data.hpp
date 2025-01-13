@@ -23,6 +23,10 @@ struct data {
         }
     }
 
+    static constexpr type make_zero() {
+        return make_square<0>();
+    }
+
     template<T Value>
     static constexpr type make_square() {
         return type{Value};
@@ -118,6 +122,20 @@ struct data {
                 return data[index];
             }
         });
+    }
+
+    template<Offset Offset>
+    static constexpr type shift(const type &data) {
+        // const type d;
+        // if constexpr (0 < Offset.x) {
+        //     d = shift_right<Offset.x>(data);
+        // } else if constexpr (Offset.x < 0) {
+        //     d = shift_left<-Offset.x>(data);
+        // } else {
+        //     d = data;
+        // }
+
+        return data;
     }
 
     static constexpr void show(const type &data, const int height = bits<T>::bit_size) {

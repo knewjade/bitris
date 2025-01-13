@@ -15,6 +15,42 @@ constexpr void static_for(F &&function) {
     f(std::forward<F>(function), std::make_index_sequence<iterations>());
 }
 
+template<typename T, typename F, std::size_t N>
+[[gnu::always_inline]]
+constexpr void static_for(F &&function, const std::array<T, N> &arr) {
+    constexpr auto f = []<std::size_t... S>(
+        F &&callable, const std::array<T, N> &vs, std::index_sequence<S...>) {
+        (void(callable(vs[S])), ...);
+    };
+    f(std::forward<F>(function), arr, std::make_index_sequence<N>());
+}
+
+template<std::array Arr, typename F>
+[[gnu::always_inline]]
+constexpr void static_for(F &&function) {
+    // using T = typename std::remove_reference_t<decltype(Arr)>::value_type;
+    constexpr auto N = std::tuple_size_v<std::remove_reference_t<decltype(Arr)> >;
+    constexpr auto f = []<std::size_t... S>(
+        F &&callable, std::index_sequence<S...>) {
+        (void(callable.template operator()<Arr[S]>()), ...);
+    };
+    f(std::forward<F>(function), std::make_index_sequence<N>());
+}
+
+template<std::array Arr, size_t N = std::tuple_size_v<std::remove_reference_t<decltype(Arr)> >, typename F>
+    requires (
+        N == 0 || requires(F &&f) { { f.template operator()<Arr[0]>() } -> std::convertible_to<bool>; }
+    )
+[[gnu::always_inline]]
+constexpr void static_for_until(F &&function) {
+    constexpr auto f = []<std::size_t... S>(
+        F &&callable, std::index_sequence<S...>) {
+        bool continues = true;
+        ((continues = continues ? callable.template operator()<Arr[S]>() : false), ...);
+    };
+    f(std::forward<F>(function), std::make_index_sequence<N>());
+}
+
 template<std::size_t Start, std::size_t End>
 [[gnu::always_inline]]
 constexpr auto make_offset_index_sequence() {
@@ -66,8 +102,8 @@ template<typename T, typename F, std::size_t N>
 constexpr auto static_packing_fold(F &&function, const std::array<T, N> &value) {
     constexpr auto f = []<std::size_t... S>(
         F &&callable, const std::array<T, N> &vs, std::index_sequence<S...>) {
-            return callable(vs[S]...);
-        };
+        return callable(vs[S]...);
+    };
     return f(std::forward<F>(function), value, std::make_index_sequence<N>());;
 }
 
@@ -96,8 +132,8 @@ constexpr std::array<T, N> static_transform_indexed(F &&function, const std::arr
     auto buffer = std::array<T, N>{};
     constexpr auto f = []<std::size_t... S>(
         F &&callable, std::array<T, N> &bs, const std::array<T, N> &vs, std::index_sequence<S...>) {
-            ((bs[S] = callable(S, vs[S])), ...);
-        };
+        ((bs[S] = callable(S, vs[S])), ...);
+    };
     f(std::forward<F>(function), buffer, value, std::make_index_sequence<N>());
     return buffer;
 }
@@ -107,9 +143,10 @@ template<typename T, typename F, std::size_t N>
 constexpr std::array<T, N> static_zip2(F &&function, const std::array<T, N> &arr1, const std::array<T, N> &arr2) {
     auto buffer = std::array<T, N>{};
     constexpr auto f = []<std::size_t... S>(
-        F &&callable, std::array<T, N> &bs, const std::array<T, N> &vs1, const std::array<T, N> &vs2, std::index_sequence<S...>) {
-            ((bs[S] = callable(vs1[S], vs2[S])), ...);
-        };
+        F &&callable, std::array<T, N> &bs, const std::array<T, N> &vs1, const std::array<T, N> &vs2,
+        std::index_sequence<S...>) {
+        ((bs[S] = callable(vs1[S], vs2[S])), ...);
+    };
     f(std::forward<F>(function), buffer, arr1, arr2, std::make_index_sequence<N>());
     return buffer;
 }

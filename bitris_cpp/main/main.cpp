@@ -4,6 +4,7 @@
 // #include <simdpp/simd.h>
 
 #include "search.hpp"
+#include "kicks.hpp"
 // #include "search2.hpp"
 // #include "board.hpp"
 
@@ -85,6 +86,14 @@ int main() {
 
     // __m256i board = _mm256_setzero_si256();
     // s2::search(board_bytes, board, 0, 0, 4, 20);
+
+    std::cout << get_offsets<{Shape::T, Orientation::North}, Rotation::Cw>()[0].x << std::endl;
+
+    std::cout << "---" << std::endl;
+    static_for_until<std::array{0, 1, 2, 3, 4}>([&]<int v>() {
+        std::cout << v << std::endl;
+        return v < 2;
+    });
 
     return 0;
 }
