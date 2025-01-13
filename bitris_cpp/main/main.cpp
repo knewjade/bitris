@@ -16,18 +16,18 @@
 
 // from https://github.com/facebook/folly/blob/7a3f5e4e81bc83a07036e2d1d99d6a5bf5932a48/folly/lang/Hint-inl.h#L107
 // Apache License 2.0
-template <class Tp>
-inline void DoNotOptimize(Tp& value) {
-    asm  ("" : : "m"(value) : "memory");
+template<class Tp>
+inline void DoNotOptimize(Tp &value) {
+    asm ("" : : "m"(value) : "memory");
 }
 
-template <class Tp>
+template<class Tp>
 inline void DoNotOptimize(const Tp &value) {
     asm volatile("" : : "m"(value) : "memory");
 }
 
-template <int count = 1000000>
-auto bench(auto f, auto &&...args) {
+template<int count = 1000000>
+auto bench(auto f, auto &&... args) {
     int i = 0;
     auto start = std::chrono::steady_clock::now();
     for (int _ = 0; _ < count; ++_) {
@@ -78,11 +78,18 @@ int main() {
     // const auto board2 = Board64{g2};
     // std::cout << board2.to_string() << std::endl;
     //
-    const auto o = bench(s::searcher<uint16_t, Shape::O>::search, board_bytes, 0, 4, 20);
-    std::cout << "Elapsed time (O): " << o << " ns" << std::endl;
+    // const auto o = bench(s::searcher<uint16_t, Shape::O>::search, board_bytes, 0, 4, 20);
+    // std::cout << "Elapsed time (O): " << o << " ns" << std::endl;
+    //
+    // const auto t = bench(s::searcher<uint16_t, Shape::T>::search, board_bytes, 0, 4, 20);
+    // std::cout << "Elapsed time (T): " << t << " ns" << std::endl;
 
-    const auto t = bench(s::searcher<uint16_t, Shape::T>::search, board_bytes, 0, 4, 20);
-    std::cout << "Elapsed time (T): " << t << " ns" << std::endl;
+    auto string = "TIOLJSZ";
+    // static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
+    static_for<{Shape::T, Shape::O}>([&]<Shape Shape>() {
+        const auto t = bench(s::searcher<uint16_t, Shape>::search, board_bytes, 0, 4, 20);
+        std::cout << "Elapsed time (" << string[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
+    });
 
     return 0;
 }

@@ -102,7 +102,7 @@ private:
     static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
-        const auto r1u1 = data_t::template shift_up<1, true>(r1);
+        const auto r1u1 = data_t::template shift_up<1>(r1);
         return l1 & r1 & r1u1 & free_space_block;
     }
 
@@ -147,7 +147,7 @@ private:
     static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
-        const auto l1u1 = data_t::template shift_up<1, true>(l1);
+        const auto l1u1 = data_t::template shift_up<1>(l1);
         return l1 & r1 & l1u1 & free_space_block;
     }
 
