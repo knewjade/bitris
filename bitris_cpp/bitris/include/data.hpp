@@ -126,16 +126,27 @@ struct data {
 
     template<Offset Offset>
     static constexpr type shift(const type &data) {
-        // const type d;
-        // if constexpr (0 < Offset.x) {
-        //     d = shift_right<Offset.x>(data);
-        // } else if constexpr (Offset.x < 0) {
-        //     d = shift_left<-Offset.x>(data);
-        // } else {
-        //     d = data;
-        // }
+        constexpr auto shift_vertical = [][[gnu::always_inline]](const auto &v) {
+            if constexpr (0 < Offset.y) {
+                constexpr auto Up = static_cast<size_t>(Offset.y);
+                return shift_up<Up>(v);
+            } else if constexpr (Offset.y < 0) {
+                constexpr auto Down = static_cast<size_t>(-Offset.y);
+                return shift_down<Down>(v);
+            } else {
+                return v;
+            }
+        };
 
-        return data;
+        if constexpr (0 < Offset.x) {
+            constexpr auto Right = static_cast<size_t>(Offset.x);
+            return shift_vertical(shift_right<Right>(data));
+        } else if constexpr (Offset.x < 0) {
+            constexpr auto Left = static_cast<size_t>(-Offset.x);
+            return shift_vertical(shift_left<Left>(data));
+        } else {
+            return shift_vertical(data);
+        }
     }
 
     static constexpr void show(const type &data, const int height = bits<T>::bit_size) {

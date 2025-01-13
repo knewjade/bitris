@@ -161,7 +161,7 @@ namespace s {
             std::unreachable();
         }
 
-        static consteval std::array<Orientation, N> orientation_order(const Orientation orientation) {
+        static consteval std::array<Orientation, 4> orientation_order(const Orientation orientation) {
             static_assert(N == 4);
 
             switch (orientation) {
