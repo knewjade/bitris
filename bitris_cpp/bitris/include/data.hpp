@@ -9,7 +9,8 @@ namespace stdx = std::experimental;
 
 template<typename T>
 struct data {
-    using type = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
+    // using type = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
+    using type = stdx::simd<T, stdx::simd_abi::deduce_t<T, 10> >;
 
     template<typename U>
     [[gnu::always_inline]]
@@ -65,8 +66,10 @@ struct data {
         if (0 < reachable_rows) {
             return make_square(reachable_rows) & free_space;
         }
-        if (bits<T>::bit_size <= spawn_cy) {
-            return make_square<bits<T>::one << (bits<T>::bit_size - 1)>() & free_space;
+
+        // フィールド上部に2列空きのあるボードのみを探索対象としているため
+        if (bits<T>::bit_size - 2 <= spawn_cy) {
+            return make_square<static_cast<T>(0b11) << (bits<T>::bit_size - 2)>() & free_space;
         }
 
         alignas(32) std::array<T, 10> b{};

@@ -30,6 +30,7 @@ namespace s {
         ) {
             const auto board_u = data_t::template load<U>(board);
             const auto reachable_rows_u = ~static_cast<U>(~reachable_rows);
+
             const auto goals = searcher<U, Shape>::execute(
                 board_u, spawn_orientation, spawn_cx, spawn_cy, reachable_rows_u
             );
@@ -59,7 +60,7 @@ namespace s {
                 return search_casted<uint16_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
             }
 
-            if (top_y < 31) {
+            if (top_y < 30) {
                 return search_casted<uint32_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
             }
 
@@ -249,11 +250,14 @@ namespace s {
                 }
             } else {
                 constexpr size_t index = 0;
+                // std::cout << "start" << std::endl;
 
                 // move
                 while (true) {
+                    // std::cout << "move " << std::endl;
                     const auto &reachable = all_reachable[index];
                     const auto next = move(reachable, all_free_space[index]);
+
                     if (all_of(next == reachable)) {
                         break;
                     }
