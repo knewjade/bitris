@@ -9,6 +9,7 @@ struct data {
     using type = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
 
     template<typename U>
+    [[gnu::always_inline]]
     static constexpr typename data<U>::type load(const std::array<T, 10> &board_bytes) {
         if constexpr (std::is_same_v<T, U>) {
             return typename data<U>::type{board_bytes.data(), stdx::vector_aligned};
@@ -17,26 +18,30 @@ struct data {
                 if constexpr (constexpr size_t index = i; index < 0) {
                     return 0;
                 } else {
-                    return board_bytes[index];
+                    return static_cast<U>(board_bytes[index]);
                 }
             });
         }
     }
 
+    [[gnu::always_inline]]
     static constexpr type make_zero() {
         return make_square<0>();
     }
 
     template<T Value>
+    [[gnu::always_inline]]
     static constexpr type make_square() {
         return type{Value};
     }
 
+    [[gnu::always_inline]]
     static constexpr type make_square(const T value) {
         return type{value};
     }
 
     template<typename U>
+    [[gnu::always_inline]]
     static constexpr typename data<U>::type to(const type &board) {
         return typename data<U>::type([=][[gnu::always_inline]](auto i) {
             if constexpr (constexpr size_t index = i; index < 0) {
@@ -47,6 +52,7 @@ struct data {
         });
     }
 
+    [[gnu::always_inline]]
     static constexpr type make_spawn(
         const T reachable_rows,
         const type &free_space,
@@ -66,6 +72,7 @@ struct data {
     }
 
     template<size_t Down, bool CeilOpen = false>
+    [[gnu::always_inline]]
     static constexpr type shift_down(const type &data) {
         if constexpr (Down == 0) {
             return data;
@@ -77,6 +84,7 @@ struct data {
     }
 
     template<size_t Up>
+    [[gnu::always_inline]]
     static constexpr type shift_up(const type &data) {
         if constexpr (Up == 0) {
             return data;
@@ -88,6 +96,7 @@ struct data {
     }
 
     template<size_t Right>
+    [[gnu::always_inline]]
     static constexpr type shift_right(const type &data) {
         if constexpr (Right == 0) {
             return data;
@@ -106,6 +115,7 @@ struct data {
     }
 
     template<size_t Left>
+    [[gnu::always_inline]]
     static constexpr type shift_left(const type &data) {
         if constexpr (Left == 0) {
             return data;
@@ -125,6 +135,7 @@ struct data {
     }
 
     template<Offset Offset>
+    [[gnu::always_inline]]
     static constexpr type shift(const type &data) {
         constexpr auto shift_vertical = [][[gnu::always_inline]](const auto &v) {
             if constexpr (0 < Offset.y) {

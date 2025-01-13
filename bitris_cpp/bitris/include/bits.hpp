@@ -10,6 +10,7 @@ template<typename Data>
 struct bits_base {
     static constexpr Data one = 1;
 
+    [[gnu::always_inline]]
     static constexpr Data used_rows(const std::array<Data, 10> &board) {
         return static_packing_fold<Data>(
             []<typename... V>(V... s) {
@@ -19,6 +20,7 @@ struct bits_base {
         );
     }
 
+    [[gnu::always_inline]]
     static constexpr int most_significant_index(const Data v) {
         [[assume(bits<Data>::bit_size <= 64)]];
         if constexpr (bits<Data>::bit_size <= 32) {

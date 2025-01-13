@@ -6,6 +6,7 @@
 
 namespace rows {
     template<typename Data>
+    [[gnu::always_inline]]
     constexpr std::pair<int, Data> spawn_bits(
         const Data used_rows,
         const size_t spawn_cy

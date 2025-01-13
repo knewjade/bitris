@@ -11,8 +11,9 @@ struct Offset {
     int32_t x, y;
 };
 
+[[gnu::always_inline]]
 constexpr Offset operator-(const Offset &offset) {
-    return Offset{-offset.x, -offset.y};
+    return {-offset.x, -offset.y};
 }
 
 // チェック表
@@ -86,7 +87,7 @@ consteval std::array<Offset, offsets<FromPiece.shape>::N> get_offsets() {
     constexpr auto from_orientation = FromPiece.orientation;
     constexpr auto from_offsets = offsets<FromPiece.shape>::template get<from_orientation>();
 
-    constexpr auto to_orientation = rotate(from_orientation, Rotation);
+    constexpr auto to_orientation = rotate_to(from_orientation, Rotation);
     constexpr auto to_offsets = offsets<FromPiece.shape>::template get<to_orientation>();
 
     return static_zip2<Offset>([](auto from, auto to) {

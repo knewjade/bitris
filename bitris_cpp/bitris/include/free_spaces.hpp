@@ -13,11 +13,13 @@ struct free_spaces<Data, Shape::O> {
     using type = typename data_t::type;
     static constexpr size_t N = 1;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {north(free_space_block)};
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto l1a = free_space_block & data_t::template shift_left<1>(free_space_block);
         return l1a & data_t::template shift_down<1, true>(l1a);
@@ -30,6 +32,7 @@ struct free_spaces<Data, Shape::T> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
             north(free_space_block),
@@ -40,6 +43,7 @@ struct free_spaces<Data, Shape::T> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -47,6 +51,7 @@ private:
         return l1 & r1 & d1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto d1 = data_t::template shift_down<1, true>(free_space_block);
@@ -54,6 +59,7 @@ private:
         return l1 & d1 & u1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -61,6 +67,7 @@ private:
         return l1 & r1 & u1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type west(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto d1 = data_t::template shift_down<1, true>(free_space_block);
@@ -75,6 +82,7 @@ struct free_spaces<Data, Shape::L> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
             north(free_space_block),
@@ -85,6 +93,7 @@ struct free_spaces<Data, Shape::L> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -92,6 +101,7 @@ private:
         return l1 & r1 & l1d1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto l1a = free_space_block & data_t::template shift_left<1>(free_space_block);
         const auto d1 = data_t::template shift_down<1, true>(free_space_block);
@@ -99,6 +109,7 @@ private:
         return l1a & d1 & l1au1;
     }
 
+    [[gnu::always_inline]]
     static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -106,6 +117,7 @@ private:
         return l1 & r1 & r1u1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type west(const type &free_space_block) {
         const auto r1a = free_space_block & data_t::template shift_right<1>(free_space_block);
         const auto r1ad1 = data_t::template shift_down<1, true>(r1a);
@@ -120,6 +132,7 @@ struct free_spaces<Data, Shape::J> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
             north(free_space_block),
@@ -130,6 +143,7 @@ struct free_spaces<Data, Shape::J> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -137,6 +151,7 @@ private:
         return l1 & r1 & r1d1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto l1a = free_space_block & data_t::template shift_left<1>(free_space_block);
         const auto l1ad1 = data_t::template shift_down<1, true>(l1a);
@@ -144,6 +159,7 @@ private:
         return l1a & l1ad1 & u1;
     }
 
+    [[gnu::always_inline]]
     static constexpr type south(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto r1 = data_t::template shift_right<1>(free_space_block);
@@ -151,6 +167,7 @@ private:
         return l1 & r1 & l1u1 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type west(const type &free_space_block) {
         const auto r1a = free_space_block & data_t::template shift_right<1>(free_space_block);
         const auto d1 = data_t::template shift_down<1, true>(free_space_block);
@@ -165,6 +182,7 @@ struct free_spaces<Data, Shape::I> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         const auto n = north(free_space_block);
         const auto e = east(free_space_block);
@@ -172,6 +190,7 @@ struct free_spaces<Data, Shape::I> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto l1 = data_t::template shift_left<1>(free_space_block);
@@ -179,6 +198,7 @@ private:
         return r1 & l1 & l2 & free_space_block;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto d1 = data_t::template shift_down<1, true>(free_space_block);
         const auto u1 = data_t::template shift_up<1>(free_space_block);
@@ -193,6 +213,7 @@ struct free_spaces<Data, Shape::S> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         const auto n = north(free_space_block);
         const auto e = east(free_space_block);
@@ -200,6 +221,7 @@ struct free_spaces<Data, Shape::S> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto l1d1a = free_space_block & data_t::template shift_down<1, true>(l1);
@@ -207,6 +229,7 @@ private:
         return l1d1a & l1d1ar1;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto d1a = free_space_block & data_t::template shift_down<1, true>(free_space_block);
         const auto d1al1 = data_t::template shift_left<1>(d1a);
@@ -221,6 +244,7 @@ struct free_spaces<Data, Shape::Z> {
     using type = typename data_t::type;
     static constexpr size_t N = 4;
 
+    [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         const auto n = north(free_space_block);
         const auto e = east(free_space_block);
@@ -228,6 +252,7 @@ struct free_spaces<Data, Shape::Z> {
     }
 
 private:
+    [[gnu::always_inline]]
     static constexpr type north(const type &free_space_block) {
         const auto r1 = data_t::template shift_right<1>(free_space_block);
         const auto r1d1a = free_space_block & data_t::template shift_down<1, true>(r1);
@@ -235,6 +260,7 @@ private:
         return r1d1a & l1d1al1;
     }
 
+    [[gnu::always_inline]]
     static constexpr type east(const type &free_space_block) {
         const auto l1 = data_t::template shift_left<1>(free_space_block);
         const auto l1d1a = free_space_block & data_t::template shift_down<1, true>(l1);
