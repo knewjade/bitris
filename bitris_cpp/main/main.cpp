@@ -4,7 +4,7 @@
 // #include <simdpp/simd.h>
 
 #include "search.hpp"
-#include "kicks.hpp"
+#include "data.hpp"
 // #include "search2.hpp"
 // #include "board.hpp"
 
@@ -68,28 +68,33 @@ int main() {
     alignas(32) constexpr auto board_bytes = std::array<T, 10>{};
     // auto board = s::data_t<T>{board_bytes.data(), stdx::vector_aligned};
 
-    // auto g = s::search2(board_bytes, board, 0, 0, 4, 20);
-    //
-    // size_t count = 0;
-    // std::array<uint64_t, 10> g2{};
-    // for (int i = 0; i < 10; ++i) {
-    //     g2[i] = g[i];
-    // }
-    // const auto board2 = Board64{g2};
-    // std::cout << board2.to_string() << std::endl;
-    //
+    auto g = s::searcher<uint16_t, Shape::S>::search(board_bytes, Orientation::North, 4, 20);
+
+    for (int r = 0; r < g.size() / 10; ++r) {
+        const auto bias = r * 10;
+        for (int y = 12 - 1; 0 <= y; --y) {
+            for (int x = 0; x < 10; ++x) {
+                const auto ch = g[x + bias] & (1U << y) ? "X" : "_";
+                std::cout << ch;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+
     // const auto o = bench(s::searcher<uint16_t, Shape::O>::search, board_bytes, 0, 4, 20);
     // std::cout << "Elapsed time (O): " << o << " ns" << std::endl;
     //
     // const auto t = bench(s::searcher<uint16_t, Shape::T>::search, board_bytes, 0, 4, 20);
     // std::cout << "Elapsed time (T): " << t << " ns" << std::endl;
 
-    auto string = "TIOLJSZ";
+    // auto string = "TIOLJSZ";
     // static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
-    static_for<{Shape::T, Shape::O}>([&]<Shape Shape>() {
-        const auto t = bench(s::searcher<uint16_t, Shape>::search, board_bytes, 0, 4, 20);
-        std::cout << "Elapsed time (" << string[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
-    });
+    // // static_for<{Shape::T, Shape::O}>([&]<Shape Shape>() {
+    //     const auto t = bench(s::searcher<uint16_t, Shape>::search, board_bytes, Orientation::North, 4, 20);
+    //     std::cout << "Elapsed time (" << string[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
+    // });
 
     return 0;
 }

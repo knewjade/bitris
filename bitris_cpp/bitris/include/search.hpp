@@ -23,14 +23,15 @@ namespace s {
         template<typename U>
         static constexpr std::array<Data, N * 10> search_casted(
             const std::array<Data, 10> &board,
-            const uint8_t spawn_orientation,
+            const Orientation spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
             const Data reachable_rows
         ) {
-            const auto board_data = data_t::template load<U>(board);
+            const auto board_u = data_t::template load<U>(board);
+            const auto reachable_rows_u = ~static_cast<U>(~reachable_rows);
             const auto goals = searcher<U, Shape>::execute(
-                board_data, spawn_orientation, spawn_cx, spawn_cy, reachable_rows
+                board_u, spawn_orientation, spawn_cx, spawn_cy, reachable_rows_u
             );
 
             alignas(32) std::array<Data, N * 10> array{};
@@ -43,7 +44,7 @@ namespace s {
     public:
         static constexpr std::array<Data, N * 10> search(
             const std::array<Data, 10> &board,
-            const uint8_t spawn_orientation,
+            const Orientation spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy
         ) {
@@ -67,7 +68,7 @@ namespace s {
 
         static constexpr std::array<type, N> execute(
             const type &board,
-            const uint8_t spawn_orientation,
+            const Orientation spawn_orientation,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
             const Data reachable_rows
@@ -79,7 +80,7 @@ namespace s {
                 );
             }
 
-            switch (static_cast<Orientation>(spawn_orientation)) {
+            switch (spawn_orientation) {
                 case Orientation::North: {
                     constexpr auto orientation = Orientation::North;
                     return execute<orientation>(
@@ -111,7 +112,7 @@ namespace s {
     private:
         template<Orientation SpawnOrientation>
         [[gnu::always_inline]]
-        static constexpr std::array<type, N> reach(
+        static constexpr std::array<type, N> spawn(
             const std::array<type, N> &all_free_space,
             const uint8_t spawn_cx,
             const uint8_t spawn_cy,
@@ -184,7 +185,7 @@ namespace s {
             const auto free_space_block = ~board;
             const auto all_free_space = free_spaces<Data, Shape>::get(free_space_block);
 
-            auto all_reachable = reach<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy, reachable_rows);
+            auto all_reachable = spawn<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy, reachable_rows);
 
             if constexpr (N == 4) {
                 constexpr auto rotate = []<Orientation Orientation, Rotation Rotation>[[gnu::always_inline]](

@@ -2,6 +2,9 @@
 
 #include <experimental/simd>
 
+#include "bits.hpp"
+#include "kicks.hpp"
+
 namespace stdx = std::experimental;
 
 template<typename T>
