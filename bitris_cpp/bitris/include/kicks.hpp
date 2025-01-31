@@ -1,11 +1,7 @@
 #pragma once
 
-// #include <array>
-// #include <cstddef>
  #include <cstdint>
 
-// #include "pieces.hpp"
-// #include "rotate.hpp"
 #include "templates.hpp"
 
 struct Offset {

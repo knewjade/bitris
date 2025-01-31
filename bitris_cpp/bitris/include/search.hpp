@@ -1,19 +1,15 @@
 #pragma once
 
-// #include <experimental/simd>
-
 #include <utility>
+#include <bitset>
 
 #include "rows.hpp"
 #include "pieces.hpp"
 #include "rotate.hpp"
 #include "kicks.hpp"
-// #include "bits.hpp"
 #include "data.hpp"
 #include "free_spaces.hpp"
-//
-// namespace stdx = std::experimental;
-//
+
 namespace s {
      template<typename Data, Shape Shape>
      struct searcher {

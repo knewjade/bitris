@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ranges>
 #include <experimental/simd>
 
 #include "bits.hpp"
@@ -227,37 +228,37 @@ struct data {
         std::cout << str << std::endl;
     }
 
-//    static constexpr std::optional<type> from_str(const std::string &str) {
-//        type board = make_zero();
-//        const int ceiling = bits_t::bit_size;
-//        int index = 0;
-//
-//        for (const char ch: std::ranges::reverse_view(str)) {
-//            switch (ch) {
-//                case '#':
-//                case 'X':
-//                    if (index >= 10 * ceiling) {
-//                        return std::nullopt; // ExceedBoardCeiling
-//                    }
-//                    board[9 - (index % 10)] |= bits_t::one << (index / 10);
-//                    ++index;
-//                    break;
-//
-//                case '.':
-//                case '_':
-//                    ++index;
-//                    break;
-//
-//                default: {
-//                    // noop
-//                }
-//            }
-//        }
-//
-//        if (index % 10 != 0) {
-//            return std::nullopt; // MismatchedWidth
-//        }
-//
-//        return std::make_optional(board);
-//    }
+    static constexpr std::optional<type> from_str(const std::string &str) {
+        type board = make_zero();
+        const int ceiling = bits_t::bit_size;
+        int index = 0;
+
+        for (const char ch: std::ranges::reverse_view(str)) {
+            switch (ch) {
+                case '#':
+                case 'X':
+                    if (index >= 10 * ceiling) {
+                        return std::nullopt; // ExceedBoardCeiling
+                    }
+                    board[9 - (index % 10)] |= bits_t::one << (index / 10);
+                    ++index;
+                    break;
+
+                case '.':
+                case '_':
+                    ++index;
+                    break;
+
+                default: {
+                    // noop
+                }
+            }
+        }
+
+        if (index % 10 != 0) {
+            return std::nullopt; // MismatchedWidth
+        }
+
+        return std::make_optional(board);
+    }
 };

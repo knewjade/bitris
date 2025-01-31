@@ -21,7 +21,7 @@ void DoNotOptimize(const Tp &value) {
     asm volatile("" : : "m"(value) : "memory");
 }
 
-template<int count = 1000000>
+template<int count = 5000000>
 auto bench(auto f, auto &&... args) {
     int i = 0;
     auto start = std::chrono::steady_clock::now();
