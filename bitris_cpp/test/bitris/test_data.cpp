@@ -40,7 +40,55 @@ namespace core {
         }
     }
 
-    TEST_F(DataTest, make_spawn2_in_board_u8) {
+    TEST_F(DataTest, make_spawn2_no_horizontal_hole_u8) {
+        using Data = uint8_t;
+        using data_t = data<Data>;
+        const auto free_space = data_t::from_str(
+            ""
+            "XXXXXXXXX."
+            "XXXXXXXXX."
+            "XXXXXXXXX."
+            "XXXXXX..X."
+            "XXXXXX..X."
+            "XXXXXX..X."
+            "XXXXXX...."
+            ".XXXXX...."
+        ).value();
+        // over board
+        {
+            const auto expected = data_t::from_str(
+                ""
+                "XXXXXXXXX."
+                "XXXXXXXXX."
+                "XXXXXXXXX."
+                "XXXXXX..X."
+                "XXXXXX..X."
+                "XXXXXX..X."
+                "XXXXXX...."
+                ".XXXXX...."
+            ).value();
+            const auto spawn = data_t::make_spawn2(free_space, 20);
+            ASSERT_EQ(all_of(spawn == expected), true);
+        }
+        // in board, over horizontal hole row
+        {
+            const auto expected = data_t::from_str(
+                ""
+                ".........."
+                ".........."
+                "XXXXXXXXX."
+                "XXXXXX..X."
+                "XXXXXX..X."
+                "XXXXXX..X."
+                "XXXXXX...."
+                ".XXXXX...."
+            ).value();
+            const auto spawn = data_t::make_spawn2(free_space, 5);
+            ASSERT_EQ(all_of(spawn == expected), true);
+        }
+    }
+
+    TEST_F(DataTest, make_spawn2_horizontal_hole_u8) {
         using Data = uint8_t;
         using data_t = data<Data>;
         const auto free_space = data_t::from_str(

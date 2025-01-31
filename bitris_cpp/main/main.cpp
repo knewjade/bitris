@@ -175,7 +175,7 @@ void test1() {
             }
         } {
             constexpr auto shape = Shape::O;
-            constexpr auto expected = 36;
+            constexpr auto expected = 9;
             const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
             if (popcount<Data>(result) == expected) {
                 std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
@@ -292,33 +292,33 @@ void test2() {
 
 int main() {
     test1();
-    // test2();
-    //
-    // std::cout << std::endl;
-    //
-    // auto shape_names = "TIOLJSZ";
-    // // {
-    // //     std::cout << "# EMPTY" << std::endl;
-    // //     using T = uint32_t;
-    // //     alignas(32) const auto board_bytes = std::array<T, 10>{};
-    // //
-    // //     static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
-    // //     // static_for<{Shape::O}>([&]<Shape Shape>() {
-    // //         const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
-    // //         std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
-    // //     });
-    // // }
-    // {
-    //     std::cout << "# LEMONTEA" << std::endl;
-    //     using T = uint16_t;
-    //     alignas(32) const auto board_bytes = lemontea_tspin_board<T>();
-    //
-    //     static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
-    //     // static_for<{Shape::O}>([&]<Shape Shape>() {
-    //         const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
-    //         std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
-    //     });
-    // }
+    test2();
+
+    std::cout << std::endl;
+
+    auto shape_names = "TIOLJSZ";
+    {
+        std::cout << "# EMPTY" << std::endl;
+        using T = uint32_t;
+        alignas(32) const auto board_bytes = std::array<T, 10>{};
+
+        static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
+        // static_for<{Shape::O}>([&]<Shape Shape>() {
+            const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
+            std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
+        });
+    }
+    {
+        std::cout << "# LEMONTEA" << std::endl;
+        using T = uint16_t;
+        alignas(32) const auto board_bytes = lemontea_tspin_board<T>();
+
+        static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
+        // static_for<{Shape::O}>([&]<Shape Shape>() {
+            const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
+            std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
+        });
+    }
 
     return 0;
 }

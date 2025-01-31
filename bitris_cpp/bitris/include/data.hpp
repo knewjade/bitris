@@ -78,6 +78,10 @@ struct data {
         const type &free_space,
         const uint8_t y
     ) {
+        if (bits_t::bit_size <= y) {
+            return true;
+        }
+
         size_t count = 0;
         auto prev = bits_t::zero;
         const auto m = bits_t::one << y;
@@ -108,6 +112,10 @@ struct data {
 
         const auto mask2 = 0 < k ? static_cast<T>(bits_t::full << k) >> k : bits_t::full;
         // std::cout << "mask2: " << std::hex << mask2 << std::endl;
+
+        if (b == 0) {
+            return make_square(mask2) & free_space;
+        }
 
         const auto most_significant_index = bits_t::most_significant_index(b & (mask2 >> 1));
         // std::cout << "most_significant_index: " << most_significant_index << std::endl;

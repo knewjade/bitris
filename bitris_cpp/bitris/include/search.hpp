@@ -233,8 +233,7 @@ namespace s {
                             );
 
                             const auto dest_reachable = all_reachable[dest_orientation_index] | found_dest_reachable;
-
-                            if (any_of(all_reachable[dest_orientation_index] != dest_reachable)) {
+                            if (!all_of(all_reachable[dest_orientation_index] == dest_reachable)) {
                                 all_reachable[dest_orientation_index] = dest_reachable;
                                 needs_update.set(dest_orientation_index);
                             }
@@ -243,11 +242,11 @@ namespace s {
                 }
             } else {
                 constexpr size_t index = 0;
-                std::cout << "start" << std::endl;
+                // std::cout << "start" << std::endl;
 
                 // move
                 while (true) {
-                    std::cout << "move " << std::endl;
+                    // std::cout << "move " << std::endl;
                     const auto &reachable = all_reachable[index];
                     const auto next = move(reachable, all_free_space[index]);
 
