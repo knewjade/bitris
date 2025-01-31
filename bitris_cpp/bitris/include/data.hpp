@@ -82,7 +82,7 @@ struct data {
         size_t count = 0;
         auto prev = bits_t::zero;
         const auto m = bits_t::one << y;
-        static_for_t<10>([&]<size_t Index>[[gue::always_inline]]() {
+        static_for_t<10>([&]<size_t Index>() {
             const auto bit = free_space[Index] & m;
             if (prev && (prev ^ bit)) {
                 count++;
@@ -102,7 +102,7 @@ struct data {
         const auto a = (~free_space >> 1) & free_space;
         // show(a);
 
-        const auto b = static_fold_t<10>([&]<size_t Index>[[gue::always_inline]](const auto acc) {
+        const auto b = static_fold_t<10>([&]<size_t Index>(const auto acc) {
             return acc | a[Index];
         }, bits_t::zero);
         const int k = bits_t::bit_size - spawn_cy - 1;

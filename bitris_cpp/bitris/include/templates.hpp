@@ -17,7 +17,7 @@ template<std::array Arr, typename F>
 [[gnu::always_inline]]
 constexpr void static_for_t(F &&function) {
     constexpr auto N = std::tuple_size_v<std::remove_reference_t<decltype(Arr)> >;
-    constexpr auto f = []<std::size_t... S>[[gue::always_inline]](
+    constexpr auto f = []<std::size_t... S>(
         F &&callable, std::index_sequence<S...>) {
         (void(callable.template operator()<Arr[S]>()), ...);
     };
@@ -30,7 +30,7 @@ template<std::array Arr, size_t N = std::tuple_size_v<std::remove_reference_t<de
     )
 [[gnu::always_inline]]
 constexpr void static_for_t_until(F &&function) {
-    constexpr auto f = []<std::size_t... S>[[gue::always_inline]](
+    constexpr auto f = []<std::size_t... S>(
         F &&callable, std::index_sequence<S...>) {
         bool continues = true;
         ((continues = continues ? callable.template operator()<Arr[S]>() : false), ...);
@@ -41,7 +41,7 @@ constexpr void static_for_t_until(F &&function) {
 template<std::size_t Iterations, typename T, typename F>
 [[gnu::always_inline]]
 constexpr T static_fold_t(F &&function, T init) {
-    constexpr auto f = []<std::size_t... S>[[gue::always_inline]](F &&function, T init, std::index_sequence<S...>) {
+    constexpr auto f = []<std::size_t... S>(F &&function, T init, std::index_sequence<S...>) {
         ((init = function.template operator()<std::integral_constant<std::size_t, S>{}>(std::forward<T>(init))), ...);
         return std::forward<T>(init);
     };
