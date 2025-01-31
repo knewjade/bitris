@@ -1,6 +1,7 @@
 #pragma once
 
 #include <experimental/simd>
+#include <ranges>
 
 #include "bits.hpp"
 #include "kicks.hpp"
@@ -11,6 +12,7 @@ template<typename T>
 struct data {
     // using type = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
     using type = stdx::simd<T, stdx::simd_abi::deduce_t<T, 10> >;
+    using bits_t = bits<T>;
 
     template<typename U>
     [[gnu::always_inline]]
@@ -58,23 +60,65 @@ struct data {
 
     [[gnu::always_inline]]
     static constexpr type make_spawn(
-        const T reachable_rows,
         const type &free_space,
         const uint8_t spawn_cx,
         const uint8_t spawn_cy
     ) {
-        if (0 < reachable_rows) {
-            return make_square(reachable_rows) & free_space;
-        }
-
-        // フィールド上部に2列空きのあるボードのみを探索対象としているため
-        if (bits<T>::bit_size - 2 <= spawn_cy) {
-            return make_square<static_cast<T>(0b11) << (bits<T>::bit_size - 2)>() & free_space;
+        if (is_continuous_line(free_space, spawn_cy)) {
+            return make_spawn2(free_space, spawn_cy);
         }
 
         alignas(32) std::array<T, 10> b{};
-        b[spawn_cx] = 1 << spawn_cy;
+        b[spawn_cx] = bits_t::one << spawn_cy;
         return type{b.data(), stdx::vector_aligned};
+    }
+
+    [[gnu::always_inline]]
+    static constexpr bool is_continuous_line(
+        const type &free_space,
+        const uint8_t y
+    ) {
+        size_t count = 0;
+        auto prev = bits_t::zero;
+        const auto m = bits_t::one << y;
+        static_for_t<10>([&]<size_t Index>() {
+            const auto bit = free_space[Index] & m;
+            if (prev && (prev ^ bit)) {
+                count++;
+            }
+            prev = bit;
+        });
+        count += prev ? 1 : 0;
+        return count <= 1;
+    }
+
+    [[gnu::always_inline]]
+    static constexpr type make_spawn2(
+        const type &free_space,
+        const uint8_t spawn_cy
+    ) {
+        const auto a = (~free_space >> 1) & free_space;
+        // show(a);
+
+        const auto b = static_fold_t<10>([&]<size_t Index>(const auto acc) {
+            return acc | a[Index];
+        }, bits_t::zero);
+        const int k = bits_t::bit_size - spawn_cy - 1;
+        // std::cout << "k: " << std::to_string(k) << std::endl;
+
+        const auto mask2 = 0 < k ? static_cast<T>(bits_t::full << k) >> k : bits_t::full;
+        // std::cout << "mask2: " << std::hex << mask2 << std::endl;
+
+        const auto most_significant_index = bits_t::most_significant_index(b & (mask2 >> 1));
+        // std::cout << "most_significant_index: " << most_significant_index << std::endl;
+        const auto s = most_significant_index + 1;
+        const auto mask = (bits_t::full >> s) << s;
+        // std::cout << "mask: " << std::hex << mask << std::endl;
+
+        const auto c = mask & mask2;
+        // std::cout << "c: " << std::hex << c << std::endl;
+
+        return make_square(c) & free_space;
     }
 
     template<size_t Down, bool CeilOpen = false>
@@ -83,8 +127,8 @@ struct data {
         if constexpr (Down == 0) {
             return data;
         }
-        if constexpr (bits<T>::bit_size <= Down) {
-            make_square<CeilOpen ? bits<T>::full : 0>();
+        if constexpr (bits_t::bit_size <= Down) {
+            make_square<CeilOpen ? bits_t::full : 0>();
         }
         return CeilOpen ? ~(~data >> Down) : data >> Down;
     }
@@ -95,7 +139,7 @@ struct data {
         if constexpr (Up == 0) {
             return data;
         }
-        if constexpr (bits<T>::bit_size <= Up) {
+        if constexpr (bits_t::bit_size <= Up) {
             return make_square<0>();
         }
         return data << Up;
@@ -166,16 +210,50 @@ struct data {
         }
     }
 
-    static constexpr void show(const type &data, const int height = bits<T>::bit_size) {
+    static constexpr void show(const type &data, const int height = bits_t::bit_size) {
         std::string str;
         for (int y = height - 1; y >= 0; --y) {
             for (int x = 0; x < 10; ++x) {
-                auto is_occupied_at = data[x] & (1 << y);
+                auto is_occupied_at = data[x] & (bits_t::one << y);
                 str += is_occupied_at ? '#' : '.';
             }
             str += '\n';
         }
 
         std::cout << str << std::endl;
+    }
+
+    static constexpr std::optional<type> from_str(const std::string &str) {
+        type board = make_zero();
+        const int ceiling = bits_t::bit_size;
+        int index = 0;
+
+        for (const char ch: std::ranges::reverse_view(str)) {
+            switch (ch) {
+                case '#':
+                case 'X':
+                    if (index >= 10 * ceiling) {
+                        return std::nullopt; // ExceedBoardCeiling
+                    }
+                    board[9 - (index % 10)] |= bits_t::one << (index / 10);
+                    ++index;
+                    break;
+
+                case '.':
+                case '_':
+                    ++index;
+                    break;
+
+                default: {
+                    // noop
+                }
+            }
+        }
+
+        if (index % 10 != 0) {
+            return std::nullopt; // MismatchedWidth
+        }
+
+        return std::make_optional(board);
     }
 };

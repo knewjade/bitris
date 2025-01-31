@@ -25,14 +25,12 @@ namespace s {
             const std::array<Data, 10> &board,
             const Orientation spawn_orientation,
             const uint8_t spawn_cx,
-            const uint8_t spawn_cy,
-            const Data reachable_rows
+            const uint8_t spawn_cy
         ) {
             const auto board_u = data_t::template load<U>(board);
-            const auto reachable_rows_u = ~static_cast<U>(~reachable_rows);
 
             const auto goals = searcher<U, Shape>::execute(
-                board_u, spawn_orientation, spawn_cx, spawn_cy, reachable_rows_u
+                board_u, spawn_orientation, spawn_cx, spawn_cy
             );
 
             alignas(32) std::array<Data, N * 10> array{};
@@ -49,35 +47,33 @@ namespace s {
             const uint8_t spawn_cx,
             const uint8_t spawn_cy
         ) {
-            const auto used_rows = bits<Data>::used_rows(board);
-            const auto [top_y, reachable_rows] = rows::spawn_bits(used_rows, spawn_cy);
+            const auto top_y = rows::top_y(board, spawn_cy);
 
             if (top_y < 6) {
-                return search_casted<uint8_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
+                return search_casted<uint8_t>(board, spawn_orientation, spawn_cx, spawn_cy);
             }
 
             if (top_y < 14) {
-                return search_casted<uint16_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
+                return search_casted<uint16_t>(board, spawn_orientation, spawn_cx, spawn_cy);
             }
 
             if (top_y < 30) {
-                return search_casted<uint32_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
+                return search_casted<uint32_t>(board, spawn_orientation, spawn_cx, spawn_cy);
             }
 
-            return search_casted<uint64_t>(board, spawn_orientation, spawn_cx, spawn_cy, reachable_rows);
+            return search_casted<uint64_t>(board, spawn_orientation, spawn_cx, spawn_cy);
         }
 
         static constexpr std::array<type, N> execute(
             const type &board,
             const Orientation spawn_orientation,
             const uint8_t spawn_cx,
-            const uint8_t spawn_cy,
-            const Data reachable_rows
+            const uint8_t spawn_cy
         ) {
             if constexpr (N == 1) {
                 constexpr auto orientation = Orientation::North;
                 return execute<orientation>(
-                    board, spawn_cx, spawn_cy, reachable_rows
+                    board, spawn_cx, spawn_cy
                 );
             }
 
@@ -85,46 +81,43 @@ namespace s {
                 case Orientation::North: {
                     constexpr auto orientation = Orientation::North;
                     return execute<orientation>(
-                        board, spawn_cx, spawn_cy, reachable_rows
+                        board, spawn_cx, spawn_cy
                     );
                 }
                 case Orientation::East: {
                     constexpr auto orientation = Orientation::East;
                     return execute<orientation>(
-                        board, spawn_cx, spawn_cy, reachable_rows
+                        board, spawn_cx, spawn_cy
                     );
                 }
                 case Orientation::South: {
                     constexpr auto orientation = Orientation::South;
                     return execute<orientation>(
-                        board, spawn_cx, spawn_cy, reachable_rows
+                        board, spawn_cx, spawn_cy
                     );
                 }
                 case Orientation::West: {
                     constexpr auto orientation = Orientation::West;
                     return execute<orientation>(
-                        board, spawn_cx, spawn_cy, reachable_rows
+                        board, spawn_cx, spawn_cy
                     );
                 }
             }
             std::unreachable();
         }
 
-    private:
         template<Orientation SpawnOrientation>
         [[gnu::always_inline]]
         static constexpr std::array<type, N> spawn(
             const std::array<type, N> &all_free_space,
             const uint8_t spawn_cx,
-            const uint8_t spawn_cy,
-            const Data reachable_rows
+            const uint8_t spawn_cy
         ) {
             const auto spawn_orientation_index = static_cast<size_t>(SpawnOrientation);
             auto all_reachable = std::array<type, N>{};
             static_for<N>([&][[gnu::always_inline]](auto index) {
                 if (index == spawn_orientation_index) {
                     all_reachable[index] = data_t::make_spawn(
-                        reachable_rows,
                         all_free_space[index],
                         spawn_cx,
                         spawn_cy
@@ -136,6 +129,7 @@ namespace s {
             return all_reachable;
         }
 
+    private:
         [[gnu::always_inline]]
         static constexpr type move(const auto &reachable, const auto &free_space) {
             const auto right = data_t::template shift_right<1>(reachable);
@@ -178,15 +172,14 @@ namespace s {
         static constexpr std::array<type, N> execute(
             const type &board,
             const uint8_t spawn_cx,
-            const uint8_t spawn_cy,
-            const Data reachable_rows
+            const uint8_t spawn_cy
         ) {
             static_assert(N == 1 || N == 4);
 
             const auto free_space_block = ~board;
             const auto all_free_space = free_spaces<Data, Shape>::get(free_space_block);
 
-            auto all_reachable = spawn<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy, reachable_rows);
+            auto all_reachable = spawn<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy);
 
             if constexpr (N == 4) {
                 constexpr auto rotate = []<Orientation Orientation, Rotation Rotation>[[gnu::always_inline]](
@@ -250,11 +243,11 @@ namespace s {
                 }
             } else {
                 constexpr size_t index = 0;
-                // std::cout << "start" << std::endl;
+                std::cout << "start" << std::endl;
 
                 // move
                 while (true) {
-                    // std::cout << "move " << std::endl;
+                    std::cout << "move " << std::endl;
                     const auto &reachable = all_reachable[index];
                     const auto next = move(reachable, all_free_space[index]);
 

@@ -8,6 +8,7 @@ struct bits {
 
 template<typename Data>
 struct bits_base {
+    static constexpr Data zero = 0;
     static constexpr Data one = 1;
 
     [[gnu::always_inline]]
@@ -55,6 +56,6 @@ struct bits<uint32_t> : bits_base<uint32_t> {
 template<>
 struct bits<uint64_t> : bits_base<uint64_t> {
     using Data = uint64_t;
-    static constexpr Data full = 0xFFFFFFFFFFFFFFFF;
+    static constexpr Data full = 0xFFFFFFFFFFFFFFFFULL;
     static constexpr Data bit_size = 64;
 };

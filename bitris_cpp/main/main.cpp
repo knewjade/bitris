@@ -84,7 +84,7 @@ size_t popcount(const std::array<T, N> &board) {
     return count;
 }
 
-template<int count = 50000000>
+template<int count = 1000000>
 auto bench(auto f, auto &&... args) {
     int i = 0;
     auto start = std::chrono::steady_clock::now();
@@ -114,7 +114,90 @@ std::array<Data, 10> lemontea_tspin_board() {
     ));
 }
 
-void test() {
+void test1() {
+    auto shape_names = "TIOLJSZ"; {
+        using Data = uint32_t;
+        const auto empty = load_board<Data>("");
+        std::cout << to_string(empty, 10) << std::endl; {
+            constexpr auto shape = Shape::T;
+            constexpr auto expected = 34;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        } {
+            constexpr auto shape = Shape::I;
+            constexpr auto expected = 34;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        } {
+            constexpr auto shape = Shape::J;
+            constexpr auto expected = 34;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        } {
+            constexpr auto shape = Shape::S;
+            constexpr auto expected = 34;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        } {
+            constexpr auto shape = Shape::Z;
+            constexpr auto expected = 34;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        } {
+            constexpr auto shape = Shape::O;
+            constexpr auto expected = 36;
+            const auto result = s::searcher<Data, shape>::search(empty, Orientation::North, 4, 20);
+            if (popcount<Data>(result) == expected) {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": OK" << std::endl;
+            } else {
+                std::cout << shape_names[static_cast<size_t>(shape)] << ": NG" << std::endl;
+                std::cout << to_string(result, 10) << std::endl;
+                std::cout << popcount<Data>(result) << std::endl;
+            }
+        }
+    }
+
+    /**                 (T, 34),
+                (I, 34),
+                (L, 34),
+                (J, 34),
+                (S, 34),
+                (Z, 34),
+                (O, 36),
+            ],*/
+}
+
+void test2() {
     auto shape_names = "TIOLJSZ"; {
         using Data = uint32_t;
         const auto lemontea_tspin = lemontea_tspin_board<Data>();
@@ -208,33 +291,34 @@ void test() {
 }
 
 int main() {
-    // test();
-
-    std::cout << std::endl;
-
-    auto shape_names = "TIOLJSZ";
-    // {
-    //     std::cout << "# EMPTY" << std::endl;
-    //     using T = uint32_t;
-    //     alignas(32) const auto board_bytes = std::array<T, 10>{};
+    test1();
+    // test2();
     //
-    //     // static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
-    //     static_for<{Shape::O}>([&]<Shape Shape>() {
+    // std::cout << std::endl;
+    //
+    // auto shape_names = "TIOLJSZ";
+    // // {
+    // //     std::cout << "# EMPTY" << std::endl;
+    // //     using T = uint32_t;
+    // //     alignas(32) const auto board_bytes = std::array<T, 10>{};
+    // //
+    // //     static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
+    // //     // static_for<{Shape::O}>([&]<Shape Shape>() {
+    // //         const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
+    // //         std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
+    // //     });
+    // // }
+    // {
+    //     std::cout << "# LEMONTEA" << std::endl;
+    //     using T = uint16_t;
+    //     alignas(32) const auto board_bytes = lemontea_tspin_board<T>();
+    //
+    //     static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
+    //     // static_for<{Shape::O}>([&]<Shape Shape>() {
     //         const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
     //         std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
     //     });
     // }
-    {
-        std::cout << "# LEMONTEA" << std::endl;
-        using T = uint16_t;
-        alignas(32) const auto board_bytes = lemontea_tspin_board<T>();
-
-        // static_for<{Shape::I, Shape::J, Shape::L, Shape::O, Shape::S, Shape::T, Shape::Z}>([&]<Shape Shape>() {
-        static_for<{Shape::O}>([&]<Shape Shape>() {
-            const auto t = bench(s::searcher<T, Shape>::search, board_bytes, Orientation::North, 4, 20);
-            std::cout << "Elapsed time (" << shape_names[static_cast<int>(Shape)] << "): " << t << " ns" << std::endl;
-        });
-    }
 
     return 0;
 }

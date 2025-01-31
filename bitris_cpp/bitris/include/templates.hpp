@@ -15,6 +15,19 @@ constexpr void static_for(F &&function) {
     f(std::forward<F>(function), std::make_index_sequence<iterations>());
 }
 
+template<std::size_t iterations, typename F>
+[[gnu::always_inline]]
+constexpr void static_for_t(F &&function) {
+    constexpr auto f = []<std::size_t... S>(F &&callable, std::index_sequence<S...>) {
+        const auto unpack = {
+            0,
+            (void(callable.template operator()<std::integral_constant<std::size_t, S>{}>()), 0)...
+        };
+        (void) unpack;
+    };
+    f(std::forward<F>(function), std::make_index_sequence<iterations>());
+}
+
 template<typename T, typename F, std::size_t N>
 [[gnu::always_inline]]
 constexpr void static_for(F &&function, const std::array<T, N> &arr) {
@@ -80,6 +93,16 @@ template<typename T, typename F, std::size_t... S>
 constexpr T static_fold(F &&function, T init, std::index_sequence<S...>) {
     ((init = function(std::forward<T>(init), std::integral_constant<std::size_t, S>{})), ...);
     return std::forward<T>(init);
+}
+
+template<std::size_t Iterations, typename T, typename F>
+[[gnu::always_inline]]
+constexpr T static_fold_t(F &&function, T init) {
+    constexpr auto f = []<std::size_t... S>(F &&function, T init, std::index_sequence<S...>) {
+        ((init = function.template operator()<std::integral_constant<std::size_t, S>{}>(std::forward<T>(init))), ...);
+        return std::forward<T>(init);
+    };
+    return f(std::forward<F>(function), std::move(init), std::make_index_sequence<Iterations>());
 }
 
 template<typename T, typename F, std::size_t N>
