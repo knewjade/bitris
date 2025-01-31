@@ -54,4 +54,18 @@ namespace core {
             EXPECT_EQ(bits<T>::used_rows(board), 0b1001);
         }
     }
+
+    TEST_F(BitsTest, full) {
+        EXPECT_EQ(bits<uint8_t>::full, 0xff);
+        EXPECT_EQ(bits<uint16_t>::full, 0xffff);
+        EXPECT_EQ(bits<uint32_t>::full, 0xffffffff);
+        EXPECT_EQ(bits<uint64_t>::full, 0xffffffffffffffff);
+    }
+
+    TEST_F(BitsTest, bit_size) {
+        EXPECT_EQ(bits<uint8_t>::bit_size, 8);
+        EXPECT_EQ(bits<uint16_t>::bit_size, 16);
+        EXPECT_EQ(bits<uint32_t>::bit_size, 32);
+        EXPECT_EQ(bits<uint64_t>::bit_size, 64);
+    }
 }
