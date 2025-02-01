@@ -62,7 +62,7 @@ struct data {
             const uint8_t spawn_cy
     ) {
         if (is_continuous_line(free_space, spawn_cy)) {
-            return make_spawn2(free_space, spawn_cy);
+            return calculate_spawn_area(free_space, spawn_cy);
         }
 
         alignas(32) std::array<T, 10> b{};
@@ -93,38 +93,34 @@ struct data {
         return count <= 1;
     }
 
-    // TODO rename
     [[gnu::always_inline]]
-    static constexpr type make_spawn2(
+    static constexpr type calculate_spawn_area(
             const type &free_space,
             const uint8_t spawn_cy
     ) {
-        const auto a = (~free_space >> 1) & free_space;
-        // show(a);
+        // 上にブロック（屋根）がある空白を1とする
+        const auto roof_blocks = (~free_space >> 1) & free_space;
 
-        const auto b = static_fold_t<10>([&]<size_t Index>(const auto acc) {
-            return acc | a[Index];
+        // 屋根のある行を1とするビット列
+        const auto roof_rows = static_fold_t<10>([&]<size_t Index>(const auto acc) {
+            return acc | roof_blocks[Index];
         }, bits_t::zero);
-        const int k = bits_t::bit_size - spawn_cy - 1;
-        // std::cout << "k: " << std::to_string(k) << std::endl;
 
-        const auto mask2 = 0 < k ? static_cast<T>(bits_t::full << k) >> k : bits_t::full;
-        // std::cout << "mask2: " << std::hex << mask2 << std::endl;
+        // spawn位置より下を1とするビット列
+        const int spawn_offset = bits_t::bit_size - spawn_cy - 1;
+        const auto below_spawn_mask =
+                0 < spawn_offset ? static_cast<T>(bits_t::full << spawn_offset) >> spawn_offset : bits_t::full;
 
-        if (b == 0) {
-            return make_square(mask2) & free_space;
+        if (roof_rows == 0) {
+            return make_square(below_spawn_mask) & free_space;
         }
 
-        const auto most_significant_index = bits_t::most_significant_index(b & (mask2 >> 1));
-        // std::cout << "most_significant_index: " << most_significant_index << std::endl;
-        const auto s = most_significant_index + 1;
-        const auto mask = (bits_t::full >> s) << s;
-        // std::cout << "mask: " << std::hex << mask << std::endl;
+        // 移動できそうな範囲で、屋根のある行の上までを1とするビット列
+        const auto most_significant_index = bits_t::most_significant_index(roof_rows & (below_spawn_mask >> 1));
+        const auto shift_amount = most_significant_index + 1;
+        const auto above_roof_mask = (bits_t::full >> shift_amount) << shift_amount;
 
-        const auto c = mask & mask2;
-        // std::cout << "c: " << std::hex << c << std::endl;
-
-        return make_square(c) & free_space;
+        return make_square(below_spawn_mask & above_roof_mask) & free_space;
     }
 
     template<size_t Down, bool CeilOpen = false>
