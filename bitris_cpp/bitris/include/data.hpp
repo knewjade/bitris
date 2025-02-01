@@ -57,9 +57,9 @@ struct data {
 
     [[gnu::always_inline]]
     static constexpr type make_spawn(
-        const type &free_space,
-        const uint8_t spawn_cx,
-        const uint8_t spawn_cy
+            const type &free_space,
+            const uint8_t spawn_cx,
+            const uint8_t spawn_cy
     ) {
         if (is_continuous_line(free_space, spawn_cy)) {
             return make_spawn2(free_space, spawn_cy);
@@ -72,8 +72,8 @@ struct data {
 
     [[gnu::always_inline]]
     static constexpr bool is_continuous_line(
-        const type &free_space,
-        const uint8_t y
+            const type &free_space,
+            const uint8_t y
     ) {
         if (bits_t::bit_size <= y) {
             return true;
@@ -96,8 +96,8 @@ struct data {
     // TODO rename
     [[gnu::always_inline]]
     static constexpr type make_spawn2(
-        const type &free_space,
-        const uint8_t spawn_cy
+            const type &free_space,
+            const uint8_t spawn_cy
     ) {
         const auto a = (~free_space >> 1) & free_space;
         // show(a);

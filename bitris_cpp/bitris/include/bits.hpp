@@ -12,10 +12,10 @@ struct bits {
     [[gnu::always_inline]]
     static constexpr Data used_rows(const std::array<Data, 10> &board) {
         return static_packing_fold<Data>(
-            []<typename... V>[[gnu::always_inline]](V... s) {
-                return (s | ...);
-            },
-            board
+                []<typename... V> [[gnu::always_inline]](V... s) {
+                    return (s | ...);
+                },
+                board
         );
     }
 

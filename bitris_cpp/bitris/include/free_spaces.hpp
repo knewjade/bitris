@@ -35,10 +35,10 @@ struct free_spaces<Data, Shape::T> {
     [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
-            north(free_space_block),
-            east(free_space_block),
-            south(free_space_block),
-            west(free_space_block),
+                north(free_space_block),
+                east(free_space_block),
+                south(free_space_block),
+                west(free_space_block),
         };
     }
 
@@ -85,10 +85,10 @@ struct free_spaces<Data, Shape::L> {
     [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
-            north(free_space_block),
-            east(free_space_block),
-            south(free_space_block),
-            west(free_space_block),
+                north(free_space_block),
+                east(free_space_block),
+                south(free_space_block),
+                west(free_space_block),
         };
     }
 
@@ -135,10 +135,10 @@ struct free_spaces<Data, Shape::J> {
     [[gnu::always_inline]]
     static constexpr std::array<type, N> get(const type &free_space_block) {
         return {
-            north(free_space_block),
-            east(free_space_block),
-            south(free_space_block),
-            west(free_space_block),
+                north(free_space_block),
+                east(free_space_block),
+                south(free_space_block),
+                west(free_space_block),
         };
     }
 
@@ -187,10 +187,10 @@ struct free_spaces<Data, Shape::I> {
         const auto n = north(free_space_block);
         const auto w = west(free_space_block);
         return {
-            n,
-            data_t::template shift_up<1>(w),
-            data_t::template shift_right<1>(n),
-            w,
+                n,
+                data_t::template shift_up<1>(w),
+                data_t::template shift_right<1>(n),
+                w,
         };
     }
 
@@ -219,10 +219,10 @@ struct free_spaces<Data, Shape::S> {
         const auto n = north(free_space_block);
         const auto e = east(free_space_block);
         return {
-            n,
-            e,
-            data_t::template shift_up<1>(n),
-            data_t::template shift_right<1>(e),
+                n,
+                e,
+                data_t::template shift_up<1>(n),
+                data_t::template shift_right<1>(e),
         };
     }
 
@@ -253,10 +253,10 @@ struct free_spaces<Data, Shape::Z> {
         const auto n = north(free_space_block);
         const auto e = east(free_space_block);
         return {
-            n,
-            e,
-            data_t::template shift_up<1>(n),
-            data_t::template shift_right<1>(e),
+                n,
+                e,
+                data_t::template shift_up<1>(n),
+                data_t::template shift_right<1>(e),
         };
     }
 

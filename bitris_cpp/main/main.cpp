@@ -143,7 +143,8 @@ size_t popcount(const std::array<T, N> &board) {
 }
 
 template<typename Data, size_t N>
-void test(const std::array<Data, 10> board, const size_t height, const std::array<Data, N> &result, const Shape shape, size_t expected) {
+void test(const std::array<Data, 10> board, const size_t height, const std::array<Data, N> &result, const Shape shape,
+          size_t expected) {
     constexpr auto SHAPE_NAMES = "TIOLJSZ";
     const char name = SHAPE_NAMES[static_cast<size_t>(shape)];
     if (const auto actual = popcount<Data>(result); actual == expected) {

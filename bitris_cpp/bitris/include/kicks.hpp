@@ -1,12 +1,12 @@
 #pragma once
 
- #include <cstdint>
+#include <cstdint>
 
 #include "templates.hpp"
 
 struct Offset {
-     int32_t x, y;
- };
+    int32_t x, y;
+};
 
 [[gnu::always_inline]]
 constexpr Offset operator-(const Offset &offset) {
