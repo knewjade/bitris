@@ -38,8 +38,6 @@ namespace s {
                 static_for_t<10>([&]<size_t DestIndex> [[gnu::always_inline]]() {
                     array[SrcIndex * 10 + DestIndex] = converted[DestIndex];
                 });
-                // TODO
-                // unknown.copy_to(&array[Index * 10], stdx::vector_aligned);
             });
             return array;
         }

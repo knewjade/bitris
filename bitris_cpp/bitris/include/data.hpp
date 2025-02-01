@@ -10,9 +10,7 @@ namespace stdx = std::experimental;
 
 template<typename T>
 struct data {
-    // TODO deduce?
     using type = stdx::simd<T, stdx::simd_abi::fixed_size<10> >;
-    // using type = stdx::simd<T, stdx::simd_abi::deduce_t<T, 10> >;
     using bits_t = bits<T>;
 
     template<typename U>
