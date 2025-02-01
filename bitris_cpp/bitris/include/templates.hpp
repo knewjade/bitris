@@ -24,20 +24,6 @@ constexpr void static_for_t(F &&function) {
     f(std::forward<F>(function), std::make_index_sequence<N>());
 }
 
-template<std::array Arr, size_t N = std::tuple_size_v<std::remove_reference_t<decltype(Arr)> >, typename F>
-    requires (
-        N == 0 || requires(F &&f) { { f.template operator()<Arr[0]>() } -> std::convertible_to<bool>; }
-    )
-[[gnu::always_inline]]
-constexpr void static_for_t_until(F &&function) {
-    constexpr auto f = []<std::size_t... S>(
-        F &&callable, std::index_sequence<S...>) {
-        bool continues = true;
-        ((continues = continues ? callable.template operator()<Arr[S]>() : false), ...);
-    };
-    f(std::forward<F>(function), std::make_index_sequence<N>());
-}
-
 template<std::size_t Iterations, typename T, typename F>
 [[gnu::always_inline]]
 constexpr T static_fold_t(F &&function, T init) {
