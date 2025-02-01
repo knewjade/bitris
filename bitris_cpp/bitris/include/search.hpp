@@ -13,6 +13,7 @@
 namespace s {
      template<typename Data, Shape Shape>
      struct searcher {
+         using bits_t = bits<Data>;
          using data_t = data<Data>;
          using type = typename data_t::type;
          static constexpr auto N = free_spaces<Data, Shape>::N;
@@ -137,8 +138,15 @@ namespace s {
          static constexpr type move(const auto &reachable, const auto &free_space) {
              const auto right = data_t::template shift_right<1>(reachable);
              const auto left = data_t::template shift_left<1>(reachable);
-             const auto down = data_t::template shift_down<1>(reachable);
-             return (reachable | right | left | down) & free_space;
+             if constexpr (16 < bits_t::bit_size) {
+                 // 下移動はコストが比較して低く、横より縦の回数が大きくなりやすいため、2ブロック移動する
+                 const auto down1 = data_t::template shift_down<1>(reachable);
+                 const auto down2 = data_t::template shift_down<1>(down1 & free_space);
+                 return (reachable | right | left | down1 | down2) & free_space;
+             } else {
+                 const auto down1 = data_t::template shift_down<1>(reachable);
+                 return (reachable | right | left | down1) & free_space;
+             }
          }
 
          [[gnu::always_inline]]
@@ -183,7 +191,7 @@ namespace s {
              const auto all_free_space = free_spaces<Data, Shape>::get(free_space_block);
 
              auto all_reachable = spawn<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy);
-             // TODO std::array<type, N> prev{};
+             std::array<type, N> rotated_already{};
 
              if constexpr (N == 4) {
                  constexpr auto rotate = []<Orientation Orientation, Rotation Rotation>[[gnu::always_inline]](
@@ -273,10 +281,8 @@ namespace s {
                          }
 
                          // rotate
-                         const auto reachable_for_rotate = all_reachable[current_index] & data_t::template make_square<(bits<Data>::full >> 2)>();
-                         // TODO
-                         // const auto reachable_for_rotate = all_reachable[current_index] & data_t::template make_square<(bits<Data>::full >> 2)>() & ~prev[current_index];
-                         // prev[current_index] |= reachable_for_rotate;
+                         const auto reachable_for_rotate = all_reachable[current_index] & data_t::template make_square<(bits<Data>::full >> 2)>() & ~rotated_already[current_index];
+                         rotated_already[current_index] |= reachable_for_rotate;
                          constexpr auto rotations = std::array{Rotation::Cw, Rotation::Ccw};
                          static_for_t<rotations>([&]<Rotation Rotation>[[gnu::always_inline]]() {
                              constexpr auto to_orientation = rotate_to(Orientation, Rotation);
