@@ -270,8 +270,8 @@ namespace s {
 
             // rotate
             const auto reachable_for_rotate = all_reachable[current_index] &
-                                              data_t::template make_square<(bits<Data>::full
-                                                      >> 2)>() & ~rotated_already[current_index];
+                                              data_t::template make_square<(bits<Data>::full >> 2)>() &
+                                              ~rotated_already[current_index];
             rotated_already[current_index] |= reachable_for_rotate;
             constexpr auto rotations = std::array{Rotation::Cw, Rotation::Ccw};
             static_for_t<rotations>([&]<Rotation Rotation> [[gnu::always_inline]]() {
