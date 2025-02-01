@@ -15,15 +15,15 @@ struct data {
 
     template<typename U>
     [[gnu::always_inline]]
-    static constexpr typename data<U>::type load(const std::array<T, 10> &board_bytes) {
+    static constexpr typename data<U>::type load(const std::array<T, 10> &board_aligned) {
         if constexpr (std::is_same_v<T, U>) {
-            return typename data<U>::type{board_bytes.data(), stdx::vector_aligned};
+            return typename data<U>::type{board_aligned.data(), stdx::vector_aligned};
         } else {
             return typename data<U>::type([=][[gnu::always_inline]](auto i) {
                 if constexpr (constexpr size_t index = i; index < 0) {
                     return 0;
                 } else {
-                    return static_cast<U>(board_bytes[index]);
+                    return static_cast<U>(board_aligned[index]);
                 }
             });
         }

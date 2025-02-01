@@ -21,12 +21,12 @@ namespace s {
     private:
         template<typename U>
         static constexpr std::array<Data, N * 10> search_casted(
-                const std::array<Data, 10> &board,
+                const std::array<Data, 10> &board_aligned,
                 const Orientation spawn_orientation,
                 const uint8_t spawn_cx,
                 const uint8_t spawn_cy
         ) {
-            const auto board_u = data_t::template load<U>(board);
+            const auto board_u = data_t::template load<U>(board_aligned);
 
             const auto goals = searcher<U, Shape>::execute(
                     board_u, spawn_orientation, spawn_cx, spawn_cy
@@ -44,26 +44,22 @@ namespace s {
 
     public:
         static constexpr std::array<Data, N * 10> search(
-                const std::array<Data, 10> &board,
+                const std::array<Data, 10> &board_aligned,
                 const Orientation spawn_orientation,
                 const uint8_t spawn_cx,
                 const uint8_t spawn_cy
         ) {
-            const auto top_y = rows::top_y(board, spawn_cy);
+            const auto top_y = rows::top_y(board_aligned, spawn_cy);
 
             if (top_y < 6) {
-                return search_casted<uint8_t>(board, spawn_orientation, spawn_cx, spawn_cy);
+                return search_casted<uint8_t>(board_aligned, spawn_orientation, spawn_cx, spawn_cy);
             }
 
             if (top_y < 14) {
-                return search_casted<uint16_t>(board, spawn_orientation, spawn_cx, spawn_cy);
+                return search_casted<uint16_t>(board_aligned, spawn_orientation, spawn_cx, spawn_cy);
             }
 
-            if (top_y < 30) {
-                return search_casted<uint32_t>(board, spawn_orientation, spawn_cx, spawn_cy);
-            }
-
-            return search_casted<uint64_t>(board, spawn_orientation, spawn_cx, spawn_cy);
+            return search_casted<uint32_t>(board_aligned, spawn_orientation, spawn_cx, spawn_cy);
         }
 
         static constexpr std::array<type, N> execute(
