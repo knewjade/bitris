@@ -179,6 +179,120 @@ namespace s {
             return all_goal;
         }
 
+        template<Orientation Orientation>
+        [[gnu::always_inline]]
+        static constexpr void move_and_rotate(
+                std::bitset<N> &needs_update,
+                const std::array<type, N> &all_free_space,
+                std::array<type, N> &all_reachable,
+                std::array<type, N> &rotated_already
+        ) {
+            constexpr auto rotate = []<Rotation Rotation> [[gnu::always_inline]](
+                    const type &src_reachable,
+                    const type &dest_free_space
+            ) {
+                auto src_candidates = src_reachable;
+                auto dest_reachable = data_t::make_zero();
+
+                constexpr auto offsets = get_offsets<{Shape, Orientation}, Rotation>();
+                static_assert(offsets.size() == 5);
+
+                do {
+                    // offset[0]
+                    {
+                        constexpr auto offset = offsets[0];
+                        const auto shift_forward = data_t::template shift<offset>(src_candidates);
+                        dest_reachable = dest_reachable | shift_forward;
+                        const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
+                        src_candidates = (~shift_backward) & src_candidates;
+                        if (data_t::is_equal_to(src_candidates, 0)) {
+                            break;
+                        }
+                    }
+                    // offset[1]
+                    {
+                        constexpr auto offset = offsets[1];
+                        const auto shift_forward = data_t::template shift<offset>(src_candidates);
+                        dest_reachable = dest_reachable | shift_forward;
+                        const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
+                        src_candidates = (~shift_backward) & src_candidates;
+                        if (data_t::is_equal_to(src_candidates, 0)) {
+                            break;
+                        }
+                    }
+                    // offset[2]
+                    {
+                        constexpr auto offset = offsets[2];
+                        const auto shift_forward = data_t::template shift<offset>(src_candidates);
+                        dest_reachable = dest_reachable | shift_forward;
+                        const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
+                        src_candidates = (~shift_backward) & src_candidates;
+                        if (data_t::is_equal_to(src_candidates, 0)) {
+                            break;
+                        }
+                    }
+                    // offset[3]
+                    {
+                        constexpr auto offset = offsets[3];
+                        const auto shift_forward = data_t::template shift<offset>(src_candidates);
+                        dest_reachable = dest_reachable | shift_forward;
+                        const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
+                        src_candidates = (~shift_backward) & src_candidates;
+                        if (data_t::is_equal_to(src_candidates, 0)) {
+                            break;
+                        }
+                    }
+                    // offset[4]
+                    {
+                        constexpr auto offset = offsets[4];
+                        const auto shift_forward = data_t::template shift<offset>(src_candidates);
+                        dest_reachable = dest_reachable | shift_forward;
+                    }
+                } while (false);
+
+                return dest_reachable & dest_free_space;
+            };
+
+            // check
+            constexpr auto current_index = static_cast<size_t>(Orientation);
+            if (!needs_update[current_index]) {
+                return;
+            }
+            needs_update.reset(current_index);
+
+            // move
+            while (true) {
+                const auto &reachable = all_reachable[current_index];
+                const auto next = move(reachable, all_free_space[current_index]);
+                if (data_t::is_equal_to(next, reachable)) {
+                    break;
+                }
+                all_reachable[current_index] = next;
+            }
+
+            // rotate
+            const auto reachable_for_rotate = all_reachable[current_index] &
+                                              data_t::template make_square<(bits<Data>::full
+                                                      >> 2)>() & ~rotated_already[current_index];
+            rotated_already[current_index] |= reachable_for_rotate;
+            constexpr auto rotations = std::array{Rotation::Cw, Rotation::Ccw};
+            static_for_t<rotations>([&]<Rotation Rotation> [[gnu::always_inline]]() {
+                constexpr auto to_orientation = rotate_to(Orientation, Rotation);
+                constexpr auto dest_orientation_index = static_cast<size_t>(to_orientation);
+
+                const auto found_dest_reachable = rotate.template operator()<Rotation>(
+                        reachable_for_rotate, all_free_space[dest_orientation_index]
+                );
+
+                const auto dest_reachable =
+                        all_reachable[dest_orientation_index] | found_dest_reachable;
+                if (data_t::is_not_equal_to(all_reachable[dest_orientation_index], dest_reachable)) {
+                    all_reachable[dest_orientation_index] = dest_reachable;
+                    needs_update.set(dest_orientation_index);
+                }
+            });
+        }
+
         template<Orientation SpawnOrientation>
         static constexpr std::array<type, N> execute(
                 const type &board,
@@ -191,117 +305,16 @@ namespace s {
             const auto all_free_space = free_spaces<Data, Shape>::get(free_space_block);
 
             auto all_reachable = spawn<SpawnOrientation>(all_free_space, spawn_cx, spawn_cy);
-            std::array<type, N> rotated_already{};
+            auto rotated_already = std::array<type, N>{};
 
             if constexpr (N == 4) {
-                constexpr auto rotate = []<Orientation Orientation, Rotation Rotation> [[gnu::always_inline]](
-                        const type &src_reachable,
-                        const type &dest_free_space
-                ) {
-                    auto src_candidates = src_reachable;
-                    auto dest_reachable = data_t::make_zero();
-
-                    constexpr auto offsets = get_offsets<{Shape, Orientation}, Rotation>();
-                    static_assert(offsets.size() == 5);
-
-                    do {
-                        // offset[0]
-                        {
-                            constexpr auto offset = offsets[0];
-                            const auto shift_forward = data_t::template shift<offset>(src_candidates);
-                            dest_reachable = dest_reachable | shift_forward;
-                            const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
-                            src_candidates = (~shift_backward) & src_candidates;
-                            if (all_of(src_candidates == 0)) {
-                                break;
-                            }
-                        }
-                        // offset[1]
-                        {
-                            constexpr auto offset = offsets[1];
-                            const auto shift_forward = data_t::template shift<offset>(src_candidates);
-                            dest_reachable = dest_reachable | shift_forward;
-                            const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
-                            src_candidates = (~shift_backward) & src_candidates;
-                            if (all_of(src_candidates == 0)) {
-                                break;
-                            }
-                        }
-                        // offset[2]
-                        {
-                            constexpr auto offset = offsets[2];
-                            const auto shift_forward = data_t::template shift<offset>(src_candidates);
-                            dest_reachable = dest_reachable | shift_forward;
-                            const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
-                            src_candidates = (~shift_backward) & src_candidates;
-                            if (all_of(src_candidates == 0)) {
-                                break;
-                            }
-                        }
-                        // offset[3]
-                        {
-                            constexpr auto offset = offsets[3];
-                            const auto shift_forward = data_t::template shift<offset>(src_candidates);
-                            dest_reachable = dest_reachable | shift_forward;
-                            const auto shift_backward = data_t::template shift<-offset>(dest_free_space);
-                            src_candidates = (~shift_backward) & src_candidates;
-                            if (all_of(src_candidates == 0)) {
-                                break;
-                            }
-                        }
-                        // offset[4]
-                        {
-                            constexpr auto offset = offsets[4];
-                            const auto shift_forward = data_t::template shift<offset>(src_candidates);
-                            dest_reachable = dest_reachable | shift_forward;
-                        }
-                    } while (false);
-
-                    return dest_reachable & dest_free_space;
-                };
-
                 auto needs_update = std::bitset<N>().flip();
                 while (needs_update.any()) {
                     static_for_t<orientation_order(SpawnOrientation)>(
-                            [&]<Orientation Orientation> [[gnu::always_inline]]() {
-                                // check
-                                auto current_index = static_cast<size_t>(Orientation);
-                                if (!needs_update[current_index]) {
-                                    return;
-                                }
-                                needs_update.reset(current_index);
-
-                                // move
-                                while (true) {
-                                    const auto &reachable = all_reachable[current_index];
-                                    const auto next = move(reachable, all_free_space[current_index]);
-                                    if (all_of(next == reachable)) {
-                                        break;
-                                    }
-                                    all_reachable[current_index] = next;
-                                }
-
-                                // rotate
-                                const auto reachable_for_rotate = all_reachable[current_index] &
-                                                                  data_t::template make_square<(bits<Data>::full
-                                                                          >> 2)>() & ~rotated_already[current_index];
-                                rotated_already[current_index] |= reachable_for_rotate;
-                                constexpr auto rotations = std::array{Rotation::Cw, Rotation::Ccw};
-                                static_for_t<rotations>([&]<Rotation Rotation> [[gnu::always_inline]]() {
-                                    constexpr auto to_orientation = rotate_to(Orientation, Rotation);
-                                    constexpr auto dest_orientation_index = static_cast<size_t>(to_orientation);
-
-                                    const auto found_dest_reachable = rotate.template operator()<Orientation, Rotation>(
-                                            reachable_for_rotate, all_free_space[dest_orientation_index]
-                                    );
-
-                                    const auto dest_reachable =
-                                            all_reachable[dest_orientation_index] | found_dest_reachable;
-                                    if (!all_of(all_reachable[dest_orientation_index] == dest_reachable)) {
-                                        all_reachable[dest_orientation_index] = dest_reachable;
-                                        needs_update.set(dest_orientation_index);
-                                    }
-                                });
+                            [&]<Orientation Orientation>() {
+                                move_and_rotate<Orientation>(
+                                        needs_update, all_free_space, all_reachable, rotated_already
+                                );
                             });
                 }
             } else {
@@ -314,7 +327,7 @@ namespace s {
                     const auto &reachable = all_reachable[index];
                     const auto next = move(reachable, all_free_space[index]);
 
-                    if (all_of(next == reachable)) {
+                    if (data_t::is_equal_to(next, reachable)) {
                         break;
                     }
                     all_reachable[index] = next;

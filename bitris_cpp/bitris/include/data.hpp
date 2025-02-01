@@ -216,6 +216,21 @@ struct data {
         }
     }
 
+    [[gnu::always_inline]]
+    static constexpr bool is_equal_to(const type &left, const type &right) {
+        return all_of(left == right);
+    }
+
+    [[gnu::always_inline]]
+    static constexpr bool is_equal_to(const type &left, const T right) {
+        return all_of(left == right);
+    }
+
+    [[gnu::always_inline]]
+    static constexpr bool is_not_equal_to(const type &left, const type &right) {
+        return !all_of(left == right);
+    }
+
     static constexpr void show(const type &data, const int height = bits_t::bit_size) {
         std::string str;
         for (int y = height - 1; y >= 0; --y) {
